@@ -1,17 +1,35 @@
 "use client"
 
 import { useState } from "react"
-import { Menu, X } from "lucide-react"
+import { Menu, X } from 'lucide-react'
 import Link from "next/link"
+import { usePathname } from 'next/navigation'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const pathname = usePathname()
+
+  const isActive = (href: string) => {
+    if (href === "/" && pathname === "/") return true
+    if (href !== "/" && pathname.startsWith(href)) return true
+    return false
+  }
+
+  const navLinks = [
+    { label: "Inicio", href: "/" },
+    { label: "Profesionales", href: "/profesionales" },
+    { label: "Educación", href: "#educacion" },
+    { label: "Sobre Nosotros", href: "#nosotros" },
+  ]
 
   return (
     <header className="fixed top-0 w-full bg-black/80 backdrop-blur-md border-b border-white/10 z-50">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
-          <Link href="/" className="flex items-center gap-2">
+          <Link
+            href="/"
+            className="flex items-center gap-2 group hover:opacity-80 transition-opacity duration-300"
+          >
             <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect width="40" height="40" rx="8" fill="white" />
               <path
@@ -32,26 +50,28 @@ export default function Header() {
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center space-x-12">
-            <Link href="#inicio" className="text-sm text-white/70 hover:text-white transition-colors font-medium">
-              Inicio
-            </Link>
-            <Link
-              href="#profesionales"
-              className="text-sm text-white/70 hover:text-white transition-colors font-medium"
-            >
-              Profesionales
-            </Link>
-            <Link href="#educacion" className="text-sm text-white/70 hover:text-white transition-colors font-medium">
-              Educación
-            </Link>
-            <Link href="#nosotros" className="text-sm text-white/70 hover:text-white transition-colors font-medium">
-              Sobre Nosotros
-            </Link>
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-1">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`relative px-4 py-2 text-sm font-medium transition-all duration-300 group ${
+                  isActive(link.href) ? "text-white" : "text-white/60 hover:text-white"
+                }`}
+              >
+                {link.label}
+                <span
+                  className={`absolute bottom-1 left-4 right-4 h-0.5 bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-300 ${
+                    isActive(link.href) ? "scale-x-100 opacity-100" : "scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-50"
+                  }`}
+                />
+              </Link>
+            ))}
           </nav>
 
           <div className="hidden md:flex items-center">
-            <button className="text-sm font-medium bg-white text-black px-6 py-3 rounded-full hover:bg-white/90 transition-all">
+            <button className="text-sm font-medium bg-white text-black px-6 py-3 rounded-full hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-emerald-500/20 hover:shadow-2xl active:scale-95">
               Crear Perfil Profesional
             </button>
           </div>
@@ -59,7 +79,7 @@ export default function Header() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 hover:bg-white/10 rounded-lg transition-colors text-white"
+            className="md:hidden p-2 hover:bg-white/10 rounded-lg transition-all duration-300 text-white active:scale-95"
           >
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -67,24 +87,25 @@ export default function Header() {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <nav className="md:hidden pb-4 border-t border-white/10">
-            <div className="flex flex-col space-y-3 pt-4">
-              <Link href="#inicio" className="text-sm text-white/70 hover:text-white transition-colors px-2 py-2">
-                Inicio
-              </Link>
-              <Link
-                href="#profesionales"
-                className="text-sm text-white/70 hover:text-white transition-colors px-2 py-2"
-              >
-                Profesionales
-              </Link>
-              <Link href="#educacion" className="text-sm text-white/70 hover:text-white transition-colors px-2 py-2">
-                Educación
-              </Link>
-              <Link href="#nosotros" className="text-sm text-white/70 hover:text-white transition-colors px-2 py-2">
-                Sobre Nosotros
-              </Link>
-              <button className="w-full px-6 py-3 bg-white text-black rounded-full font-medium text-sm mt-2">
+          <nav
+            className="md:hidden pb-4 border-t border-white/10 animate-in fade-in slide-in-from-top-2 duration-300"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            <div className="flex flex-col space-y-2 pt-4">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`text-sm font-medium px-4 py-3 rounded-lg transition-all duration-300 ${
+                    isActive(link.href)
+                      ? "text-white bg-white/10"
+                      : "text-white/60 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <button className="w-full px-6 py-3 bg-white text-black rounded-full font-medium text-sm mt-4 active:scale-95 transition-transform">
                 Crear Perfil Profesional
               </button>
             </div>
