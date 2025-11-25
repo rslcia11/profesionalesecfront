@@ -2,10 +2,17 @@
 
 import { Play, Pause } from "lucide-react"
 import { useState, useRef } from "react"
+import VideoCarousel from "./video-carousel"
 
 export default function Hero() {
   const [isPlaying, setIsPlaying] = useState(true)
   const videoRef = useRef<HTMLVideoElement>(null)
+
+  const carouselVideos = [
+    "https://cdn.pixabay.com/video/2023/05/02/160966-822707893_large.mp4",
+    "https://cdn.pixabay.com/video/2024/03/04/204740-917035783_large.mp4",
+    "https://cdn.pixabay.com/video/2023/08/15/176297-849318455_large.mp4",
+  ]
 
   const toggleVideo = () => {
     if (videoRef.current) {
@@ -21,10 +28,7 @@ export default function Hero() {
   return (
     <section className="relative w-full h-screen flex items-center justify-start overflow-hidden bg-black">
       <div className="absolute inset-0 w-full h-full">
-        <video ref={videoRef} autoPlay muted loop playsInline className="w-full h-full object-cover opacity-60">
-          <source src="https://cdn.pixabay.com/video/2023/05/02/160966-822707893_large.mp4" type="video/mp4" />
-        </video>
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black" />
+        <VideoCarousel videos={carouselVideos} autoplay={true} autoplayInterval={6000} showControls={true} />
       </div>
 
       {/* Content */}
