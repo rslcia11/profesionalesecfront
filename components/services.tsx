@@ -1,6 +1,7 @@
 "use client"
 
 import { Briefcase, Stethoscope, BookOpen, Wrench, Code, Palette } from "lucide-react"
+import Link from "next/link"
 
 export default function Services() {
   const services = [
@@ -8,31 +9,37 @@ export default function Services() {
       icon: Briefcase,
       title: "Derecho",
       description: "Consultoría legal profesional",
+      href: "/abogados",
     },
     {
       icon: Stethoscope,
       title: "Salud",
       description: "Servicios médicos especializados",
+      href: "#",
     },
     {
       icon: BookOpen,
       title: "Educación",
       description: "Capacitación profesional",
+      href: "#",
     },
     {
       icon: Wrench,
-      title: "Tecnología",
-      description: "Soluciones tech avanzadas",
+      title: "Comunicación",
+      description: "Servicios de comunicación profesional",
+      href: "/comunicacion",
     },
     {
       icon: Code,
       title: "Desarrollo",
       description: "Software y aplicaciones",
+      href: "#",
     },
     {
       icon: Palette,
       title: "Diseño",
       description: "Creatividad y branding",
+      href: "#",
     },
   ]
 
@@ -55,9 +62,10 @@ export default function Services() {
           {services.map((service, idx) => {
             const Icon = service.icon
             return (
-              <div
+              <Link
                 key={idx}
-                className="group p-8 rounded-xl border border-border/50 hover:border-primary/30 transition-all duration-300 cursor-pointer hover:bg-primary/5"
+                href={service.href}
+                className="group p-8 rounded-xl border border-border/50 hover:border-primary/30 transition-all duration-300 cursor-pointer hover:bg-primary/5 block"
               >
                 <div className="mb-6">
                   <Icon className="text-primary w-8 h-8" />
@@ -69,7 +77,7 @@ export default function Services() {
                 <div className="mt-6 inline-flex text-primary text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                   Explorar →
                 </div>
-              </div>
+              </Link>
             )
           })}
         </div>
