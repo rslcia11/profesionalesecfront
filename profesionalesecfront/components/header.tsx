@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Menu, X } from 'lucide-react'
+import { Menu, X } from "lucide-react"
 import Link from "next/link"
-import { usePathname } from 'next/navigation'
+import { usePathname } from "next/navigation"
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -26,10 +26,7 @@ export default function Header() {
     <header className="fixed top-0 w-full bg-black/80 backdrop-blur-md border-b border-white/10 z-50">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
-          <Link
-            href="/"
-            className="flex items-center gap-2 group hover:opacity-80 transition-opacity duration-300"
-          >
+          <Link href="/" className="flex items-center gap-2 group hover:opacity-80 transition-opacity duration-300">
             <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect width="40" height="40" rx="8" fill="white" />
               <path
@@ -63,7 +60,9 @@ export default function Header() {
                 {link.label}
                 <span
                   className={`absolute bottom-1 left-4 right-4 h-0.5 bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-300 ${
-                    isActive(link.href) ? "scale-x-100 opacity-100" : "scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-50"
+                    isActive(link.href)
+                      ? "scale-x-100 opacity-100"
+                      : "scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-50"
                   }`}
                 />
               </Link>
@@ -71,9 +70,12 @@ export default function Header() {
           </nav>
 
           <div className="hidden md:flex items-center">
-            <button className="text-sm font-medium bg-white text-black px-6 py-3 rounded-full hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-emerald-500/20 hover:shadow-2xl active:scale-95">
+            <Link
+              href="/crear-perfil"
+              className="text-sm font-medium bg-white text-black px-6 py-3 rounded-full hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-emerald-500/20 hover:shadow-2xl active:scale-95"
+            >
               Crear Perfil Profesional
-            </button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -97,17 +99,18 @@ export default function Header() {
                   key={link.href}
                   href={link.href}
                   className={`text-sm font-medium px-4 py-3 rounded-lg transition-all duration-300 ${
-                    isActive(link.href)
-                      ? "text-white bg-white/10"
-                      : "text-white/60 hover:text-white hover:bg-white/5"
+                    isActive(link.href) ? "text-white bg-white/10" : "text-white/60 hover:text-white hover:bg-white/5"
                   }`}
                 >
                   {link.label}
                 </Link>
               ))}
-              <button className="w-full px-6 py-3 bg-white text-black rounded-full font-medium text-sm mt-4 active:scale-95 transition-transform">
+              <Link
+                href="/crear-perfil"
+                className="w-full px-6 py-3 bg-white text-black rounded-full font-medium text-sm mt-4 active:scale-95 transition-transform text-center"
+              >
                 Crear Perfil Profesional
-              </button>
+              </Link>
             </div>
           </nav>
         )}
