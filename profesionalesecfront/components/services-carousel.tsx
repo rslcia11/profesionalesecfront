@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import Link from "next/link"
 
 interface ServiceCard {
   id: string
   title: string
   image: string
+  href?: string
 }
 
 interface ServicesCarouselProps {
@@ -19,41 +21,35 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
   const [isAutoPlay, setIsAutoPlay] = useState(true)
   const [isHoveringCarousel, setIsHoveringCarousel] = useState(false)
 
+  const totalPages = Math.ceil(services.length / itemsPerView)
+
   // Auto-play carousel
   useEffect(() => {
     if (!isAutoPlay) return
 
     const timer = setInterval(() => {
       setCurrentIndex((prev) => {
-        const maxIndex = Math.max(1, services.length - itemsPerView + 1)
-        const nextIndex = (prev + itemsPerView) % maxIndex
-        return nextIndex === 0 ? 0 : nextIndex
+        const nextPage = (prev + 1) % totalPages
+        return nextPage
       })
     }, 5000)
 
     return () => clearInterval(timer)
-  }, [isAutoPlay, services.length, itemsPerView])
+  }, [isAutoPlay, totalPages])
 
   const handlePrev = () => {
     setIsAutoPlay(false)
-    setCurrentIndex((prev) => {
-      const maxIndex = Math.max(1, services.length - itemsPerView + 1)
-      const nextIndex = prev - itemsPerView
-      return nextIndex < 0 ? maxIndex - itemsPerView : nextIndex
-    })
+    setCurrentIndex((prev) => (prev - 1 + totalPages) % totalPages)
   }
 
   const handleNext = () => {
     setIsAutoPlay(false)
-    setCurrentIndex((prev) => {
-      const maxIndex = Math.max(1, services.length - itemsPerView + 1)
-      const nextIndex = (prev + itemsPerView) % maxIndex
-      return nextIndex === 0 ? 0 : nextIndex
-    })
+    setCurrentIndex((prev) => (prev + 1) % totalPages)
   }
 
-  const visibleServices = services.slice(currentIndex, currentIndex + itemsPerView)
-  const totalSlides = Math.max(1, Math.ceil((services.length - itemsPerView) / itemsPerView) + 1)
+  const startIdx = currentIndex * itemsPerView
+  const endIdx = Math.min(startIdx + itemsPerView, services.length)
+  const visibleServices = services.slice(startIdx, endIdx)
 
   return (
     <div className="w-full space-y-8">
@@ -65,31 +61,41 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
       >
         {/* Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {visibleServices.map((service) => (
-            <div
-              key={service.id}
-              className="relative h-72 rounded-2xl overflow-hidden group/card cursor-pointer transform transition-all duration-300 hover:scale-105"
-            >
-              {/* Background Image */}
-              <img
-                src={service.image || "/placeholder.svg?height=288&width=100%&query=professional service"}
-                alt={service.title}
-                className="w-full h-full object-cover absolute inset-0"
-              />
+          {visibleServices.map((service) => {
+            const CardContent = (
+              <div
+                key={service.id}
+                className="relative h-72 rounded-2xl overflow-hidden group/card cursor-pointer transform transition-all duration-300 hover:scale-105"
+              >
+                {/* Background Image */}
+                <img
+                  src={service.image || "/placeholder.svg?height=288&width=100%&query=professional service"}
+                  alt={service.title}
+                  className="w-full h-full object-cover absolute inset-0"
+                />
 
-              {/* Dark Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-black/70 group-hover/card:from-black/50 group-hover/card:to-black/80 transition-all duration-300" />
+                {/* Dark Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-black/70 group-hover/card:from-black/50 group-hover/card:to-black/80 transition-all duration-300" />
 
-              {/* Content */}
-              <div className="absolute inset-0 flex items-end p-6 z-10">
-                <div className="w-full text-center">
-                  <div className="inline-block px-4 py-2 bg-white/20 backdrop-blur-md border border-white/30 rounded-full">
-                    <p className="text-white font-semibold text-sm">{service.title}</p>
+                {/* Content */}
+                <div className="absolute inset-0 flex items-end p-6 z-10">
+                  <div className="w-full text-center">
+                    <div className="inline-block px-4 py-2 bg-white/20 backdrop-blur-md border border-white/30 rounded-full group-hover/card:bg-white/30 transition-all duration-300">
+                      <p className="text-white font-semibold text-sm">{service.title}</p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+
+            return service.href ? (
+              <Link key={service.id} href={service.href}>
+                {CardContent}
+              </Link>
+            ) : (
+              CardContent
+            )
+          })}
         </div>
 
         {/* Navigation Buttons - Left */}
@@ -121,17 +127,15 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
 
       {/* Dots Indicator */}
       <div className="flex justify-center items-center gap-2">
-        {Array.from({ length: totalSlides }).map((_, idx) => (
+        {Array.from({ length: totalPages }).map((_, idx) => (
           <button
             key={idx}
             onClick={() => {
               setIsAutoPlay(false)
-              setCurrentIndex(idx * itemsPerView)
+              setCurrentIndex(idx)
             }}
             className={`transition-all duration-300 rounded-full ${
-              idx === Math.floor(currentIndex / itemsPerView)
-                ? "bg-primary w-3 h-3"
-                : "bg-primary/30 hover:bg-primary/50 w-2 h-2"
+              idx === currentIndex ? "bg-primary w-3 h-3" : "bg-primary/30 hover:bg-primary/50 w-2 h-2"
             }`}
             aria-label={`Go to slide ${idx + 1}`}
           />

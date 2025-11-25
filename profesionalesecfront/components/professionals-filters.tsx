@@ -110,7 +110,6 @@ export interface FilterState {
   province: string
   city: string
   verifiedOnly: boolean
-  minRating: number
   sortBy: string
 }
 
@@ -122,7 +121,6 @@ export function ProfessionalsFilters({ onFiltersChange }: FilterProps) {
     province: "",
     city: "",
     verifiedOnly: false,
-    minRating: 0,
     sortBy: "featured",
   })
 
@@ -165,10 +163,6 @@ export function ProfessionalsFilters({ onFiltersChange }: FilterProps) {
     setFilters({ ...filters, verifiedOnly: e.target.checked })
   }
 
-  const handleRatingChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFilters({ ...filters, minRating: Number.parseInt(e.target.value) })
-  }
-
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFilters({ ...filters, sortBy: e.target.value })
   }
@@ -181,7 +175,6 @@ export function ProfessionalsFilters({ onFiltersChange }: FilterProps) {
       province: "",
       city: "",
       verifiedOnly: false,
-      minRating: 0,
       sortBy: "featured",
     })
   }
@@ -296,21 +289,6 @@ export function ProfessionalsFilters({ onFiltersChange }: FilterProps) {
           </label>
         </div>
 
-        {/* Minimum Rating Select */}
-        <div className="relative">
-          <select
-            value={filters.minRating}
-            onChange={handleRatingChange}
-            className="px-4 py-2 bg-card border border-border/50 rounded-lg text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer pr-10"
-          >
-            <option value="0">Calificación mínima</option>
-            <option value="3">3+ estrellas</option>
-            <option value="4">4+ estrellas</option>
-            <option value="5">5 estrellas</option>
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-        </div>
-
         {/* Sort Select */}
         <div className="relative">
           <select
@@ -319,8 +297,6 @@ export function ProfessionalsFilters({ onFiltersChange }: FilterProps) {
             className="px-4 py-2 bg-card border border-border/50 rounded-lg text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer pr-10"
           >
             <option value="featured">Destacados</option>
-            <option value="rating-high">Calificación más alta</option>
-            <option value="reviews-high">Más reseñas</option>
             <option value="price-low">Precio menor a mayor</option>
             <option value="price-high">Precio mayor a menor</option>
           </select>
