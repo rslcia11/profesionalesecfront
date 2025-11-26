@@ -1,5 +1,6 @@
 "use client"
 
+<<<<<<< Updated upstream
 import ServicesCarousel from "./services-carousel"
 import {
   Briefcase,
@@ -12,22 +13,36 @@ import {
   Paintbrush as PaintBrush,
   Heart,
 } from "lucide-react"
+=======
+import { Briefcase, Stethoscope, BookOpen, Wrench, Code, Palette } from "lucide-react"
+import Link from "next/link"
+>>>>>>> Stashed changes
 
 export default function Services() {
   const services = [
     {
       id: "derecho",
       title: "Derecho",
+<<<<<<< Updated upstream
       image: "/lawyer-professional-office-desk.jpg",
       icon: Briefcase,
       href: "/profesionales",
+=======
+      description: "Consultoría legal profesional",
+      link: "/profesionales",
+>>>>>>> Stashed changes
     },
     {
       id: "salud",
       title: "Salud",
+<<<<<<< Updated upstream
       image: "/healthcare-doctor-medical-clinic.jpg",
       icon: Stethoscope,
       href: "/profesionales",
+=======
+      description: "Servicios médicos especializados",
+      link: "/profesionales",
+>>>>>>> Stashed changes
     },
     {
       id: "economia",
@@ -53,22 +68,40 @@ export default function Services() {
     {
       id: "educacion",
       title: "Educación",
+<<<<<<< Updated upstream
       image: "/education-teaching-classroom-learning.jpg",
       icon: BookOpen,
       href: "/profesionales",
+=======
+      description: "Capacitación profesional",
+      link: "/educacion",
+>>>>>>> Stashed changes
     },
     {
       id: "ingenieria",
       title: "Ingeniería y Tecnología",
       image: "/engineering-technology-software-development.jpg",
       icon: Wrench,
+<<<<<<< Updated upstream
       href: "/profesionales",
+=======
+      title: "Ingeniería y Tecnología",
+      description: "Soluciones tech avanzadas",
+      link: "/ingenieria-y-tecnologia",
+    },
+    {
+      icon: Code,
+      title: "Desarrollo",
+      description: "Software y aplicaciones",
+      link: "/profesionales",
+>>>>>>> Stashed changes
     },
     {
       id: "diseno",
       title: "Diseño y Construcción",
       image: "/design-construction-architecture-building.jpg",
       icon: Palette,
+<<<<<<< Updated upstream
       href: "/profesionales",
     },
     {
@@ -91,6 +124,11 @@ export default function Services() {
       image: "/mental-health-psychology-wellness-therapy.jpg",
       icon: Heart,
       href: "/profesionales",
+=======
+      title: "Diseño",
+      description: "Creatividad y branding",
+      link: "/profesionales",
+>>>>>>> Stashed changes
     },
   ]
 
@@ -109,7 +147,33 @@ export default function Services() {
           </p>
         </div>
 
+<<<<<<< Updated upstream
         <ServicesCarousel services={services} itemsPerView={4} />
+=======
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {services.map((service, idx) => {
+            const Icon = service.icon
+            return (
+              <Link
+                key={idx}
+                href={service.link}
+                className="group p-8 rounded-xl border border-border/50 hover:border-primary/30 transition-all duration-300 cursor-pointer hover:bg-primary/5 block"
+              >
+                <div className="mb-6">
+                  <Icon className="text-primary w-8 h-8" />
+                </div>
+
+                <h3 className="text-xl font-semibold text-foreground mb-2">{service.title}</h3>
+                <p className="text-sm text-muted-foreground">{service.description}</p>
+
+                <div className="mt-6 inline-flex text-primary text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                  Explorar →
+                </div>
+              </Link>
+            )
+          })}
+        </div>
+>>>>>>> Stashed changes
       </div>
     </section>
   )

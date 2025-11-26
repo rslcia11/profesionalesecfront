@@ -1,7 +1,12 @@
 "use client"
 
+<<<<<<< Updated upstream
 import { MapPin, Mail, ArrowRight, Play } from "lucide-react"
+=======
+import { Star, MapPin, Mail, ArrowRight, Play } from 'lucide-react'
+>>>>>>> Stashed changes
 import { useState } from "react"
+import Link from 'next/link'
 
 export default function Professionals() {
   const [activeFilter, setActiveFilter] = useState("all")
@@ -113,12 +118,14 @@ export default function Professionals() {
             </p>
           </div>
 
-          {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-12">
-            <button className="group px-8 py-4 bg-primary text-primary-foreground rounded-full font-semibold hover:bg-primary/90 transition-all hover:shadow-xl hover:shadow-primary/20 flex items-center gap-3 text-base">
+            <Link 
+              href="/profesionales" 
+              className="group px-8 py-4 bg-primary text-primary-foreground rounded-full font-semibold hover:bg-primary/90 transition-all hover:shadow-xl hover:shadow-primary/20 flex items-center gap-3 text-base"
+            >
               Explorar profesionales
               <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-            </button>
+            </Link>
             <button className="group px-8 py-4 bg-transparent border-2 border-foreground/20 text-foreground rounded-full font-semibold hover:border-primary hover:text-primary transition-all flex items-center gap-3 text-base">
               <Play size={20} className="group-hover:scale-110 transition-transform" />
               Ver presentación
@@ -252,17 +259,19 @@ export default function Professionals() {
         </div>
       </div>
 
-      {/* Bottom CTA Section */}
       <div className="max-w-4xl mx-auto px-4 pb-32 text-center">
         <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-3xl p-12 border border-primary/20">
           <h3 className="text-3xl md:text-4xl font-bold text-foreground mb-4">¿Eres un profesional destacado?</h3>
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
             Únete a nuestra red de expertos verificados y conecta con clientes que buscan excelencia
           </p>
-          <button className="group px-8 py-4 bg-primary text-primary-foreground rounded-full font-semibold hover:bg-primary/90 transition-all hover:shadow-xl hover:shadow-primary/20 flex items-center gap-3 mx-auto">
+          <Link 
+            href="/registro-profesional"
+            className="group inline-flex px-8 py-4 bg-primary text-primary-foreground rounded-full font-semibold hover:bg-primary/90 transition-all hover:shadow-xl hover:shadow-primary/20 items-center gap-3"
+          >
             Crear perfil profesional
             <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-          </button>
+          </Link>
         </div>
       </div>
     </section>

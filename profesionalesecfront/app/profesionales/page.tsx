@@ -1,404 +1,408 @@
 "use client"
 
-import { useState, useCallback } from "react"
-import { Star, MapPin, ArrowRight } from "lucide-react"
 import Header from "@/components/header"
-import Footer from "@/components/footer"
-import { ProfessionalsFilters, type FilterState } from "@/components/professionals-filters"
+import { Search, Star, MapPin, Mail, Filter } from "lucide-react"
+import { useState } from "react"
+import Link from "next/link"
 
-export default function ProfessionalsPage() {
-  const [filters, setFilters] = useState<FilterState>({
-    keyword: "",
-    profession: "",
-    specialty: "",
-    province: "",
-    city: "",
-    verifiedOnly: false,
-    minRating: 0,
-    sortBy: "featured",
-  })
+export default function AllProfessionalsPage() {
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState("all")
+
+  const categories = [
+    { id: "all", label: "Todos", count: 24 },
+    { id: "legal", label: "Legal", count: 8 },
+    { id: "salud", label: "Salud", count: 12 },
+    { id: "salud-mental", label: "Salud Mental", count: 5 },
+    { id: "artistas", label: "Artistas", count: 6 },
+    { id: "administracion", label: "Administración", count: 7 },
+    { id: "oficios", label: "Oficios y más", count: 9 },
+  ]
+
+  // 👉 Tarjetas grandes de áreas (como en tu screenshot)
+  const areas = [
+    {
+      title: "Derecho",
+      description: "Consultoría legal profesional",
+      href: "#",
+    },
+    {
+      title: "Salud",
+      description: "Servicios médicos especializados",
+      href: "#",
+    },
+    {
+      title: "Educación",
+      description: "Capacitación profesional",
+      href: "#",
+    },
+    {
+      // 👇 ESTA ES LA QUE TE IMPORTA
+      title: "Ingeniería y Tecnología",
+      description: "Soluciones tech avanzadas",
+      href: "/ingenieria-y-tecnologia", // ⬅️ va a tu nueva página
+    },
+    {
+      title: "Desarrollo",
+      description: "Software y aplicaciones",
+      href: "#",
+    },
+    {
+      title: "Diseño",
+      description: "Creatividad y branding",
+      href: "#",
+    },
+  ]
 
   const professionals = [
     {
       id: 1,
-      name: "Dr. Carlos López",
-      specialty: "Médico Cirujano",
+      name: "Dr. Carlos López Mendoza",
+      specialty: "Médico Cirujano Especialista",
       rating: 4.9,
       reviews: 127,
-      location: "Quito, Ecuador",
+      location: "Quito, Pichincha",
       image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=800&h=1000&fit=crop",
       price: "$150",
-      unit: "hora",
+      unit: "consulta",
       experience: "15 años",
       category: "salud",
-      featured: true,
       verified: true,
-      profession: "1",
-      specialty_id: "1",
-      province: "19",
-      city: "4",
+      description:
+        "Especialista en cirugía general con amplia experiencia en procedimientos mínimamente invasivos",
     },
     {
       id: 2,
-      name: "Lic. María Gómez",
-      specialty: "Abogada Especialista",
+      name: "Lic. María Gómez Paredes",
+      specialty: "Abogada Especialista en Derecho Civil",
       rating: 4.8,
       reviews: 89,
-      location: "Guayaquil, Ecuador",
+      location: "Guayaquil, Guayas",
       image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&h=1000&fit=crop",
       price: "$120",
       unit: "hora",
       experience: "12 años",
       category: "legal",
-      featured: true,
       verified: true,
-      profession: "2",
-      specialty_id: "4",
-      province: "10",
-      city: "1",
+      description: "Experta en litigios civiles, derecho de familia y sucesiones",
     },
     {
       id: 3,
-      name: "Ing. Juan Rodríguez",
-      specialty: "Ingeniero de Software",
-      rating: 5.0,
-      reviews: 156,
-      location: "Quito, Ecuador",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=1000&fit=crop",
-      price: "$180",
-      unit: "hora",
-      experience: "10 años",
-      category: "tecnologia",
-      featured: true,
-      verified: true,
-      profession: "3",
-      specialty_id: "7",
-      province: "19",
-      city: "4",
-    },
-    {
-      id: 4,
-      name: "Dra. Ana Martínez",
+      name: "Dra. Ana Martínez Silva",
       specialty: "Psicóloga Clínica",
       rating: 4.7,
       reviews: 94,
-      location: "Cuenca, Ecuador",
+      location: "Cuenca, Azuay",
       image: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=800&h=1000&fit=crop",
       price: "$100",
-      unit: "hora",
+      unit: "sesión",
       experience: "8 años",
-      category: "salud",
-      featured: false,
+      category: "salud-mental",
       verified: true,
-      profession: "1",
-      specialty_id: "2",
-      province: "1",
-      city: "7",
+      description: "Especialista en terapia cognitivo-conductual y trastornos de ansiedad",
     },
     {
-      id: 5,
-      name: "Arq. Felipe Torres",
-      specialty: "Arquitecto Diseñador",
+      id: 4,
+      name: "Arq. Felipe Torres Ruiz",
+      specialty: "Arquitecto y Diseñador",
       rating: 4.9,
       reviews: 112,
-      location: "Quito, Ecuador",
+      location: "Quito, Pichincha",
       image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=800&h=1000&fit=crop",
       price: "$140",
       unit: "proyecto",
       experience: "18 años",
-      category: "diseño",
-      featured: false,
+      category: "artistas",
       verified: true,
-      profession: "4",
-      specialty_id: "10",
-      province: "19",
-      city: "4",
+      description: "Especializado en diseño residencial y arquitectura sostenible",
     },
     {
-      id: 6,
-      name: "Dra. Patricia Sánchez",
-      specialty: "Dentista Estética",
+      id: 5,
+      name: "Dra. Patricia Sánchez Vera",
+      specialty: "Odontóloga - Estética Dental",
       rating: 4.8,
       reviews: 203,
-      location: "Quito, Ecuador",
-      image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=800&h=1000&fit=crop",
+      location: "Quito, Pichincha",
+      image: "https://images.unsplash.com/photo-1559839734291-00dcc994a43e?w=800&h=1000&fit=crop",
       price: "$90",
       unit: "consulta",
       experience: "14 años",
       category: "salud",
-      featured: false,
-      verified: false,
-      profession: "1",
-      specialty_id: "3",
-      province: "19",
-      city: "4",
+      verified: true,
+      description: "Experta en rehabilitación oral, implantes y diseño de sonrisa",
+    },
+    {
+      id: 6,
+      name: "Ing. Roberto García Morales",
+      specialty: "Contador Público Autorizado",
+      rating: 4.6,
+      reviews: 78,
+      location: "Guayaquil, Guayas",
+      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=1000&fit=crop",
+      price: "$80",
+      unit: "hora",
+      experience: "10 años",
+      category: "administracion",
+      verified: true,
+      description: "Especialista en auditoría, tributación y asesoría financiera",
     },
     {
       id: 7,
-      name: "Cons. Roberto Díaz",
-      specialty: "Asesor Financiero",
-      rating: 4.9,
+      name: "Maestro Luis Pérez Castro",
+      specialty: "Electricista Certificado",
+      rating: 5.0,
       reviews: 145,
-      location: "Guayaquil, Ecuador",
-      image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&h=1000&fit=crop",
-      price: "$160",
-      unit: "sesión",
-      experience: "16 años",
-      category: "finanzas",
-      featured: false,
+      location: "Quito, Pichincha",
+      image: "https://images.unsplash.com/photo-1500648767791-0a1dd7228bf5?w=800&h=1000&fit=crop",
+      price: "$60",
+      unit: "servicio",
+      experience: "20 años",
+      category: "oficios",
       verified: true,
-      profession: "5",
-      specialty_id: "13",
-      province: "10",
-      city: "1",
+      description:
+        "Instalaciones eléctricas residenciales, comerciales e industriales",
     },
     {
       id: 8,
-      name: "Lic. Sofia Reyes",
-      specialty: "Coach Empresarial",
-      rating: 4.8,
-      reviews: 78,
-      location: "Ambato, Ecuador",
-      image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&h=1000&fit=crop",
+      name: "Lic. Carmen Rodríguez Vega",
+      specialty: "Psiquiatra",
+      rating: 4.9,
+      reviews: 67,
+      location: "Cuenca, Azuay",
+      image: "https://images.unsplash.com/photo-1594744803329-e58b31de8bf5?w=800&h=1000&fit=crop",
       price: "$130",
-      unit: "hora",
-      experience: "11 años",
-      category: "coaching",
-      featured: false,
-      verified: true,
-      profession: "6",
-      specialty_id: "16",
-      province: "23",
-      city: "",
-    },
-    {
-      id: 9,
-      name: "Ing. Marco Flores",
-      specialty: "Especialista en Energía",
-      rating: 4.7,
-      reviews: 65,
-      location: "Quito, Ecuador",
-      image: "https://images.unsplash.com/photo-1507842217343-583f20270319?w=800&h=1000&fit=crop",
-      price: "$150",
       unit: "consulta",
-      experience: "13 años",
-      category: "ingenieria",
-      featured: false,
+      experience: "16 años",
+      category: "salud-mental",
       verified: true,
-      profession: "7",
-      specialty_id: "19",
-      province: "19",
-      city: "4",
+      description:
+        "Especialista en trastornos del estado de ánimo y psicofarmacología",
     },
   ]
 
   const filteredProfessionals = professionals.filter((prof) => {
-    // Filtrar por palabra clave
-    if (filters.keyword) {
-      const keyword = filters.keyword.toLowerCase()
-      if (!prof.name.toLowerCase().includes(keyword) && !prof.specialty.toLowerCase().includes(keyword)) {
-        return false
-      }
-    }
+    const matchesSearch =
+      prof.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      prof.specialty.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      prof.location.toLowerCase().includes(searchQuery.toLowerCase())
 
-    // Filtrar por profesión
-    if (filters.profession && prof.profession !== filters.profession) {
-      return false
-    }
+    const matchesCategory =
+      selectedCategory === "all" || prof.category === selectedCategory
 
-    // Filtrar por especialidad
-    if (filters.specialty && prof.specialty_id !== filters.specialty) {
-      return false
-    }
-
-    // Filtrar por provincia
-    if (filters.province && prof.province !== filters.province) {
-      return false
-    }
-
-    // Filtrar por ciudad
-    if (filters.city && prof.city !== filters.city) {
-      return false
-    }
-
-    // Filtrar solo verificados
-    if (filters.verifiedOnly && !prof.verified) {
-      return false
-    }
-
-    // Filtrar por calificación mínima
-    if (filters.minRating && prof.rating < filters.minRating) {
-      return false
-    }
-
-    return true
+    return matchesSearch && matchesCategory
   })
-
-  const sortedProfessionals = [...filteredProfessionals].sort((a, b) => {
-    switch (filters.sortBy) {
-      case "rating-high":
-        return b.rating - a.rating
-      case "reviews-high":
-        return b.reviews - a.reviews
-      case "price-low":
-        return Number.parseInt(a.price.replace("$", "")) - Number.parseInt(b.price.replace("$", ""))
-      case "price-high":
-        return Number.parseInt(b.price.replace("$", "")) - Number.parseInt(a.price.replace("$", ""))
-      case "featured":
-      default:
-        return (b.featured ? 1 : 0) - (a.featured ? 1 : 0)
-    }
-  })
-
-  const handleFiltersChange = useCallback((newFilters: FilterState) => {
-    setFilters(newFilters)
-  }, [])
 
   return (
-    <div className="w-full bg-background">
+    <div className="min-h-screen bg-background">
       <Header />
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-16 px-4 md:px-6 bg-gradient-to-b from-background via-background to-primary/5">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 pointer-events-none" />
-
-        <div className="relative max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-6 tracking-tight">
-              Todos los
-              <br />
-              <span className="text-primary">Profesionales</span>
-            </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Explora nuestra red completa de profesionales verificados. Filtra y encuentra el experto que necesitas.
-            </p>
-          </div>
+      <div className="bg-gradient-to-br from-primary/5 to-accent/5 border-b border-border/50">
+        <div className="max-w-7xl mx-auto px-4 py-16 text-center">
+          <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-4">
+            Todos los profesionales
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Encuentra al profesional perfecto para tus necesidades
+          </p>
         </div>
-      </section>
+      </div>
 
-      {/* Filters Section */}
-      <section className="max-w-7xl mx-auto px-4 md:px-6 py-12">
-        <ProfessionalsFilters onFiltersChange={handleFiltersChange} />
-      </section>
-
-      {/* Results Summary */}
-      <section className="max-w-7xl mx-auto px-4 md:px-6 pb-8">
-        <p className="text-sm text-muted-foreground">
-          {sortedProfessionals.length} profesional{sortedProfessionals.length !== 1 ? "es" : ""} encontrado
-          {sortedProfessionals.length !== professionals.length && " (filtrado)"}
-        </p>
-      </section>
-
-      {/* Professionals Grid */}
-      <section className="max-w-7xl mx-auto px-4 md:px-6 pb-32">
-        {sortedProfessionals.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sortedProfessionals.map((professional, index) => (
-              <div
-                key={professional.id}
-                className="group relative bg-card rounded-2xl overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2"
-                style={{ animationDelay: `${index * 100}ms` }}
+      <div className="max-w-7xl mx-auto px-4 py-12">
+        {/* 🧩 Tarjetas de Áreas de Expertise */}
+        <section className="mb-12">
+          <div className="grid md:grid-cols-3 gap-6">
+            {areas.map((area) => (
+              <Link
+                key={area.title}
+                href={area.href}
+                className="block rounded-3xl border border-border/60 bg-card p-8 hover:shadow-xl hover:border-primary/40 transition-all"
               >
-                {/* Image Section */}
-                <div className="relative h-80 overflow-hidden bg-gradient-to-br from-primary/5 to-accent/5">
-                  <img
-                    src={professional.image || "/placeholder.svg"}
-                    alt={professional.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent opacity-60" />
-
-                  {/* Rating Badge */}
-                  <div className="absolute top-4 right-4 bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
-                    <Star size={14} className="text-yellow-400 fill-yellow-400" />
-                    <span className="text-sm font-bold text-foreground">{professional.rating}</span>
-                  </div>
-
-                  {/* Verified Badge */}
-                  {professional.verified && (
-                    <div className="absolute top-4 left-4 bg-primary/90 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
-                      <span className="text-xs font-bold text-primary-foreground">✓ Verificado</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Content Section */}
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-foreground mb-1">{professional.name}</h3>
-                  <p className="text-sm text-primary font-semibold mb-4">{professional.specialty}</p>
-
-                  {/* Info Grid */}
-                  <div className="space-y-3 mb-6">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Experiencia</span>
-                      <span className="font-semibold text-foreground">{professional.experience}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Reseñas</span>
-                      <span className="font-semibold text-foreground">{professional.reviews} valoraciones</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <MapPin size={14} />
-                      {professional.location}
-                    </div>
-                  </div>
-
-                  {/* Price and CTA */}
-                  <div className="flex items-center justify-between pt-4 border-t border-border/50">
-                    <div>
-                      <div className="text-2xl font-bold text-primary">{professional.price}</div>
-                      <div className="text-xs text-muted-foreground">por {professional.unit}</div>
-                    </div>
-                    <button className="group/btn px-6 py-2.5 bg-primary text-primary-foreground rounded-full font-medium hover:bg-primary/90 transition-all hover:shadow-lg hover:shadow-primary/20 flex items-center gap-2">
-                      Contactar
-                      <ArrowRight size={16} className="group-hover/btn:translate-x-1 transition-transform" />
-                    </button>
-                  </div>
-                </div>
-              </div>
+                <h3 className="text-xl font-semibold text-foreground mb-2">
+                  {area.title}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {area.description}
+                </p>
+              </Link>
             ))}
           </div>
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-lg text-muted-foreground">
-              No se encontraron profesionales con los filtros seleccionados.
-            </p>
-            <button
-              onClick={() =>
-                setFilters({
-                  keyword: "",
-                  profession: "",
-                  specialty: "",
-                  province: "",
-                  city: "",
-                  verifiedOnly: false,
-                  minRating: 0,
-                  sortBy: "featured",
-                })
-              }
-              className="mt-4 px-6 py-2 bg-primary text-primary-foreground rounded-full font-medium hover:bg-primary/90 transition-all"
-            >
-              Limpiar filtros
-            </button>
+        </section>
+
+        {/* Layout principal */}
+        <div className="grid lg:grid-cols-4 gap-8">
+          {/* Sidebar - Categories */}
+          <aside className="lg:col-span-1">
+            <div className="sticky top-24 bg-card rounded-xl border border-border/50 p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <Filter size={20} className="text-primary" />
+                <h2 className="text-lg font-bold text-foreground">
+                  Categorías
+                </h2>
+              </div>
+
+              <div className="space-y-2">
+                {categories.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => setSelectedCategory(category.id)}
+                    className={`w-full text-left px-4 py-3 rounded-lg transition-all ${
+                      selectedCategory === category.id
+                        ? "bg-primary text-primary-foreground font-semibold"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>{category.label}</span>
+                      <span
+                        className={`text-sm ${
+                          selectedCategory === category.id
+                            ? "text-primary-foreground/70"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        {category.count}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <div className="lg:col-span-3">
+            {/* Search Bar */}
+            <div className="mb-8">
+              <div className="relative">
+                <Search
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  size={20}
+                />
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre, especialidad o ubicación..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 rounded-xl border border-border/50 bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+            </div>
+
+            {/* Results Count */}
+            <div className="mb-6">
+              <p className="text-muted-foreground">
+                Mostrando{" "}
+                <span className="font-semibold text-foreground">
+                  {filteredProfessionals.length}
+                </span>{" "}
+                profesionales
+                {selectedCategory !== "all" && (
+                  <span>
+                    {" "}
+                    en{" "}
+                    <span className="font-semibold text-primary">
+                      {
+                        categories.find(
+                          (c) => c.id === selectedCategory
+                        )?.label
+                      }
+                    </span>
+                  </span>
+                )}
+              </p>
+            </div>
+
+            {/* Professionals Grid */}
+            <div className="grid md:grid-cols-2 gap-6">
+              {filteredProfessionals.map((professional) => (
+                <div
+                  key={professional.id}
+                  className="group bg-card rounded-xl border border-border/50 hover:border-primary/30 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-primary/10"
+                >
+                  <div className="grid sm:grid-cols-5 gap-4">
+                    {/* Image */}
+                    <div className="sm:col-span-2 relative h-48 sm:h-auto overflow-hidden bg-gradient-to-br from-primary/5 to-accent/5">
+                      <img
+                        src={professional.image || "/placeholder.svg"}
+                        alt={professional.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                      {professional.verified && (
+                        <div className="absolute top-3 left-3 bg-primary text-primary-foreground px-2 py-1 rounded-full text-xs font-semibold">
+                          Verificado
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Content */}
+                    <div className="sm:col-span-3 p-4">
+                      <h3 className="text-lg font-bold text-foreground mb-1 group-hover:text-primary transition-colors">
+                        {professional.name}
+                      </h3>
+                      <p className="text-sm text-primary font-semibold mb-3">
+                        {professional.specialty}
+                      </p>
+
+                      <div className="space-y-2 mb-4">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Star
+                            size={14}
+                            className="text-yellow-400 fill-yellow-400"
+                          />
+                          <span className="font-semibold text-foreground">
+                            {professional.rating}
+                          </span>
+                          <span className="text-muted-foreground">
+                            ({professional.reviews} reseñas)
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin size={14} />
+                          {professional.location}
+                        </div>
+                      </div>
+
+                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                        {professional.description}
+                      </p>
+
+                      <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                        <div>
+                          <div className="text-xl font-bold text-primary">
+                            {professional.price}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            por {professional.unit}
+                          </div>
+                        </div>
+                        <button className="px-4 py-2 bg-primary text-primary-foreground rounded-full text-sm font-semibold hover:bg-primary/90 transition-all hover:shadow-lg hover:shadow-primary/20 flex items-center gap-2">
+                          <Mail size={16} />
+                          Contactar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Empty State */}
+            {filteredProfessionals.length === 0 && (
+              <div className="text-center py-20">
+                <div className="text-6xl mb-4">🔍</div>
+                <h3 className="text-2xl font-bold text-foreground mb-2">
+                  No se encontraron profesionales
+                </h3>
+                <p className="text-muted-foreground">
+                  Intenta ajustar tu búsqueda o filtros para encontrar lo que
+                  necesitas
+                </p>
+              </div>
+            )}
           </div>
-        )}
-      </section>
-
-      {/* Bottom CTA Section */}
-      <section className="max-w-4xl mx-auto px-4 md:px-6 pb-32">
-        <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-3xl p-12 border border-primary/20 text-center">
-          <h3 className="text-3xl md:text-4xl font-bold text-foreground mb-4">¿Eres un profesional destacado?</h3>
-          <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Únete a nuestra red de expertos verificados y conecta con clientes que buscan excelencia
-          </p>
-          <button className="group px-8 py-4 bg-primary text-primary-foreground rounded-full font-semibold hover:bg-primary/90 transition-all hover:shadow-xl hover:shadow-primary/20 inline-flex items-center gap-3">
-            Crear perfil profesional
-            <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-          </button>
         </div>
-      </section>
-
-      <Footer />
+      </div>
     </div>
   )
 }
