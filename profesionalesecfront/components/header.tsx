@@ -71,7 +71,7 @@ export default function Header() {
 
           <div className="hidden md:flex items-center">
             <Link
-              href="/crear-perfil"
+              href="/preinscripcion"
               className="text-sm font-medium bg-white text-black px-6 py-3 rounded-full hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-emerald-500/20 hover:shadow-2xl active:scale-95"
             >
               Crear Perfil Profesional
@@ -106,7 +106,7 @@ export default function Header() {
                 </Link>
               ))}
               <Link
-                href="/crear-perfil"
+                href="/preinscripcion"
                 className="w-full px-6 py-3 bg-white text-black rounded-full font-medium text-sm mt-4 active:scale-95 transition-transform text-center"
               >
                 Crear Perfil Profesional
