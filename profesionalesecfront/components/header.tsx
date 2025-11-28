@@ -18,7 +18,7 @@ export default function Header() {
   const navLinks = [
     { label: "Inicio", href: "/" },
     { label: "Profesionales", href: "/profesionales" },
-    { label: "Educación", href: "#educacion" },
+    { label: "Educación", href: "/conversatorios" },
     { label: "Sobre Nosotros", href: "#nosotros" },
   ]
 
