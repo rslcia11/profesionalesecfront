@@ -1,10 +1,6 @@
 "use client"
 
-<<<<<<< Updated upstream
-import { MapPin, Mail, ArrowRight, Play } from "lucide-react"
-=======
 import { Star, MapPin, Mail, ArrowRight, Play } from 'lucide-react'
->>>>>>> Stashed changes
 import { useState } from "react"
 import Link from 'next/link'
 
@@ -16,6 +12,8 @@ export default function Professionals() {
       id: 1,
       name: "Dr. Carlos López",
       specialty: "Médico Cirujano",
+      rating: 4.9,
+      reviews: 127,
       location: "Quito, Ecuador",
       image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=800&h=1000&fit=crop",
       price: "$150",
@@ -28,6 +26,8 @@ export default function Professionals() {
       id: 2,
       name: "Lic. María Gómez",
       specialty: "Abogada Especialista",
+      rating: 4.8,
+      reviews: 89,
       location: "Guayaquil, Ecuador",
       image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&h=1000&fit=crop",
       price: "$120",
@@ -40,6 +40,8 @@ export default function Professionals() {
       id: 3,
       name: "Ing. Juan Rodríguez",
       specialty: "Ingeniero de Software",
+      rating: 5.0,
+      reviews: 156,
       location: "Quito, Ecuador",
       image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=1000&fit=crop",
       price: "$180",
@@ -52,6 +54,8 @@ export default function Professionals() {
       id: 4,
       name: "Dra. Ana Martínez",
       specialty: "Psicóloga Clínica",
+      rating: 4.7,
+      reviews: 94,
       location: "Cuenca, Ecuador",
       image: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=800&h=1000&fit=crop",
       price: "$100",
@@ -64,6 +68,8 @@ export default function Professionals() {
       id: 5,
       name: "Arq. Felipe Torres",
       specialty: "Arquitecto Diseñador",
+      rating: 4.9,
+      reviews: 112,
       location: "Quito, Ecuador",
       image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=800&h=1000&fit=crop",
       price: "$140",
@@ -76,6 +82,8 @@ export default function Professionals() {
       id: 6,
       name: "Dra. Patricia Sánchez",
       specialty: "Dentista Estética",
+      rating: 4.8,
+      reviews: 203,
       location: "Quito, Ecuador",
       image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=800&h=1000&fit=crop",
       price: "$90",
@@ -119,8 +127,8 @@ export default function Professionals() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-12">
-            <Link 
-              href="/profesionales" 
+            <Link
+              href="/profesionales"
               className="group px-8 py-4 bg-primary text-primary-foreground rounded-full font-semibold hover:bg-primary/90 transition-all hover:shadow-xl hover:shadow-primary/20 flex items-center gap-3 text-base"
             >
               Explorar profesionales
@@ -165,6 +173,13 @@ export default function Professionals() {
                     <div className="text-2xl font-bold text-foreground">{featuredProfessional.experience}</div>
                   </div>
                   <div className="border-l-2 border-primary pl-4">
+                    <div className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Calificación</div>
+                    <div className="text-2xl font-bold text-foreground flex items-center gap-2">
+                      {featuredProfessional.rating}
+                      <Star size={20} className="text-yellow-400 fill-yellow-400" />
+                    </div>
+                  </div>
+                  <div className="border-l-2 border-primary pl-4">
                     <div className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Ubicación</div>
                     <div className="text-lg font-semibold text-foreground">{featuredProfessional.location}</div>
                   </div>
@@ -194,11 +209,10 @@ export default function Professionals() {
             <button
               key={category.id}
               onClick={() => setActiveFilter(category.id)}
-              className={`px-6 py-3 rounded-full font-medium transition-all ${
-                activeFilter === category.id
-                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
+              className={`px-6 py-3 rounded-full font-medium transition-all ${activeFilter === category.id
+                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
             >
               {category.label}
             </button>
@@ -223,6 +237,12 @@ export default function Professionals() {
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent opacity-60" />
+
+                {/* Floating rating badge */}
+                <div className="absolute top-4 right-4 bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
+                  <Star size={14} className="text-yellow-400 fill-yellow-400" />
+                  <span className="text-sm font-bold text-foreground">{professional.rating}</span>
+                </div>
               </div>
 
               {/* Content */}
@@ -235,6 +255,10 @@ export default function Professionals() {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Experiencia</span>
                     <span className="font-semibold text-foreground">{professional.experience}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Reseñas</span>
+                    <span className="font-semibold text-foreground">{professional.reviews} valoraciones</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <MapPin size={14} />
@@ -265,7 +289,7 @@ export default function Professionals() {
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
             Únete a nuestra red de expertos verificados y conecta con clientes que buscan excelencia
           </p>
-          <Link 
+          <Link
             href="/registro-profesional"
             className="group inline-flex px-8 py-4 bg-primary text-primary-foreground rounded-full font-semibold hover:bg-primary/90 transition-all hover:shadow-xl hover:shadow-primary/20 items-center gap-3"
           >

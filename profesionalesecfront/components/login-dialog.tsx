@@ -1,59 +1,145 @@
 "use client"
 
+import * as React from "react"
 import { useState } from "react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 
-export function LoginDialog() {
-  const [open, setOpen] = useState(false)
+// Tipo del formulario
+interface LoginFormData {
+  email: string
+  password: string
+  rememberMe: boolean
+}
+
+interface LoginDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
+
+export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
+  const [formData, setFormData] = useState<LoginFormData>({
+    email: "",
+    password: "",
+    rememberMe: false,
+  })
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    console.log("[v0] Login form submitted:", formData)
+    alert("Iniciando sesión...")
+    onOpenChange(false)
+  }
+
+  const handleOpenRegistration = () => {
+    onOpenChange(false)
+    window.location.href = "/registro-profesional"
+  }
 
   return (
-    <>
-      {/* Botón para abrir el diálogo */}
-      <button
-        onClick={() => setOpen(true)}
-        className="px-4 py-2 rounded-full bg-white text-gray-900 text-sm font-semibold shadow-sm hover:bg-gray-100 transition"
-      >
-        Iniciar sesión
-      </button>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold text-center">
+            Iniciar Sesión
+          </DialogTitle>
+          <DialogDescription className="text-center">
+            Ingresa a tu cuenta de profesional
+          </DialogDescription>
+        </DialogHeader>
 
-      {/* Fondo oscuro */}
-      {open && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-xl">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">Iniciar sesión</h2>
-
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col">
-                <label className="text-sm font-medium text-gray-700 mb-1">Correo</label>
-                <input
-                  type="email"
-                  className="border rounded-lg px-3 py-2 text-gray-900"
-                  placeholder="tu@email.com"
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-                <input
-                  type="password"
-                  className="border rounded-lg px-3 py-2 text-gray-900"
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <button className="mt-2 w-full bg-gray-900 text-white py-2 rounded-lg font-semibold hover:bg-gray-800 transition">
-                Entrar
-              </button>
-
-              <button
-                onClick={() => setOpen(false)}
-                className="w-full py-2 text-gray-600 hover:text-gray-900 transition"
-              >
-                Cancelar
-              </button>
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+          <div className="space-y-2">
+            <Label htmlFor="login-email">
+              Correo electrónico <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="login-email"
+              type="email"
+              required
+              value={formData.email}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
+              placeholder="ejemplo@correo.com"
+              className="h-12"
+            />
           </div>
-        </div>
-      )}
-    </>
+
+          <div className="space-y-2">
+            <Label htmlFor="login-password">
+              Contraseña <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="login-password"
+              type="password"
+              required
+              value={formData.password}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
+              placeholder="••••••••"
+              className="h-12"
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="remember"
+                checked={formData.rememberMe}
+                onCheckedChange={(checked) =>
+                  setFormData({
+                    ...formData,
+                    rememberMe: Boolean(checked),
+                  })
+                }
+              />
+              <Label
+                htmlFor="remember"
+                className="text-sm font-normal cursor-pointer"
+              >
+                Recordarme
+              </Label>
+            </div>
+            <button
+              type="button"
+              className="text-sm text-primary hover:underline"
+              onClick={() =>
+                alert(
+                  "Funcionalidad de recuperación de contraseña próximamente"
+                )
+              }
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          </div>
+
+          <Button type="submit" size="lg" className="w-full h-12">
+            Iniciar Sesión
+          </Button>
+
+          <div className="text-center text-sm text-muted-foreground">
+            ¿No tienes una cuenta?{" "}
+            <button
+              type="button"
+              onClick={handleOpenRegistration}
+              className="text-primary hover:underline font-medium"
+            >
+              Crear Perfil Profesional
+            </button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }

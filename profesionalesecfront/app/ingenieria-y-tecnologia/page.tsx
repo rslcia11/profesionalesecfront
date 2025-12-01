@@ -1,25 +1,11 @@
 "use client"
 
-import { useState, useEffect, type ButtonHTMLAttributes, type ReactNode } from "react"
+import { useState, useEffect } from "react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { Code, Cpu, Zap, Leaf, Bot, Building2, ChevronLeft, ChevronRight } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import Link from "next/link"
-
-// 👇 Botón sencillo local, sin "@/components/ui/button"
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  className?: string
-  children: ReactNode
-}
-
-const Button = ({ className = "", children, ...props }: ButtonProps) => (
-  <button
-    className={`px-4 py-2 rounded-lg font-medium transition ${className}`}
-    {...props}
-  >
-    {children}
-  </button>
-)
 
 export default function IngenieriaYTecnologia() {
   const [currentProfessionalSlide, setCurrentProfessionalSlide] = useState(0)
@@ -28,36 +14,42 @@ export default function IngenieriaYTecnologia() {
     {
       icon: Building2,
       title: "Ingeniería Civil",
+      slug: "ingenieria-civil",
       description: "Expertos en construcción, estructuras y proyectos de infraestructura",
       count: 24,
     },
     {
       icon: Cpu,
       title: "Ingeniería Industrial",
+      slug: "ingenieria-industrial",
       description: "Optimización de procesos, producción y gestión industrial",
       count: 18,
     },
     {
       icon: Zap,
       title: "Ingeniería Electrónica",
+      slug: "ingenieria-electronica",
       description: "Sistemas electrónicos, automatización y control",
       count: 15,
     },
     {
       icon: Code,
       title: "Ingeniería en Sistemas",
+      slug: "ingenieria-sistemas",
       description: "Desarrollo de software, redes y tecnologías de información",
       count: 32,
     },
     {
       icon: Leaf,
       title: "Ingeniería Ambiental",
+      slug: "ingenieria-ambiental",
       description: "Sostenibilidad, gestión ambiental y proyectos ecológicos",
       count: 12,
     },
     {
       icon: Bot,
       title: "Ingeniería Robótica",
+      slug: "ingenieria-robotica",
       description: "Robótica, automatización e inteligencia artificial",
       count: 9,
     },
@@ -120,7 +112,7 @@ export default function IngenieriaYTecnologia() {
     }, 3000)
 
     return () => clearInterval(interval)
-  }, []) // solo un intervalo
+  }, [currentProfessionalSlide])
 
   const blogPost = {
     image: "/artificial-intelligence-technology.png",
@@ -140,9 +132,8 @@ export default function IngenieriaYTecnologia() {
             {featuredProfessionals.map((professional, idx) => (
               <div
                 key={idx}
-                className={`absolute inset-0 transition-opacity duration-700 ${
-                  currentProfessionalSlide === idx ? "opacity-100" : "opacity-0"
-                }`}
+                className={`absolute inset-0 transition-opacity duration-700 ${currentProfessionalSlide === idx ? "opacity-100" : "opacity-0"
+                  }`}
               >
                 <img
                   src={professional.image || "/placeholder.svg"}
@@ -164,14 +155,14 @@ export default function IngenieriaYTecnologia() {
             {/* Navigation Arrows */}
             <Button
               onClick={prevProfessionalSlide}
-              className="absolute left-8 top-1/2 -translate-y-1/2 z-20 rounded-full border border-white/50 hover:bg-white hover:text-gray-900 bg-black/50 text-white backdrop-blur-sm h-14 w-14 flex items-center justify-center"
+              className="absolute left-8 top-1/2 -translate-y-1/2 z-20 rounded-full border-2 border-white/50 hover:bg-white hover:text-gray-900 bg-black/50 text-white backdrop-blur-sm h-14 w-14 flex items-center justify-center"
             >
               <ChevronLeft size={28} />
             </Button>
 
             <Button
               onClick={nextProfessionalSlide}
-              className="absolute right-8 top-1/2 -translate-y-1/2 z-20 rounded-full border border-white/50 hover:bg-white hover:text-gray-900 bg-black/50 text-white backdrop-blur-sm h-14 w-14 flex items-center justify-center"
+              className="absolute right-8 top-1/2 -translate-y-1/2 z-20 rounded-full border-2 border-white/50 hover:bg-white hover:text-gray-900 bg-black/50 text-white backdrop-blur-sm h-14 w-14 flex items-center justify-center"
             >
               <ChevronRight size={28} />
             </Button>
@@ -182,9 +173,8 @@ export default function IngenieriaYTecnologia() {
                 <button
                   key={idx}
                   onClick={() => setCurrentProfessionalSlide(idx)}
-                  className={`h-3 rounded-full transition-all ${
-                    currentProfessionalSlide === idx ? "w-12 bg-white" : "w-3 bg-white/40"
-                  }`}
+                  className={`h-3 rounded-full transition-all ${currentProfessionalSlide === idx ? "w-12 bg-white" : "w-3 bg-white/40"
+                    }`}
                   aria-label={`Go to slide ${idx + 1}`}
                 />
               ))}
@@ -192,7 +182,6 @@ export default function IngenieriaYTecnologia() {
           </div>
         </section>
 
-        {/* Professional Highlight */}
         <section className="py-16 px-6 bg-gray-50">
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12">
@@ -215,7 +204,7 @@ export default function IngenieriaYTecnologia() {
                     {featuredProfessionals[currentProfessionalSlide].specialty}
                   </p>
                   <Link href={`/perfil/${featuredProfessionals[currentProfessionalSlide].id}`}>
-                    <Button className="bg-gray-900 text-white hover:bg-gray-800 px-6 py-3 rounded-full">
+                    <Button className="bg-gray-900 text-white hover:bg-gray-800 h-12 px-8 text-lg">
                       Ver perfil completo
                     </Button>
                   </Link>
@@ -225,7 +214,6 @@ export default function IngenieriaYTecnologia() {
           </div>
         </section>
 
-        {/* Services Section */}
         <section className="py-20 px-6">
           <div className="max-w-7xl mx-auto">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Servicios Profesionales</h2>
@@ -235,22 +223,21 @@ export default function IngenieriaYTecnologia() {
               {categories.map((category, idx) => {
                 const Icon = category.icon
                 return (
-                  <div
-                    key={idx}
-                    className="group p-8 border-2 border-gray-200 rounded-xl hover:border-gray-400 hover:shadow-lg transition-all cursor-pointer"
-                  >
-                    <div className="bg-gray-100 w-14 h-14 rounded-lg flex items-center justify-center mb-6 group-hover:bg-gray-900 transition-colors">
-                      <Icon className="text-gray-700 group-hover:text-white transition-colors" size={28} />
+                  <Link key={idx} href={`/categoria/${category.slug}`}>
+                    <div className="group p-8 border-2 border-gray-200 rounded-xl hover:border-gray-400 hover:shadow-lg transition-all cursor-pointer">
+                      <div className="bg-gray-100 w-14 h-14 rounded-lg flex items-center justify-center mb-6 group-hover:bg-gray-900 transition-colors">
+                        <Icon className="text-gray-700 group-hover:text-white transition-colors" size={28} />
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-3">{category.title}</h3>
+                      <p className="text-gray-600 mb-4">{category.description}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-500">{category.count} profesionales</span>
+                        <Button className="bg-transparent hover:bg-transparent text-gray-900 font-semibold text-sm px-0">
+                          VER PROFESIONALES →
+                        </Button>
+                      </div>
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">{category.title}</h3>
-                    <p className="text-gray-600 mb-4">{category.description}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-500">{category.count} profesionales</span>
-                      <Button className="text-gray-900 font-semibold text-sm px-0 py-0 bg-transparent">
-                        VER PROFESIONALES →
-                      </Button>
-                    </div>
-                  </div>
+                  </Link>
                 )
               })}
             </div>
@@ -273,9 +260,11 @@ export default function IngenieriaYTecnologia() {
                   <span className="text-sm text-gray-500 mb-4">{blogPost.date}</span>
                   <h3 className="text-2xl font-bold text-gray-900 mb-4 text-balance">{blogPost.title}</h3>
                   <p className="text-gray-600 mb-6">{blogPost.excerpt}</p>
-                  <Button className="self-start border border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white px-6 py-2 rounded-full bg-transparent">
-                    Leer más →
-                  </Button>
+                  <Link href="/blog/ingenieria" className="self-start">
+                    <Button className="border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white bg-transparent px-6 py-2">
+                      Leer más →
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -290,7 +279,7 @@ export default function IngenieriaYTecnologia() {
               Únete a nuestra red de profesionales y conecta con clientes que necesitan tus servicios
             </p>
             <Link href="/registro-profesional">
-              <Button className="bg-white text-gray-900 hover:bg-gray-100 px-6 py-3 rounded-full">
+              <Button className="bg-white text-gray-900 hover:bg-gray-100 h-12 px-8 text-lg">
                 Crear Perfil Profesional
               </Button>
             </Link>

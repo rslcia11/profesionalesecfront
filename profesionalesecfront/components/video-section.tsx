@@ -1,83 +1,85 @@
 "use client"
 
-import { Play } from "lucide-react"
-import { useState } from "react"
+import { Briefcase, Stethoscope, BookOpen, Wrench, Code, Palette } from "lucide-react"
+import Link from "next/link"
 
-export default function VideoSection() {
-  const [selectedVideo, setSelectedVideo] = useState(0)
-
-  const videos = [
+export default function Services() {
+  const services = [
     {
-      title: "Cómo comenzar en Profesionales.EC",
-      thumbnail: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&h=400&fit=crop",
-      description: "Descubre cómo registrarte y crear tu perfil profesional en minutos",
+      icon: Briefcase,
+      title: "Derecho",
+      description: "Consultoría legal profesional",
+      link: "/profesionales",
     },
     {
-      title: "Consejos para destacar",
-      thumbnail: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&h=400&fit=crop",
-      description: "Aprende estrategias para atraer más clientes y proyectos",
+      icon: Stethoscope,
+      title: "Salud",
+      description: "Servicios médicos especializados",
+      link: "/profesionales",
     },
     {
-      title: "Historias de éxito",
-      thumbnail: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&h=400&fit=crop",
-      description: "Testimonios reales de profesionales que crecieron con nosotros",
+      icon: BookOpen,
+      title: "Educación",
+      description: "Capacitación profesional",
+      link: "/educacion",
+    },
+    {
+      icon: Wrench,
+      title: "Ingeniería y Tecnología",
+      description: "Soluciones tech avanzadas",
+      link: "/ingenieria-y-tecnologia",
+    },
+    {
+      icon: Code,
+      title: "Desarrollo",
+      description: "Software y aplicaciones",
+      link: "/profesionales",
+    },
+    {
+      icon: Palette,
+      title: "Diseño",
+      description: "Creatividad y branding",
+      link: "/profesionales",
     },
   ]
 
   return (
-    <section className="py-24 md:py-32 px-4 bg-background">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-16">
-          <h2 className="text-5xl md:text-6xl font-bold text-foreground mb-6">Aprende y crece</h2>
+    <section id="servicios" className="py-24 md:py-32 px-4 bg-background relative overflow-hidden">
+      {/* Subtle background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
+      </div>
+
+      <div className="max-w-7xl mx-auto relative z-10">
+        <div className="mb-20">
+          <h2 className="text-5xl md:text-6xl font-bold text-foreground mb-6">Servicios especializados</h2>
           <p className="text-lg text-muted-foreground max-w-2xl">
-            Videos educativos para maximizar tu potencial profesional
+            Acceso a profesionales expertos en diversas áreas de expertise
           </p>
         </div>
 
-        {/* Main Video */}
-        <div className="mb-12 rounded-2xl overflow-hidden bg-black/5 aspect-video relative group">
-          <img
-            src={videos[selectedVideo].thumbnail || "/placeholder.svg"}
-            alt={videos[selectedVideo].title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-          <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-            <button className="bg-primary text-primary-foreground p-5 rounded-full shadow-lg hover:bg-primary/90 transition-all transform hover:scale-110">
-              <Play size={28} fill="currentColor" />
-            </button>
-          </div>
-        </div>
-
-        {/* Video Info */}
-        <div className="mb-12">
-          <h3 className="text-2xl font-bold text-foreground mb-3">{videos[selectedVideo].title}</h3>
-          <p className="text-muted-foreground text-lg">{videos[selectedVideo].description}</p>
-        </div>
-
-        {/* Thumbnails */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {videos.map((video, idx) => (
-            <button
-              key={idx}
-              onClick={() => setSelectedVideo(idx)}
-              className={`text-left group transition-all duration-300 ${
-                idx === selectedVideo ? "opacity-100" : "opacity-60 hover:opacity-100"
-              }`}
-            >
-              <div className="relative rounded-lg overflow-hidden mb-4 aspect-video">
-                <img
-                  src={video.thumbnail || "/placeholder.svg"}
-                  alt={video.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                  <Play size={24} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {services.map((service, idx) => {
+            const Icon = service.icon
+            return (
+              <Link
+                key={idx}
+                href={service.link}
+                className="group p-8 rounded-xl border border-border/50 hover:border-primary/30 transition-all duration-300 cursor-pointer hover:bg-primary/5 block"
+              >
+                <div className="mb-6">
+                  <Icon className="text-primary w-8 h-8" />
                 </div>
-                {idx === selectedVideo && <div className="absolute inset-0 border-2 border-primary rounded-lg" />}
-              </div>
-              <h4 className="font-semibold text-foreground text-sm">{video.title}</h4>
-            </button>
-          ))}
+
+                <h3 className="text-xl font-semibold text-foreground mb-2">{service.title}</h3>
+                <p className="text-sm text-muted-foreground">{service.description}</p>
+
+                <div className="mt-6 inline-flex text-primary text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                  Explorar →
+                </div>
+              </Link>
+            )
+          })}
         </div>
       </div>
     </section>

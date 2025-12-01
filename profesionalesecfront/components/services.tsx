@@ -1,90 +1,30 @@
 "use client"
 
-<<<<<<< Updated upstream
-import ServicesCarousel from "./services-carousel"
-import {
-  Briefcase,
-  Stethoscope,
-  BookOpen,
-  Wrench,
-  Palette,
-  Bone as Money,
-  Building,
-  Paintbrush as PaintBrush,
-  Heart,
-} from "lucide-react"
-=======
 import { Briefcase, Stethoscope, BookOpen, Wrench, Code, Palette } from "lucide-react"
 import Link from "next/link"
->>>>>>> Stashed changes
 
 export default function Services() {
   const services = [
     {
-      id: "derecho",
-      title: "Derecho",
-<<<<<<< Updated upstream
-      image: "/lawyer-professional-office-desk.jpg",
       icon: Briefcase,
-      href: "/profesionales",
-=======
+      title: "Derecho",
       description: "Consultoría legal profesional",
       link: "/profesionales",
->>>>>>> Stashed changes
     },
     {
-      id: "salud",
-      title: "Salud",
-<<<<<<< Updated upstream
-      image: "/healthcare-doctor-medical-clinic.jpg",
       icon: Stethoscope,
-      href: "/profesionales",
-=======
+      title: "Salud",
       description: "Servicios médicos especializados",
       link: "/profesionales",
->>>>>>> Stashed changes
     },
     {
-      id: "economia",
-      title: "Economía y Administración",
-      image: "/business-finance-administration-office.jpg",
-      icon: Money,
-      href: "/profesionales",
-    },
-    {
-      id: "oficios",
-      title: "Oficios y más",
-      image: "/craftsman-trades-work-skilled.jpg",
-      icon: Building,
-      href: "/profesionales",
-    },
-    {
-      id: "comunicacion",
-      title: "Comunicación",
-      image: "/communication-media-marketing-broadcast.jpg",
-      icon: PaintBrush,
-      href: "/profesionales",
-    },
-    {
-      id: "educacion",
-      title: "Educación",
-<<<<<<< Updated upstream
-      image: "/education-teaching-classroom-learning.jpg",
       icon: BookOpen,
-      href: "/profesionales",
-=======
+      title: "Educación",
       description: "Capacitación profesional",
       link: "/educacion",
->>>>>>> Stashed changes
     },
     {
-      id: "ingenieria",
-      title: "Ingeniería y Tecnología",
-      image: "/engineering-technology-software-development.jpg",
       icon: Wrench,
-<<<<<<< Updated upstream
-      href: "/profesionales",
-=======
       title: "Ingeniería y Tecnología",
       description: "Soluciones tech avanzadas",
       link: "/ingenieria-y-tecnologia",
@@ -94,41 +34,12 @@ export default function Services() {
       title: "Desarrollo",
       description: "Software y aplicaciones",
       link: "/profesionales",
->>>>>>> Stashed changes
     },
     {
-      id: "diseno",
-      title: "Diseño y Construcción",
-      image: "/design-construction-architecture-building.jpg",
       icon: Palette,
-<<<<<<< Updated upstream
-      href: "/profesionales",
-    },
-    {
-      id: "agraria",
-      title: "Agraria",
-      image: "/agriculture-farming-agricultural-field.jpg",
-      icon: Briefcase,
-      href: "/profesionales",
-    },
-    {
-      id: "arte",
-      title: "Arte y Cultura",
-      image: "/art-culture-artist-creative.jpg",
-      icon: PaintBrush,
-      href: "/arte-y-cultura",
-    },
-    {
-      id: "saludmental",
-      title: "Salud mental",
-      image: "/mental-health-psychology-wellness-therapy.jpg",
-      icon: Heart,
-      href: "/profesionales",
-=======
       title: "Diseño",
       description: "Creatividad y branding",
       link: "/profesionales",
->>>>>>> Stashed changes
     },
   ]
 
@@ -141,15 +52,12 @@ export default function Services() {
 
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="mb-20">
-          <h2 className="text-5xl md:text-6xl font-bold text-foreground mb-6">Servicios Profesionales</h2>
+          <h2 className="text-5xl md:text-6xl font-bold text-foreground mb-6">Servicios especializados</h2>
           <p className="text-lg text-muted-foreground max-w-2xl">
             Acceso a profesionales expertos en diversas áreas de expertise
           </p>
         </div>
 
-<<<<<<< Updated upstream
-        <ServicesCarousel services={services} itemsPerView={4} />
-=======
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {services.map((service, idx) => {
             const Icon = service.icon
@@ -173,7 +81,6 @@ export default function Services() {
             )
           })}
         </div>
->>>>>>> Stashed changes
       </div>
     </section>
   )
