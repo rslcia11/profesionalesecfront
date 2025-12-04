@@ -53,55 +53,54 @@ export default function SobreNosotrosPage() {
             <div className="w-24 h-1 bg-blue-500 mx-auto"></div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-12 mb-16 animate-in fade-in slide-in-from-bottom duration-700 delay-150">
-            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 border border-gray-800 hover:border-blue-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10">
+          <div className="grid md:grid-cols-2 gap-6 mb-8 animate-in fade-in slide-in-from-bottom duration-700 delay-150">
+            <div className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 rounded-2xl p-8 border border-blue-800/50 hover:border-blue-500 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/20">
               <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                  <Target className="w-6 h-6 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-white">Misión</h2>
+              </div>
+              <p className="text-gray-300 leading-relaxed">
+                Impulsar el desarrollo profesional en Ecuador y en la región, proporcionando una plataforma de difusión,
+                capacitación y networking basada en altos estándares de calidad, ética y excelencia académica.
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-purple-900/30 to-purple-800/20 rounded-2xl p-8 border border-purple-800/50 hover:border-purple-500 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/20">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
+                  <Eye className="w-6 h-6 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-white">Visión</h2>
+              </div>
+              <p className="text-gray-300 leading-relaxed">
+                Convertirnos en la principal red de profesionales en Ecuador, reconocida por su contribución activa al
+                crecimiento educativo, social y empresarial del país.
+              </p>
+            </div>
+          </div>
+
+          <div className="mb-16 animate-in fade-in slide-in-from-bottom duration-700 delay-300">
+            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-4 pb-4 border border-gray-800 hover:border-blue-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 h-fit">
+              <div className="flex items-center gap-3 mb-2">
                 <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
                   <Users className="w-6 h-6 text-white" />
                 </div>
                 <h2 className="text-2xl font-bold text-white">¿Quiénes Somos?</h2>
               </div>
-              <p className="text-gray-300 leading-relaxed mb-4">
+              <p className="text-gray-300 leading-snug mb-2">
                 En <span className="text-blue-400 font-semibold">Profesionales Ecuador</span> creemos en el poder de la
                 excelencia, la educación continua y la colaboración entre expertos.
               </p>
-              <p className="text-gray-300 leading-relaxed">
+              <p className="text-gray-300 leading-snug mb-2">
                 Somos una plataforma diseñada para conectar a profesionales de diversas áreas con personas, empresas e
                 instituciones que valoran el conocimiento especializado y la formación de calidad.
               </p>
-              <p className="text-gray-400 text-sm mt-4 italic">
+              <p className="text-gray-400 text-sm italic leading-snug mb-0">
                 Nuestro propósito es crear un espacio confiable donde el crecimiento profesional y la capacitación sean
                 accesibles para todos.
               </p>
-            </div>
-
-            <div className="space-y-6">
-              <div className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 rounded-2xl p-8 border border-blue-800/50 hover:border-blue-500 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/20">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                    <Target className="w-6 h-6 text-white" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-white">Misión</h2>
-                </div>
-                <p className="text-gray-300 leading-relaxed">
-                  Impulsar el desarrollo profesional en Ecuador y en la región, proporcionando una plataforma de
-                  difusión, capacitación y networking basada en altos estándares de calidad, ética y excelencia
-                  académica.
-                </p>
-              </div>
-
-              <div className="bg-gradient-to-br from-purple-900/30 to-purple-800/20 rounded-2xl p-8 border border-purple-800/50 hover:border-purple-500 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/20">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
-                    <Eye className="w-6 h-6 text-white" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-white">Visión</h2>
-                </div>
-                <p className="text-gray-300 leading-relaxed">
-                  Convertirnos en la principal red de profesionales en Ecuador, reconocida por su contribución activa al
-                  crecimiento educativo, social y empresarial del país.
-                </p>
-              </div>
             </div>
           </div>
 
