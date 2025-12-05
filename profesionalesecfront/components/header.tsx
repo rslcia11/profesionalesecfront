@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Menu, X } from "lucide-react"
+import { Menu, X, LogIn } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -19,7 +19,6 @@ export default function Header() {
     { label: "Inicio", href: "/" },
     { label: "Profesionales", href: "/profesionales" },
     { label: "Educación", href: "/conversatorios" },
-    { label: "Sobre Nosotros", href: "#nosotros" },
   ]
 
   return (
@@ -69,7 +68,14 @@ export default function Header() {
             ))}
           </nav>
 
-          <div className="hidden md:flex items-center">
+          <div className="hidden md:flex items-center gap-3">
+            <Link
+              href="/login"
+              className="text-sm font-medium text-white/80 hover:text-white px-4 py-2 rounded-full hover:bg-white/5 transition-all duration-300 flex items-center gap-2"
+            >
+              <LogIn className="h-4 w-4" />
+              Iniciar Sesión
+            </Link>
             <Link
               href="/preinscripcion"
               className="text-sm font-medium bg-white text-black px-6 py-3 rounded-full hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-emerald-500/20 hover:shadow-2xl active:scale-95"
@@ -105,6 +111,13 @@ export default function Header() {
                   {link.label}
                 </Link>
               ))}
+              <Link
+                href="/login"
+                className="text-sm font-medium px-4 py-3 rounded-lg transition-all duration-300 text-white/80 hover:text-white hover:bg-white/5 flex items-center gap-2"
+              >
+                <LogIn className="h-4 w-4" />
+                Iniciar Sesión
+              </Link>
               <Link
                 href="/preinscripcion"
                 className="w-full px-6 py-3 bg-white text-black rounded-full font-medium text-sm mt-4 active:scale-95 transition-transform text-center"
