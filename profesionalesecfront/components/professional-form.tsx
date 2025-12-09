@@ -2,7 +2,8 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Upload, ChevronRight, ChevronLeft, Check } from "lucide-react"
+import { Upload, ChevronRight, ChevronLeft, Check, Home, CheckCircle2 } from "lucide-react"
+import Link from "next/link"
 
 const mockData = {
   professions: ["Médico", "Ingeniero", "Abogado", "Arquitecto", "Contador", "Psicólogo"],
@@ -30,6 +31,7 @@ const mockData = {
 
 interface FormData {
   fullName: string
+  cedula: string // Added cedula field
   email: string
   password: string
   phone: string
@@ -60,6 +62,7 @@ export default function ProfessionalForm() {
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState<FormData>({
     fullName: "",
+    cedula: "", // Added cedula field
     email: "",
     password: "",
     phone: "",
@@ -82,6 +85,8 @@ export default function ProfessionalForm() {
     tags: "",
   })
   const [errors, setErrors] = useState<FormErrors>({})
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
 
   const steps = [
     { title: "Datos Personales", description: "Información básica" },
@@ -131,11 +136,12 @@ export default function ProfessionalForm() {
     switch (step) {
       case 0:
         if (!formData.fullName.trim()) newErrors.fullName = "Nombre requerido"
+        if (!formData.cedula.trim()) newErrors.cedula = "Cédula requerida"
         if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
           newErrors.email = "Email válido requerido"
         }
-        if (!formData.password || formData.password.length < 6) {
-          newErrors.password = "Contraseña de al menos 6 caracteres"
+        if (!formData.password || formData.password.length < 8) {
+          newErrors.password = "Contraseña de al menos 8 caracteres"
         }
         if (!formData.phone.trim()) newErrors.phone = "Teléfono requerido"
         if (!formData.profileImage) newErrors.profileImage = "Foto de perfil requerida"
@@ -153,8 +159,6 @@ export default function ProfessionalForm() {
         if (!formData.address.trim()) newErrors.address = "Dirección requerida"
         break
       case 3:
-        if (!formData.identity) newErrors.identity = "Documento de identidad requerido"
-        if (!formData.title) newErrors.title = "Título profesional requerido"
         break
       case 4:
         if (!formData.tags.trim()) newErrors.tags = "Al menos una palabra clave requerida"
@@ -167,45 +171,63 @@ export default function ProfessionalForm() {
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep(Math.min(currentStep + 1, steps.length - 1))
+      setIsTransitioning(true)
+      setTimeout(() => {
+        setCurrentStep(Math.min(currentStep + 1, steps.length - 1))
+        setIsTransitioning(false)
+      }, 300)
     }
   }
 
   const handlePrev = () => {
-    setCurrentStep(Math.max(currentStep - 1, 0))
+    setIsTransitioning(true)
+    setTimeout(() => {
+      setCurrentStep(Math.max(currentStep - 1, 0))
+      setIsTransitioning(false)
+    }, 300)
   }
 
   const handleSubmit = () => {
     if (validateStep(currentStep)) {
       console.log("Form submitted:", formData)
+      setShowSuccessModal(true)
     }
   }
 
   const renderPersonalInfo = () => (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-foreground mb-8">Información Personal</h2>
+      <h2 className="font-oswald text-2xl font-bold text-foreground mb-8">Información Personal</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-2">Nombre Completo *</label>
           <input
             type="text"
             name="fullName"
-            placeholder="Juan Pérez García"
             value={formData.fullName}
             onChange={handleInputChange}
-            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           />
           {errors.fullName && <p className="text-red-400 text-sm mt-1">{errors.fullName}</p>}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-muted-foreground mb-2">Cédula *</label>
+          <input
+            type="text"
+            name="cedula"
+            value={formData.cedula}
+            onChange={handleInputChange}
+            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+          {errors.cedula && <p className="text-red-400 text-sm mt-1">{errors.cedula}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-2">Teléfono de Contacto *</label>
           <input
             type="tel"
             name="phone"
-            placeholder="+593 9 1234 5678"
             value={formData.phone}
             onChange={handleInputChange}
-            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           />
           {errors.phone && <p className="text-red-400 text-sm mt-1">{errors.phone}</p>}
         </div>
@@ -214,22 +236,22 @@ export default function ProfessionalForm() {
           <input
             type="email"
             name="email"
-            placeholder="correo@ejemplo.com"
             value={formData.email}
             onChange={handleInputChange}
-            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           />
           {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
         </div>
         <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-2">Contraseña *</label>
+          <label className="block text-sm font-medium text-muted-foreground mb-2">
+            Contraseña (mínimo 8 caracteres) *
+          </label>
           <input
             type="password"
             name="password"
-            placeholder="••••••••"
             value={formData.password}
             onChange={handleInputChange}
-            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           />
           {errors.password && <p className="text-red-400 text-sm mt-1">{errors.password}</p>}
         </div>
@@ -261,7 +283,7 @@ export default function ProfessionalForm() {
 
   const renderProfessionalInfo = () => (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-foreground mb-8">Información Profesional</h2>
+      <h2 className="font-oswald text-2xl font-bold text-foreground mb-8">Información Profesional</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-2">Profesión *</label>
@@ -317,10 +339,9 @@ export default function ProfessionalForm() {
             name="rate"
             min="0"
             step="0.01"
-            placeholder="0.00"
             value={formData.rate || ""}
             onChange={handleInputChange}
-            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
         <div className="md:col-span-2">
@@ -345,11 +366,10 @@ export default function ProfessionalForm() {
         <label className="block text-sm font-medium text-muted-foreground mb-2">Descripción Profesional *</label>
         <textarea
           name="description"
-          placeholder="Cuéntanos sobre tu experiencia y servicios..."
           value={formData.description}
           onChange={handleInputChange}
           rows={4}
-          className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         />
         {errors.description && <p className="text-red-400 text-sm mt-1">{errors.description}</p>}
       </div>
@@ -358,7 +378,7 @@ export default function ProfessionalForm() {
 
   const renderLocation = () => (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-foreground mb-8">Ubicación</h2>
+      <h2 className="font-oswald text-2xl font-bold text-foreground mb-8">Ubicación</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-2">Provincia *</label>
@@ -401,10 +421,9 @@ export default function ProfessionalForm() {
           <input
             type="text"
             name="address"
-            placeholder="Calle Principal 123, Apartamento 4B"
             value={formData.address}
             onChange={handleInputChange}
-            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           />
           {errors.address && <p className="text-red-400 text-sm mt-1">{errors.address}</p>}
         </div>
@@ -413,10 +432,9 @@ export default function ProfessionalForm() {
           <input
             type="text"
             name="reference"
-            placeholder="Cerca del parque central, frente a la iglesia..."
             value={formData.reference}
             onChange={handleInputChange}
-            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
       </div>
@@ -425,11 +443,14 @@ export default function ProfessionalForm() {
 
   const renderDocuments = () => (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-foreground mb-8">Documentos de Verificación</h2>
+      <h2 className="font-oswald text-2xl font-bold text-foreground mb-8">Documentos de Verificación</h2>
+      <p className="text-muted-foreground text-sm mb-4">
+        Todos los documentos son opcionales. Puedes subirlos más tarde.
+      </p>
       <div className="space-y-6">
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-2">
-            Documento de Identidad (Cédula o DNI) *
+            Documento de Identidad (Cédula o DNI) - Opcional
           </label>
           <input
             type="file"
@@ -448,10 +469,9 @@ export default function ProfessionalForm() {
               </p>
             </div>
           </label>
-          {errors.identity && <p className="text-red-400 text-sm mt-1">{errors.identity}</p>}
         </div>
         <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-2">Título Profesional *</label>
+          <label className="block text-sm font-medium text-muted-foreground mb-2">Título Profesional - Opcional</label>
           <input
             type="file"
             onChange={(e) => handleFileChange("title", e.target.files?.[0] || null)}
@@ -469,11 +489,10 @@ export default function ProfessionalForm() {
               </p>
             </div>
           </label>
-          {errors.title && <p className="text-red-400 text-sm mt-1">{errors.title}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-2">
-            Licencia Profesional (Opcional)
+            Licencia Profesional - Opcional
           </label>
           <input
             type="file"
@@ -499,7 +518,7 @@ export default function ProfessionalForm() {
 
   const renderPreferences = () => (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-foreground mb-8">Preferencias y Privacidad</h2>
+      <h2 className="font-oswald text-2xl font-bold text-foreground mb-8">Preferencias y Privacidad</h2>
       <div className="space-y-4">
         <label className="flex items-center gap-3 p-4 border border-border rounded-lg hover:bg-primary/5 transition-colors cursor-pointer">
           <input
@@ -533,12 +552,12 @@ export default function ProfessionalForm() {
         <input
           type="text"
           name="tags"
-          placeholder="Ej: diseño web, odontología estética, contabilidad. Separa con comas"
           value={formData.tags}
           onChange={handleInputChange}
-          className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         />
         {errors.tags && <p className="text-red-400 text-sm mt-1">{errors.tags}</p>}
+        <p className="text-xs text-muted-foreground mt-1">Separa con comas</p>
       </div>
     </div>
   )
@@ -546,10 +565,20 @@ export default function ProfessionalForm() {
   return (
     <div className="min-h-screen bg-background py-12 px-4">
       <div className="max-w-3xl mx-auto">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors mb-6 group"
+        >
+          <Home className="size-5 group-hover:-translate-x-1 transition-transform" />
+          <span className="font-varela">Volver al inicio</span>
+        </Link>
+
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">Crear Perfil Profesional</h1>
-          <p className="text-lg text-muted-foreground">Completa tu información para comenzar a conectar con clientes</p>
+          <h1 className="font-oswald text-4xl md:text-5xl font-bold text-foreground mb-4">Crear Perfil Profesional</h1>
+          <p className="font-arimo text-lg text-muted-foreground">
+            Completa tu información para comenzar a conectar con clientes
+          </p>
         </div>
 
         {/* Progress Steps */}
@@ -584,8 +613,11 @@ export default function ProfessionalForm() {
           </div>
         </div>
 
-        {/* Form Content */}
-        <div className="bg-card border border-border rounded-2xl p-8 md:p-12 shadow-lg">
+        <div
+          className={`bg-card border border-border rounded-2xl p-8 md:p-12 shadow-lg transition-all duration-300 ${
+  isTransitioning ? "opacity-0 transform -translate-x-8" : "opacity-100 transform translate-x-0"
+}`}
+        >
           {currentStep === 0 && renderPersonalInfo()}
           {currentStep === 1 && renderProfessionalInfo()}
           {currentStep === 2 && renderLocation()}
@@ -598,7 +630,7 @@ export default function ProfessionalForm() {
           <button
             onClick={handlePrev}
             disabled={currentStep === 0}
-            className="flex items-center gap-2 px-6 py-3 bg-muted text-foreground rounded-full font-semibold hover:bg-muted/80 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="font-varela flex items-center gap-2 px-6 py-3 bg-muted text-foreground rounded-full font-semibold hover:bg-muted/80 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ChevronLeft size={18} />
             Anterior
@@ -607,7 +639,7 @@ export default function ProfessionalForm() {
           {currentStep === steps.length - 1 ? (
             <button
               onClick={handleSubmit}
-              className="flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground rounded-full font-semibold hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl hover:shadow-primary/20"
+              className="font-varela flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground rounded-full font-semibold hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl hover:shadow-primary/20"
             >
               <Check size={18} />
               Crear Perfil
@@ -615,7 +647,7 @@ export default function ProfessionalForm() {
           ) : (
             <button
               onClick={handleNext}
-              className="flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground rounded-full font-semibold hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl hover:shadow-primary/20"
+              className="font-varela flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground rounded-full font-semibold hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl hover:shadow-primary/20"
             >
               Siguiente
               <ChevronRight size={18} />
@@ -623,6 +655,30 @@ export default function ProfessionalForm() {
           )}
         </div>
       </div>
+
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+          <div className="bg-card border border-border rounded-2xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="text-center">
+              <div className="mx-auto w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mb-4 animate-in zoom-in duration-500 delay-150">
+                <CheckCircle2 className="size-10 text-green-500" />
+              </div>
+              <h3 className="font-oswald text-2xl font-bold text-foreground mb-2">¡Perfil Creado!</h3>
+              <p className="font-arimo text-muted-foreground mb-6">
+                Tu información ha sido enviada correctamente. Te llegará un correo electrónico cuando tu perfil sea
+                aprobado por nuestro equipo.
+              </p>
+              <Link
+                href="/"
+                className="font-varela inline-flex items-center justify-center gap-2 w-full px-6 py-3 bg-primary text-primary-foreground rounded-full font-semibold hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl hover:shadow-primary/20"
+              >
+                <Home className="size-5" />
+                Volver al Inicio
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

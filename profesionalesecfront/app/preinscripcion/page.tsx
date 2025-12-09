@@ -17,11 +17,7 @@ export default function PreinscripcionPage() {
         <div className="max-w-6xl mx-auto">
           {/* Hero Section */}
           <div className="text-center mb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 border border-emerald-200 rounded-full text-emerald-700 text-sm font-medium mb-6">
-              <Zap size={16} />
-              ¡Estás a un paso de ser parte de Profesionales.ec!
-            </div>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-gray-900 via-emerald-700 to-emerald-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 bg-clip-text text-transparent font-display">
               Preinscripción Profesional
             </h1>
             <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
@@ -35,25 +31,23 @@ export default function PreinscripcionPage() {
             {/* Free Plan */}
             <div
               className={`relative group bg-white border-2 rounded-2xl p-8 transition-all duration-500 cursor-pointer hover:scale-105 shadow-lg ${
-                selectedPlan === "free"
-                  ? "border-emerald-500 shadow-emerald-200"
-                  : "border-gray-300 hover:border-gray-400"
+                selectedPlan === "free" ? "border-blue-500 shadow-blue-200" : "border-gray-300 hover:border-gray-400"
               }`}
               onClick={() => setSelectedPlan("free")}
             >
               {selectedPlan === "free" && (
-                <div className="absolute top-4 right-4 bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-in zoom-in duration-300">
+                <div className="absolute top-4 right-4 bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-in zoom-in duration-300">
                   Seleccionado
                 </div>
               )}
 
               <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-emerald-100 rounded-xl">
-                  <Users className="text-emerald-600" size={28} />
+                <div className="p-3 bg-blue-100 rounded-xl">
+                  <Users className="text-blue-600" size={28} />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900">Preinscripción GRATIS</h3>
-                  <p className="text-emerald-600 text-sm font-medium">Sin costo inicial</p>
+                  <h3 className="text-2xl font-bold text-gray-900 font-display">Preinscripción GRATIS</h3>
+                  <p className="text-blue-600 text-sm font-medium">Sin costo inicial</p>
                 </div>
               </div>
 
@@ -67,15 +61,15 @@ export default function PreinscripcionPage() {
 
               <ul className="space-y-4 mb-8">
                 <li className="flex items-start gap-3">
-                  <Check className="text-emerald-600 flex-shrink-0 mt-1" size={20} />
+                  <Check className="text-blue-600 flex-shrink-0 mt-1" size={20} />
                   <span className="text-gray-700">Perfil profesional completo</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <Check className="text-emerald-600 flex-shrink-0 mt-1" size={20} />
+                  <Check className="text-blue-600 flex-shrink-0 mt-1" size={20} />
                   <span className="text-gray-700">Apareces en búsquedas</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <Check className="text-emerald-600 flex-shrink-0 mt-1" size={20} />
+                  <Check className="text-blue-600 flex-shrink-0 mt-1" size={20} />
                   <span className="text-gray-700">Subir fotos y documentos</span>
                 </li>
                 <li className="flex items-start gap-3">
@@ -88,9 +82,9 @@ export default function PreinscripcionPage() {
 
               <Link
                 href="/crear-perfil"
-                className={`w-full py-4 px-6 rounded-xl font-semibold text-center transition-all duration-300 flex items-center justify-center gap-2 ${
+                className={`w-full py-4 px-6 rounded-xl font-semibold text-center transition-all duration-300 flex items-center justify-center gap-2 font-button ${
                   selectedPlan === "free"
-                    ? "bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg hover:shadow-emerald-500/50"
+                    ? "bg-blue-500 text-white hover:bg-blue-600 shadow-lg hover:shadow-blue-500/50"
                     : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                 }`}
               >
@@ -101,70 +95,68 @@ export default function PreinscripcionPage() {
 
             {/* Paid Plan - Priority */}
             <div
-              className={`relative group bg-gradient-to-br from-emerald-50 via-white to-white border-2 rounded-2xl p-8 transition-all duration-500 cursor-pointer hover:scale-105 shadow-lg ${
-                selectedPlan === "paid"
-                  ? "border-emerald-500 shadow-emerald-200"
-                  : "border-emerald-300 hover:border-emerald-400"
+              className={`relative group bg-gradient-to-br from-blue-50 via-white to-white border-2 rounded-2xl p-8 transition-all duration-500 cursor-pointer hover:scale-105 shadow-lg ${
+                selectedPlan === "paid" ? "border-blue-500 shadow-blue-200" : "border-blue-300 hover:border-blue-400"
               }`}
               onClick={() => setSelectedPlan("paid")}
             >
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg">
                 ⚡ MÁS POPULAR
               </div>
 
               {selectedPlan === "paid" && (
-                <div className="absolute top-4 right-4 bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-in zoom-in duration-300">
+                <div className="absolute top-4 right-4 bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-in zoom-in duration-300">
                   Seleccionado
                 </div>
               )}
 
               <div className="flex items-center gap-3 mb-6 mt-4">
-                <div className="p-3 bg-emerald-100 rounded-xl border border-emerald-200">
-                  <Zap className="text-emerald-600" size={28} />
+                <div className="p-3 bg-blue-100 rounded-xl border border-blue-200">
+                  <Zap className="text-blue-600" size={28} />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900">Evita la Lista de Espera</h3>
-                  <p className="text-emerald-600 text-sm font-medium">Activación inmediata</p>
+                  <h3 className="text-2xl font-bold text-gray-900 font-display">Evita la Lista de Espera</h3>
+                  <p className="text-blue-600 text-sm font-medium">Activación inmediata</p>
                 </div>
               </div>
 
               <div className="mb-8">
                 <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-5xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-700 bg-clip-text text-transparent">
+                  <span className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
                     $10
                   </span>
                   <span className="text-gray-600 text-lg">USD</span>
                 </div>
-                <p className="text-emerald-600 text-sm font-medium">Pago único - Sin mensualidades</p>
+                <p className="text-blue-600 text-sm font-medium">Pago único - Sin mensualidades</p>
               </div>
 
               <ul className="space-y-4 mb-8">
                 <li className="flex items-start gap-3">
-                  <Check className="text-emerald-600 flex-shrink-0 mt-1" size={20} />
+                  <Check className="text-blue-600 flex-shrink-0 mt-1" size={20} />
                   <span className="text-gray-900 font-medium">Todo lo del plan gratuito</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <Zap className="text-emerald-600 flex-shrink-0 mt-1" size={20} />
+                  <Zap className="text-blue-600 flex-shrink-0 mt-1" size={20} />
                   <span className="text-gray-900 font-medium">
-                    Verificación prioritaria <span className="text-emerald-600">(24-48 horas)</span>
+                    Verificación prioritaria <span className="text-blue-600">(24-48 horas)</span>
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <Shield className="text-emerald-600 flex-shrink-0 mt-1" size={20} />
+                  <Shield className="text-blue-600 flex-shrink-0 mt-1" size={20} />
                   <span className="text-gray-900 font-medium">Insignia de verificado destacada</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <Check className="text-emerald-600 flex-shrink-0 mt-1" size={20} />
+                  <Check className="text-blue-600 flex-shrink-0 mt-1" size={20} />
                   <span className="text-gray-900 font-medium">Mejor posicionamiento en búsquedas</span>
                 </li>
               </ul>
 
               <Link
                 href="/crear-perfil?plan=priority"
-                className={`w-full py-4 px-6 rounded-xl font-semibold text-center transition-all duration-300 flex items-center justify-center gap-2 ${
+                className={`w-full py-4 px-6 rounded-xl font-semibold text-center transition-all duration-300 flex items-center justify-center gap-2 font-button ${
                   selectedPlan === "paid"
-                    ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 shadow-xl hover:shadow-emerald-500/50"
-                    : "bg-emerald-600 text-white hover:bg-emerald-500 shadow-lg"
+                    ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-xl hover:shadow-blue-500/50"
+                    : "bg-blue-600 text-white hover:bg-blue-500 shadow-lg"
                 }`}
               >
                 Inscribirme Ahora - $10
@@ -180,7 +172,7 @@ export default function PreinscripcionPage() {
                 <h3 className="text-2xl font-bold mb-6 text-center text-gray-900">Métodos de Pago Disponibles</h3>
 
                 <div className="grid md:grid-cols-2 gap-6">
-                  <div className="bg-gray-50 border border-gray-300 rounded-xl p-6 hover:border-emerald-500 transition-all duration-300 group">
+                  <div className="bg-gray-50 border border-gray-300 rounded-xl p-6 hover:border-blue-500 transition-all duration-300 group">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
                         <CreditCard className="text-blue-600" size={24} />
@@ -198,10 +190,10 @@ export default function PreinscripcionPage() {
                     </Link>
                   </div>
 
-                  <div className="bg-gray-50 border border-gray-300 rounded-xl p-6 hover:border-emerald-500 transition-all duration-300 group">
+                  <div className="bg-gray-50 border border-gray-300 rounded-xl p-6 hover:border-blue-500 transition-all duration-300 group">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="p-3 bg-emerald-100 rounded-lg group-hover:bg-emerald-200 transition-colors">
-                        <CreditCard className="text-emerald-600" size={24} />
+                      <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
+                        <CreditCard className="text-blue-600" size={24} />
                       </div>
                       <div>
                         <h4 className="font-bold text-gray-900">Tarjeta de Crédito/Débito</h4>
@@ -210,7 +202,7 @@ export default function PreinscripcionPage() {
                     </div>
                     <Link
                       href="/crear-perfil?plan=priority&payment=card"
-                      className="w-full block text-center py-3 px-4 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-500 transition-all"
+                      className="w-full block text-center py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-500 transition-all"
                     >
                       Continuar con Tarjeta
                     </Link>
@@ -223,19 +215,19 @@ export default function PreinscripcionPage() {
           {/* Trust Badges */}
           <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
             <div className="text-center">
-              <div className="text-3xl font-bold text-emerald-600 mb-2">1000+</div>
-              <div className="text-sm text-gray-600">Profesionales Activos</div>
+              <div className="text-3xl font-bold text-blue-600 mb-2">+100.000</div>
+              <div className="text-sm text-gray-600">Visualizaciones mensuales</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-emerald-600 mb-2">5000+</div>
+              <div className="text-3xl font-bold text-blue-600 mb-2">5000+</div>
               <div className="text-sm text-gray-600">Búsquedas Diarias</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-emerald-600 mb-2">24/7</div>
+              <div className="text-3xl font-bold text-blue-600 mb-2">24/7</div>
               <div className="text-sm text-gray-600">Soporte Técnico</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-emerald-600 mb-2">100%</div>
+              <div className="text-3xl font-bold text-blue-600 mb-2">100%</div>
               <div className="text-sm text-gray-600">Seguro</div>
             </div>
           </div>

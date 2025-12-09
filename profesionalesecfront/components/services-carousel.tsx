@@ -34,7 +34,7 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
         const nextPage = (prev + 1) % totalPages
         return nextPage
       })
-    }, 5000)
+    }, 4000)
 
     return () => clearInterval(timer)
   }, [isAutoPlay, totalPages])
@@ -48,7 +48,7 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
     setTimeout(() => {
       setIsTransitioning(false)
       setDirection(null)
-    }, 1000)
+    }, 800)
   }
 
   const handleNext = () => {
@@ -60,7 +60,7 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
     setTimeout(() => {
       setIsTransitioning(false)
       setDirection(null)
-    }, 1000)
+    }, 800)
   }
 
   const startIdx = currentIndex * itemsPerView
@@ -79,7 +79,7 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
         @keyframes slideInRight {
           0% {
             opacity: 0;
-            transform: translateX(30px);
+            transform: translateX(20px);
           }
           100% {
             opacity: 1;
@@ -89,7 +89,7 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
         @keyframes slideInLeft {
           0% {
             opacity: 0;
-            transform: translateX(-30px);
+            transform: translateX(-20px);
           }
           100% {
             opacity: 1;
@@ -97,10 +97,10 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
           }
         }
         .animate-slide-in-right {
-          animation: slideInRight 1000ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+          animation: slideInRight 800ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
         }
         .animate-slide-in-left {
-          animation: slideInLeft 1000ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+          animation: slideInLeft 800ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
         }
         @keyframes fadeInUp {
           0% {
@@ -122,7 +122,7 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
         onMouseEnter={() => setIsHoveringCarousel(true)}
         onMouseLeave={() => setIsHoveringCarousel(false)}
       >
-        <div className={`transition-all duration-1000 ease-in-out ${getAnimationClass()}`}>
+        <div className={`transition-all duration-800 ease-in-out ${getAnimationClass()}`}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {visibleServices.map((service, index) => {
               const CardContent = (
@@ -162,27 +162,23 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
         </div>
         <button
           onClick={handlePrev}
-          className={`absolute left-4 md:left-0 top-1/2 -translate-y-1/2 z-20 p-2 md:p-3 bg-primary hover:bg-primary/80 text-white rounded-full shadow-lg transition-all duration-500 ease-out ${
-            isHoveringCarousel
-              ? "opacity-100 md:-translate-x-6 translate-x-0 scale-100"
-              : "opacity-0 md:translate-x-0 -translate-x-12 scale-75"
-          } active:scale-95 hover:shadow-2xl hover:scale-110`}
+          className={`absolute left-2 md:left-0 top-1/2 -translate-y-1/2 z-20 p-3 bg-primary hover:bg-primary/80 text-white rounded-full shadow-lg transition-all duration-500 ease-out ${
+            isHoveringCarousel ? "opacity-100 md:-translate-x-6 scale-110" : "opacity-80 scale-100"
+          } active:scale-95 hover:shadow-2xl`}
           aria-label="Previous slide"
           disabled={isTransitioning}
         >
-          <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
+          <ChevronLeft className="w-6 h-6" />
         </button>
         <button
           onClick={handleNext}
-          className={`absolute right-4 md:right-0 top-1/2 -translate-y-1/2 z-20 p-2 md:p-3 bg-primary hover:bg-primary/80 text-white rounded-full shadow-lg transition-all duration-500 ease-out ${
-            isHoveringCarousel
-              ? "opacity-100 md:translate-x-6 translate-x-0 scale-100"
-              : "opacity-0 md:translate-x-0 translate-x-12 scale-75"
-          } active:scale-95 hover:shadow-2xl hover:scale-110`}
+          className={`absolute right-2 md:right-0 top-1/2 -translate-y-1/2 z-20 p-3 bg-primary hover:bg-primary/80 text-white rounded-full shadow-lg transition-all duration-500 ease-out ${
+            isHoveringCarousel ? "opacity-100 md:translate-x-6 scale-110" : "opacity-80 scale-100"
+          } active:scale-95 hover:shadow-2xl`}
           aria-label="Next slide"
           disabled={isTransitioning}
         >
-          <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+          <ChevronRight className="w-6 h-6" />
         </button>
       </div>
       <div className="flex justify-center items-center gap-2">
@@ -198,7 +194,7 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
                 setTimeout(() => {
                   setIsTransitioning(false)
                   setDirection(null)
-                }, 1000)
+                }, 800)
               }
             }}
             className={`transition-all duration-500 ease-in-out rounded-full ${

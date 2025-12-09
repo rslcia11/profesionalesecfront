@@ -25,17 +25,16 @@ export default function VideoSection() {
   ]
 
   return (
-    <section className="py-24 md:py-32 px-4 bg-background">
+    <section className="py-8 md:py-10 px-4 bg-background">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-16">
+        <div className="mb-6">
           <h2 className="text-5xl md:text-6xl font-bold text-foreground mb-6">Aprende y crece</h2>
           <p className="text-lg text-muted-foreground max-w-2xl">
             Videos educativos para maximizar tu potencial profesional
           </p>
         </div>
 
-        {/* Main Video */}
-        <div className="mb-12 rounded-2xl overflow-hidden bg-black/5 aspect-video relative group">
+        <div className="mb-6 rounded-2xl overflow-hidden bg-black/5 aspect-video relative group">
           <img
             src={videos[selectedVideo].thumbnail || "/placeholder.svg"}
             alt={videos[selectedVideo].title}
@@ -48,8 +47,7 @@ export default function VideoSection() {
           </div>
         </div>
 
-        {/* Video Info */}
-        <div className="mb-12">
+        <div className="mb-6">
           <h3 className="text-2xl font-bold text-foreground mb-3">{videos[selectedVideo].title}</h3>
           <p className="text-muted-foreground text-lg">{videos[selectedVideo].description}</p>
         </div>

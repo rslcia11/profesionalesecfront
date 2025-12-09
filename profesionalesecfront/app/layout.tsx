@@ -1,13 +1,14 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Oswald, Arimo, Varela_Round } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { WhatsAppFloat } from "@/components/whatsapp-float"
 import PageLoader from "@/components/page-loader"
 
-const _geist = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
+const oswald = Oswald({ subsets: ["latin"], variable: "--font-oswald" })
+const arimo = Arimo({ subsets: ["latin"], variable: "--font-arimo" })
+const varelaRound = Varela_Round({ weight: "400", subsets: ["latin"], variable: "--font-varela" })
 
 export const metadata: Metadata = {
   title: "Profesionales.EC - Plataforma de Profesionales",
@@ -22,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className={`font-sans antialiased`}>
+      <body className={`${oswald.variable} ${arimo.variable} ${varelaRound.variable} font-body antialiased`}>
         <PageLoader />
         {children}
         <WhatsAppFloat />

@@ -96,14 +96,14 @@ export default function Services() {
   ]
 
   return (
-    <section id="servicios" className="py-24 md:py-32 px-4 bg-background relative overflow-hidden">
+    <section id="servicios" className="py-8 md:py-10 px-4 bg-background relative overflow-hidden">
       {/* Subtle background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 right-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10">
-        <div className="mb-20">
+        <div className="mb-6">
           <h2 className="text-5xl md:text-6xl font-bold text-foreground mb-6">Servicios Profesionales</h2>
           <p className="text-lg text-muted-foreground max-w-2xl">
             Acceso a profesionales expertos en diversas áreas de expertise
