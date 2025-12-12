@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { Star, MapPin, ArrowRight } from "lucide-react"
+import { MapPin, ArrowRight } from "lucide-react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { ProfessionalsFilters, type FilterState } from "@/components/professionals-filters"
@@ -23,8 +23,6 @@ export default function ProfessionalsPage() {
       id: 1,
       name: "Dr. Carlos López",
       specialty: "Médico Cirujano",
-      rating: 4.9,
-      reviews: 127,
       location: "Quito, Ecuador",
       image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=800&h=1000&fit=crop",
       price: "$150",
@@ -42,8 +40,6 @@ export default function ProfessionalsPage() {
       id: 2,
       name: "Lic. María Gómez",
       specialty: "Abogada Especialista",
-      rating: 4.8,
-      reviews: 89,
       location: "Guayaquil, Ecuador",
       image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&h=1000&fit=crop",
       price: "$120",
@@ -61,8 +57,6 @@ export default function ProfessionalsPage() {
       id: 3,
       name: "Ing. Juan Rodríguez",
       specialty: "Ingeniero de Software",
-      rating: 5.0,
-      reviews: 156,
       location: "Quito, Ecuador",
       image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=1000&fit=crop",
       price: "$180",
@@ -80,8 +74,6 @@ export default function ProfessionalsPage() {
       id: 4,
       name: "Dra. Ana Martínez",
       specialty: "Psicóloga Clínica",
-      rating: 4.7,
-      reviews: 94,
       location: "Cuenca, Ecuador",
       image: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=800&h=1000&fit=crop",
       price: "$100",
@@ -99,8 +91,6 @@ export default function ProfessionalsPage() {
       id: 5,
       name: "Arq. Felipe Torres",
       specialty: "Arquitecto Diseñador",
-      rating: 4.9,
-      reviews: 112,
       location: "Quito, Ecuador",
       image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=800&h=1000&fit=crop",
       price: "$140",
@@ -118,10 +108,8 @@ export default function ProfessionalsPage() {
       id: 6,
       name: "Dra. Patricia Sánchez",
       specialty: "Dentista Estética",
-      rating: 4.8,
-      reviews: 203,
       location: "Quito, Ecuador",
-      image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=800&h=1000&fit=crop",
+      image: "https://images.unsplash.com/photo-15598397342b71ea197ec2?w=800&h=1000&fit=crop",
       price: "$90",
       unit: "consulta",
       experience: "14 años",
@@ -137,8 +125,6 @@ export default function ProfessionalsPage() {
       id: 7,
       name: "Cons. Roberto Díaz",
       specialty: "Asesor Financiero",
-      rating: 4.9,
-      reviews: 145,
       location: "Guayaquil, Ecuador",
       image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&h=1000&fit=crop",
       price: "$160",
@@ -156,8 +142,6 @@ export default function ProfessionalsPage() {
       id: 8,
       name: "Lic. Sofia Reyes",
       specialty: "Coach Empresarial",
-      rating: 4.8,
-      reviews: 78,
       location: "Ambato, Ecuador",
       image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&h=1000&fit=crop",
       price: "$130",
@@ -175,8 +159,6 @@ export default function ProfessionalsPage() {
       id: 9,
       name: "Ing. Marco Flores",
       specialty: "Especialista en Energía",
-      rating: 4.7,
-      reviews: 65,
       location: "Quito, Ecuador",
       image: "https://images.unsplash.com/photo-1507842217343-583f20270319?w=800&h=1000&fit=crop",
       price: "$150",
@@ -226,20 +208,11 @@ export default function ProfessionalsPage() {
       return false
     }
 
-    // Filtrar por calificación mínima
-    if (filters.minRating && prof.rating < filters.minRating) {
-      return false
-    }
-
     return true
   })
 
   const sortedProfessionals = [...filteredProfessionals].sort((a, b) => {
     switch (filters.sortBy) {
-      case "rating-high":
-        return b.rating - a.rating
-      case "reviews-high":
-        return b.reviews - a.reviews
       case "price-low":
         return Number.parseInt(a.price.replace("$", "")) - Number.parseInt(b.price.replace("$", ""))
       case "price-high":
@@ -259,12 +232,12 @@ export default function ProfessionalsPage() {
       <Header />
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-16 px-4 md:px-6 bg-gradient-to-b from-background via-background to-primary/5">
+      <section className="relative pt-28 pb-6 px-4 md:px-6 bg-gradient-to-b from-background via-background to-primary/5">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 pointer-events-none" />
 
         <div className="relative max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-6 tracking-tight">
+          <div className="text-center mb-6">
+            <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-4 tracking-tight">
               Todos los
               <br />
               <span className="text-primary">Profesionales</span>
@@ -277,12 +250,12 @@ export default function ProfessionalsPage() {
       </section>
 
       {/* Filters Section */}
-      <section className="max-w-7xl mx-auto px-4 md:px-6 py-12">
+      <section className="max-w-7xl mx-auto px-4 md:px-6 py-4">
         <ProfessionalsFilters onFiltersChange={handleFiltersChange} />
       </section>
 
       {/* Results Summary */}
-      <section className="max-w-7xl mx-auto px-4 md:px-6 pb-8">
+      <section className="max-w-7xl mx-auto px-4 md:px-6 pb-4">
         <p className="text-sm text-muted-foreground">
           {sortedProfessionals.length} profesional{sortedProfessionals.length !== 1 ? "es" : ""} encontrado
           {sortedProfessionals.length !== professionals.length && " (filtrado)"}
@@ -290,7 +263,7 @@ export default function ProfessionalsPage() {
       </section>
 
       {/* Professionals Grid */}
-      <section className="max-w-7xl mx-auto px-4 md:px-6 pb-32">
+      <section className="max-w-7xl mx-auto px-4 md:px-6 pb-16">
         {sortedProfessionals.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {sortedProfessionals.map((professional, index) => (
@@ -307,12 +280,6 @@ export default function ProfessionalsPage() {
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent opacity-60" />
-
-                  {/* Rating Badge */}
-                  <div className="absolute top-4 right-4 bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
-                    <Star size={14} className="text-yellow-400 fill-yellow-400" />
-                    <span className="text-sm font-bold text-foreground">{professional.rating}</span>
-                  </div>
 
                   {/* Verified Badge */}
                   {professional.verified && (
@@ -332,10 +299,6 @@ export default function ProfessionalsPage() {
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Experiencia</span>
                       <span className="font-semibold text-foreground">{professional.experience}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Reseñas</span>
-                      <span className="font-semibold text-foreground">{professional.reviews} valoraciones</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <MapPin size={14} />
@@ -385,7 +348,7 @@ export default function ProfessionalsPage() {
       </section>
 
       {/* Bottom CTA Section */}
-      <section className="max-w-4xl mx-auto px-4 md:px-6 pb-32">
+      <section className="max-w-4xl mx-auto px-4 md:px-6 pb-16">
         <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-3xl p-12 border border-primary/20 text-center">
           <h3 className="text-3xl md:text-4xl font-bold text-foreground mb-4">¿Eres un profesional destacado?</h3>
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">

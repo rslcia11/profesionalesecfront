@@ -2,29 +2,309 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Upload, ChevronRight, ChevronLeft, Check, Home, CheckCircle2 } from "lucide-react"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
+import { CheckCircle2, ChevronLeft, ChevronRight, Home, Upload } from "lucide-react"
+import { Check } from "lucide-react" // Declared the Check variable
 
 const mockData = {
-  professions: ["Médico", "Ingeniero", "Abogado", "Arquitecto", "Contador", "Psicólogo"],
+  professions: [
+    "Derecho",
+    "Salud",
+    "Economia y Administracion",
+    "Oficios y mas",
+    "Comunicacion",
+    "Educacion",
+    "Ingenieria y Tecnologia",
+    "Diseño y Construccion",
+    "Agraria",
+    "Arte y Cultura",
+    "Salud Mental",
+  ],
   specialties: {
-    Médico: ["Cardiología", "Pediatría", "Neurología", "Dermatología"],
-    Ingeniero: ["Civil", "Eléctrico", "Sistemas", "Industrial"],
-    Abogado: ["Civil", "Penal", "Laboral", "Corporativo"],
-    Arquitecto: ["Diseño", "Restauración", "Urbanismo"],
-    Contador: ["Auditoría", "Tributaria", "Contabilidad General"],
-    Psicólogo: ["Clínica", "Organizacional", "Educativa"],
+    Derecho: [
+      "Derecho Penal",
+      "Derecho Civil",
+      "Derecho Laboral",
+      "Derecho Constitucional",
+      "Derecho Administrativo",
+      "Derecho Mercantil",
+      "Derecho Internacional",
+      "Derecho Ambiental",
+    ],
+    Salud: [
+      "Medicina General",
+      "Enfermería",
+      "Odontología",
+      "Nutrición",
+      "Laboratorio Clínico",
+      "Obstetricia",
+      "Terapia Física",
+    ],
+    "Economia y Administracion": [
+      "Contabilidad",
+      "Auditoría",
+      "Finanzas",
+      "Administración de Empresas",
+      "Gestión de Talento Humano",
+      "Comercio Exterior",
+      "Logística y Operaciones",
+    ],
+    "Oficios y mas": [
+      "Cocinero/a",
+      "Mesero/a",
+      "Maestro Panadero",
+      "Mecánico Automotriz",
+      "Maestro Albañil",
+      "Carpintero",
+      "Electricista",
+      "Soldador",
+      "Pintor de Obra",
+      "Plomero",
+      "Chofer Profesional",
+    ],
+    Comunicacion: [
+      "Periodismo",
+      "Comunicación Corporativa",
+      "Producción Audiovisual",
+      "Relaciones Públicas",
+      "Locución",
+      "Diseño Publicitario",
+      "Gestión de Redes Sociales",
+    ],
+    Educacion: [
+      "Educación Inicial",
+      "Educación Básica",
+      "Educación Especial",
+      "Docencia en Matemáticas",
+      "Docencia en Lengua y Literatura",
+      "Docencia en Ciencias Sociales",
+      "Docencia en Ciencias Naturales",
+      "Educación Física",
+    ],
+    "Ingenieria y Tecnologia": [
+      "Ingeniería en Sistemas",
+      "Ingeniería Eléctrica",
+      "Ingeniería Electrónica",
+      "Ingeniería Mecánica",
+      "Ingeniería Industrial",
+      "Ingeniería en Telecomunicaciones",
+      "Ingeniería Civil",
+      "Ingeniería Química",
+      "Ingeniería Biomédica",
+      "Ingeniería en Energías Renovables",
+      "Ingeniería en Minas",
+      "Ingeniería en Petróleos",
+      "Ingeniería Geológica",
+      "Ingeniería en Transporte",
+      "Automatización Industrial",
+      "Desarrollo de Software",
+      "Ciberseguridad",
+      "Big Data",
+      "Inteligencia Artificial",
+    ],
+    "Diseño y Construccion": [
+      "Arquitectura",
+      "Dibujo Técnico",
+      "Topografía",
+      "Diseño de Interiores",
+      "Urbanismo",
+      "Construcción y Obra",
+      "Modelado 3D y Render",
+    ],
+    Agraria: [
+      "Ingeniería Agrícola",
+      "Ingeniería Forestal",
+      "Veterinaria",
+      "Agroindustria",
+      "Zootecnia",
+      "Gestión Ambiental Rural",
+      "Producción Agropecuaria",
+      "Riego y Drenaje",
+      "Silvicultura",
+    ],
+    "Arte y Cultura": [
+      "Música",
+      "Pintura",
+      "Danza",
+      "Teatro",
+      "Fotografía",
+      "Escultura",
+      "Diseño Gráfico",
+      "Cine y Dirección",
+    ],
+    "Salud Mental": [
+      "Psicología Clínica",
+      "Psicopedagogía",
+      "Terapia Ocupacional",
+      "Neuropsicología",
+      "Psicología Infantil",
+      "Psicología Organizacional",
+    ],
   },
-  provinces: ["Pichincha", "Guayas", "Azuay", "Tungurahua", "Manabí", "Chimborazo", "Cotopaxi", "Imbabura"],
+  provinces: [
+    "Azuay",
+    "Bolívar",
+    "Cañar",
+    "Carchi",
+    "Chimborazo",
+    "Cotopaxi",
+    "El Oro",
+    "Esmeraldas",
+    "Galápagos",
+    "Guayas",
+    "Imbabura",
+    "Loja",
+    "Los Ríos",
+    "Manabí",
+    "Morona Santiago",
+    "Napo",
+    "Orellana",
+    "Pastaza",
+    "Pichincha",
+    "Santa Elena",
+    "Santo Domingo de los Tsáchilas",
+    "Sucumbíos",
+    "Tungurahua",
+    "Zamora Chinchipe",
+  ],
   cities: {
-    Pichincha: ["Quito", "Rumiñahui", "Mejía"],
-    Guayas: ["Guayaquil", "Samborondón", "Durán"],
-    Azuay: ["Cuenca", "Girón", "Paute"],
-    Tungurahua: ["Ambato", "Latacunga", "Pelileo"],
-    Manabí: ["Portoviejo", "Manta", "Salinas"],
-    Chimborazo: ["Riobamba", "Guaranda", "Alausí"],
-    Cotopaxi: ["Latacunga", "Ambato", "Pujilí"],
-    Imbabura: ["Ibarra", "Otavalo", "San Miguel"],
+    Azuay: [
+      "Cuenca",
+      "Gualaceo",
+      "Paute",
+      "Sevilla de Oro",
+      "Santa Isabel",
+      "Sigsig",
+      "Oña",
+      "Nabón",
+      "Guachapala",
+      "Camilo Ponce Enríquez",
+    ],
+    Bolívar: ["Guaranda", "Caluma", "Chillanes", "Chimbo", "Echeandía", "Las Naves", "San Miguel"],
+    Cañar: ["Azogues", "Biblián", "La Troncal", "Cañar", "El Tambo", "Suscal", "Déleg"],
+    Carchi: ["Tulcán", "San Gabriel", "El Ángel", "Mira", "Huaca", "Bolívar"],
+    Chimborazo: ["Riobamba", "Alausí", "Colta", "Chambo", "Guano", "Pallatanga", "Penipe", "Cumandá"],
+    Cotopaxi: ["Latacunga", "La Maná", "Pujilí", "Salcedo", "Sigchos", "Saquisilí"],
+    "El Oro": [
+      "Machala",
+      "Arenillas",
+      "Atahualpa",
+      "Balsas",
+      "Chilla",
+      "El Guabo",
+      "Huaquillas",
+      "Las Lajas",
+      "Marcabelí",
+      "Pasaje",
+      "Piñas",
+      "Portovelo",
+      "Santa Rosa",
+      "Zaruma",
+    ],
+    Esmeraldas: ["Esmeraldas", "Valdez", "Muisne", "Rosa Zárate", "San Lorenzo", "Rioverde"],
+    Galápagos: ["Puerto Baquerizo Moreno", "Puerto Ayora", "Puerto Villamil"],
+    Guayas: [
+      "Guayaquil",
+      "Alfredo Baquerizo Moreno",
+      "Balao",
+      "Balzar",
+      "Colimes",
+      "Daule",
+      "Durán",
+      "El Empalme",
+      "El Triunfo",
+      "General Antonio Elizalde",
+      "Isidro Ayora",
+      "Lomas de Sargentillo",
+      "Marcelino Maridueña",
+      "Milagro",
+      "Naranjal",
+      "Naranjito",
+      "Palestina",
+      "Pedro Carbo",
+      "Playas",
+      "Salitre",
+      "Samborondón",
+      "Santa Lucía",
+      "Simón Bolívar",
+      "Yaguachi",
+    ],
+    Imbabura: ["Ibarra", "Atuntaqui", "Cotacachi", "Otavalo", "Pimampiro", "Urcuquí"],
+    Loja: [
+      "Loja",
+      "Cariamanga",
+      "Catacocha",
+      "Catamayo",
+      "Celica",
+      "Gonzanamá",
+      "Macará",
+      "Paltas",
+      "Pindal",
+      "Puyango",
+      "Quilanga",
+      "Saraguro",
+      "Sozoranga",
+      "Zapotillo",
+    ],
+    "Los Ríos": [
+      "Babahoyo",
+      "Baba",
+      "Buena Fe",
+      "Mocache",
+      "Montalvo",
+      "Palenque",
+      "Pimocha",
+      "Quevedo",
+      "Quinsaloma",
+      "Ventanas",
+      "Vinces",
+    ],
+    Manabí: [
+      "Portoviejo",
+      "Bolívar",
+      "Chone",
+      "El Carmen",
+      "Flavio Alfaro",
+      "Jama",
+      "Jaramijó",
+      "Jipijapa",
+      "Junín",
+      "Manta",
+      "Montecristi",
+      "Olmedo",
+      "Paján",
+      "Pedernales",
+      "Pichincha",
+      "Puerto López",
+      "Rocafuerte",
+      "San Vicente",
+      "Santa Ana",
+      "Sucre",
+      "Tosagua",
+      "24 de Mayo",
+    ],
+    "Morona Santiago": [
+      "Macas",
+      "Gualaquiza",
+      "Sucúa",
+      "Huamboya",
+      "San Juan Bosco",
+      "Taisha",
+      "Logroño",
+      "Santiago de Méndez",
+      "Tiwintza",
+      "Pablo Sexto",
+    ],
+    Napo: ["Tena", "Archidona", "Baeza", "Carlos Julio Arosemena Tola", "El Chaco"],
+    Orellana: ["Coca", "Nuevo Rocafuerte", "La Joya de los Sachas", "Loreto", "Tiputini"],
+    Pastaza: ["Puyo", "Arajuno", "Mera", "Santa Clara"],
+    Pichincha: ["Quito", "Cayambe", "Machachi", "Puerto Quito", "Pedro Vicente Maldonado", "Sangolquí", "Tabacundo"],
+    "Santa Elena": ["Santa Elena", "La Libertad", "Salinas"],
+    "Santo Domingo de los Tsáchilas": ["Santo Domingo", "La Concordia"],
+    Sucumbíos: ["Nueva Loja", "Cáscales", "Gonzalo Pizarro", "Putumayo", "Shushufindi", "Sucumbíos", "Tarapoa"],
+    Tungurahua: ["Ambato", "Baños", "Cevallos", "Mocha", "Patate", "Pelileo", "Píllaro", "Quero", "Tisaleo"],
+    "Zamora Chinchipe": ["Zamora", "Yantzaza", "Zumbi", "El Pangui", "Zapotillo", "Palanda", "Chinchipe", "Nangaritza"],
   },
   workModes: ["Presencial", "Virtual", "Ambas modalidades"],
 }
@@ -59,6 +339,9 @@ interface FormErrors {
 }
 
 export default function ProfessionalForm() {
+  const searchParams = useSearchParams()
+  const plan = searchParams.get("plan") // Get plan from URL
+
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState<FormData>({
     fullName: "",
@@ -80,13 +363,13 @@ export default function ProfessionalForm() {
     identity: null,
     title: null,
     license: null,
-    showPhone: true,
+    showPhone: false,
     showEmail: false,
     tags: "",
   })
   const [errors, setErrors] = useState<FormErrors>({})
-  const [isTransitioning, setIsTransitioning] = useState(false)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [slideDirection, setSlideDirection] = useState<"left" | "right">("right")
 
   const steps = [
     { title: "Datos Personales", description: "Información básica" },
@@ -97,14 +380,32 @@ export default function ProfessionalForm() {
   ]
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target as HTMLInputElement & HTMLTextAreaElement & HTMLSelectElement
-    if (type === "checkbox") {
+    const { name, value } = e.target
+
+    if (name === "cedula" || name === "phone") {
+      // Only allow numeric characters
+      if (!/^\d*$/.test(value)) {
+        return // Don't update if non-numeric
+      }
+    }
+
+    if (name === "yearsExperience") {
+      const numValue = value === "" ? 0 : Number.parseInt(value, 10)
+      setFormData((prev) => ({ ...prev, [name]: numValue }))
+      if (errors[name]) {
+        setErrors((prev) => ({ ...prev, [name]: "" }))
+      }
+      return
+    }
+
+    if (e.target.type === "checkbox") {
       setFormData({ ...formData, [name]: (e.target as HTMLInputElement).checked })
-    } else if (type === "number") {
-      setFormData({ ...formData, [name]: Number(value) })
+    } else if (e.target.type === "number") {
+      setFormData({ ...formData, [name]: Number.parseFloat(value) || 0 })
     } else {
       setFormData({ ...formData, [name]: value })
     }
+
     if (errors[name]) {
       setErrors({ ...errors, [name]: "" })
     }
@@ -130,10 +431,10 @@ export default function ProfessionalForm() {
     }
   }
 
-  const validateStep = (step: number): boolean => {
+  const validateStep = (): boolean => {
     const newErrors: FormErrors = {}
 
-    switch (step) {
+    switch (currentStep) {
       case 0:
         if (!formData.fullName.trim()) newErrors.fullName = "Nombre requerido"
         if (!formData.cedula.trim()) newErrors.cedula = "Cédula requerida"
@@ -150,6 +451,7 @@ export default function ProfessionalForm() {
         if (!formData.profession) newErrors.profession = "Profesión requerida"
         if (!formData.specialty) newErrors.specialty = "Especialidad requerida"
         if (!formData.description.trim()) newErrors.description = "Descripción requerida"
+        if (formData.description.length > 80) newErrors.description = "Descripción no puede exceder 80 caracteres"
         if (formData.yearsExperience < 0) newErrors.yearsExperience = "Años válidos requeridos"
         if (!formData.workMode) newErrors.workMode = "Modalidad de trabajo requerida"
         break
@@ -169,26 +471,21 @@ export default function ProfessionalForm() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleNext = () => {
-    if (validateStep(currentStep)) {
-      setIsTransitioning(true)
-      setTimeout(() => {
-        setCurrentStep(Math.min(currentStep + 1, steps.length - 1))
-        setIsTransitioning(false)
-      }, 300)
+  const nextStep = () => {
+    if (validateStep()) {
+      setSlideDirection("right") // Set direction for next step
+      setCurrentStep((prev) => prev + 1)
     }
   }
 
-  const handlePrev = () => {
-    setIsTransitioning(true)
-    setTimeout(() => {
-      setCurrentStep(Math.max(currentStep - 1, 0))
-      setIsTransitioning(false)
-    }, 300)
+  const prevStep = () => {
+    setSlideDirection("left") // Set direction for previous step
+    setCurrentStep((prev) => prev - 1)
+    setErrors({})
   }
 
   const handleSubmit = () => {
-    if (validateStep(currentStep)) {
+    if (validateStep()) {
       console.log("Form submitted:", formData)
       setShowSuccessModal(true)
     }
@@ -216,6 +513,8 @@ export default function ProfessionalForm() {
             name="cedula"
             value={formData.cedula}
             onChange={handleInputChange}
+            pattern="\d*"
+            inputMode="numeric"
             className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           />
           {errors.cedula && <p className="text-red-400 text-sm mt-1">{errors.cedula}</p>}
@@ -227,6 +526,8 @@ export default function ProfessionalForm() {
             name="phone"
             value={formData.phone}
             onChange={handleInputChange}
+            pattern="\d*"
+            inputMode="numeric"
             className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           />
           {errors.phone && <p className="text-red-400 text-sm mt-1">{errors.phone}</p>}
@@ -327,8 +628,14 @@ export default function ProfessionalForm() {
             type="number"
             name="yearsExperience"
             min="0"
-            value={formData.yearsExperience}
+            value={formData.yearsExperience === 0 ? "" : formData.yearsExperience}
             onChange={handleInputChange}
+            onFocus={(e) => {
+              if (formData.yearsExperience === 0) {
+                e.target.value = ""
+              }
+            }}
+            placeholder="0"
             className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
@@ -363,14 +670,18 @@ export default function ProfessionalForm() {
         </div>
       </div>
       <div>
-        <label className="block text-sm font-medium text-muted-foreground mb-2">Descripción Profesional *</label>
+        <label className="block text-sm font-medium text-muted-foreground mb-2">
+          Descripción Profesional * (máximo 80 caracteres)
+        </label>
         <textarea
           name="description"
           value={formData.description}
           onChange={handleInputChange}
+          maxLength={80}
           rows={4}
           className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         />
+        <p className="text-xs text-muted-foreground mt-1">{formData.description.length}/80 caracteres</p>
         {errors.description && <p className="text-red-400 text-sm mt-1">{errors.description}</p>}
       </div>
     </div>
@@ -613,22 +924,24 @@ export default function ProfessionalForm() {
           </div>
         </div>
 
-        <div
-          className={`bg-card border border-border rounded-2xl p-8 md:p-12 shadow-lg transition-all duration-300 ${
-  isTransitioning ? "opacity-0 transform -translate-x-8" : "opacity-100 transform translate-x-0"
-}`}
-        >
-          {currentStep === 0 && renderPersonalInfo()}
-          {currentStep === 1 && renderProfessionalInfo()}
-          {currentStep === 2 && renderLocation()}
-          {currentStep === 3 && renderDocuments()}
-          {currentStep === 4 && renderPreferences()}
+        <div className="relative overflow-hidden">
+          <div
+            className={`transition-all duration-500 ease-in-out ${
+              slideDirection === "right" ? "animate-in slide-in-from-right" : "animate-in slide-in-from-left"
+            }`}
+          >
+            {currentStep === 0 && renderPersonalInfo()}
+            {currentStep === 1 && renderProfessionalInfo()}
+            {currentStep === 2 && renderLocation()}
+            {currentStep === 3 && renderDocuments()}
+            {currentStep === 4 && renderPreferences()}
+          </div>
         </div>
 
         {/* Navigation Buttons */}
         <div className="flex gap-4 mt-8 justify-between">
           <button
-            onClick={handlePrev}
+            onClick={prevStep}
             disabled={currentStep === 0}
             className="font-varela flex items-center gap-2 px-6 py-3 bg-muted text-foreground rounded-full font-semibold hover:bg-muted/80 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -646,7 +959,7 @@ export default function ProfessionalForm() {
             </button>
           ) : (
             <button
-              onClick={handleNext}
+              onClick={nextStep}
               className="font-varela flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground rounded-full font-semibold hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl hover:shadow-primary/20"
             >
               Siguiente
@@ -658,16 +971,63 @@ export default function ProfessionalForm() {
 
       {showSuccessModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
-          <div className="bg-card border border-border rounded-2xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-300">
+          <div className="bg-card border border-border rounded-2xl p-8 max-w-lg w-full shadow-2xl animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto">
             <div className="text-center">
               <div className="mx-auto w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mb-4 animate-in zoom-in duration-500 delay-150">
                 <CheckCircle2 className="size-10 text-green-500" />
               </div>
-              <h3 className="font-oswald text-2xl font-bold text-foreground mb-2">¡Perfil Creado!</h3>
-              <p className="font-arimo text-muted-foreground mb-6">
-                Tu información ha sido enviada correctamente. Te llegará un correo electrónico cuando tu perfil sea
-                aprobado por nuestro equipo.
-              </p>
+              <h3 className="font-oswald text-2xl font-bold text-foreground mb-2">¡Datos Enviados Correctamente!</h3>
+
+              {plan === "priority" ? (
+                <>
+                  <p className="font-arimo text-muted-foreground mb-6">
+                    Has elegido la opción de registro prioritario. Para completar tu inscripción, realiza el pago de
+                    <span className="font-bold text-primary"> $10 USD</span> a través de los siguientes métodos:
+                  </p>
+
+                  <div className="bg-muted/50 rounded-xl p-6 mb-6 text-left">
+                    <h4 className="font-bold text-foreground mb-4 text-center">Métodos de Pago</h4>
+
+                    <div className="space-y-4">
+                      <div>
+                        <h5 className="font-semibold text-sm text-foreground mb-2">Transferencia Bancaria:</h5>
+                        <div className="text-sm text-muted-foreground space-y-1">
+                          <p>
+                            <span className="font-medium">Banco:</span> Banco del Pacífico
+                          </p>
+                          <p>
+                            <span className="font-medium">Cuenta:</span> 1234567890
+                          </p>
+                          <p>
+                            <span className="font-medium">Titular:</span> Profesionales.ec
+                          </p>
+                          <p>
+                            <span className="font-medium">Tipo:</span> Cuenta Corriente
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="border-t border-border pt-4">
+                        <h5 className="font-semibold text-sm text-foreground mb-2">PayPal:</h5>
+                        <p className="text-sm text-muted-foreground">pagos@profesionales.ec</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-sm text-muted-foreground mb-6 bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <span className="font-semibold text-blue-600 dark:text-blue-400">Importante:</span> Una vez
+                    realizado el pago, tu solicitud de registro será revisada en un{" "}
+                    <span className="font-bold">máximo de 24 horas</span>. Recibirás un correo electrónico con la
+                    confirmación de tu perfil.
+                  </p>
+                </>
+              ) : (
+                <p className="font-arimo text-muted-foreground mb-6">
+                  Tu información ha sido enviada correctamente. Te llegará un correo electrónico cuando tu perfil sea
+                  aprobado por nuestro equipo.
+                </p>
+              )}
+
               <Link
                 href="/"
                 className="font-varela inline-flex items-center justify-center gap-2 w-full px-6 py-3 bg-primary text-primary-foreground rounded-full font-semibold hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl hover:shadow-primary/20"

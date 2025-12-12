@@ -2,9 +2,9 @@ import Header from "@/components/header"
 import Hero from "@/components/hero"
 import Services from "@/components/services"
 import Convenios from "@/components/convenios"
-import VideoSection from "@/components/video-section"
 import ConnectingProfessionals from "@/components/connecting-professionals"
 import FeaturedProfessionals from "@/components/featured-professionals"
+import LearnAndGrow from "@/components/learn-and-grow"
 import Footer from "@/components/footer"
 
 export default function Home() {
@@ -14,9 +14,9 @@ export default function Home() {
       <Hero />
       <Services />
       <Convenios />
-      <VideoSection />
       <ConnectingProfessionals />
       <FeaturedProfessionals />
+      <LearnAndGrow />
       <Footer />
     </main>
   )

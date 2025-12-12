@@ -154,6 +154,14 @@ export default function Footer() {
               </li>
               <li>
                 <Link
+                  href="/como-comenzar"
+                  className="text-sm text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block"
+                >
+                  Cómo comenzar
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/contacto"
                   className="text-sm text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block"
                 >

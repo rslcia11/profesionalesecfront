@@ -106,7 +106,7 @@ export default function Services() {
         <div className="mb-6">
           <h2 className="text-5xl md:text-6xl font-bold text-foreground mb-6">Servicios Profesionales</h2>
           <p className="text-lg text-muted-foreground max-w-2xl">
-            Acceso a profesionales expertos en diversas áreas de expertise
+            Acceso a serivicios de profesionales en distintas profesiones y ocupaciones
           </p>
         </div>
 

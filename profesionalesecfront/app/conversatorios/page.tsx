@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
-import { Calendar, MapPin, Users, Award, MessageSquare, DollarSign, ArrowRight } from "lucide-react"
+import { Calendar, MapPin, Users, Award, MessageSquare, DollarSign, ArrowRight, BookOpen } from "lucide-react"
 import Link from "next/link"
 
 export default function ConversatoriosPage() {
@@ -13,12 +13,12 @@ export default function ConversatoriosPage() {
     <main className="min-h-screen bg-white">
       <Header />
 
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-6 bg-gradient-to-br from-gray-50 via-white to-blue-50">
+      {/* Hero Section - Black background with white text */}
+      <section className="relative pt-32 pb-12 px-6 bg-black">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">Conversatorios Profesionales</h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <div className="text-center mb-8">
+            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">Conversatorios Profesionales</h1>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
               Espacios de conocimiento, networking y crecimiento profesional. Conecta con expertos y amplía tu red de
               contactos.
             </p>
@@ -26,10 +26,56 @@ export default function ConversatoriosPage() {
         </div>
       </section>
 
-      {/* Próximo Conversatorio */}
-      <section className="py-20 px-6 bg-gradient-to-b from-white to-gray-50">
+      <section className="py-12 px-6 bg-gradient-to-b from-gray-50 to-white">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-3 mb-4">
+              <BookOpen className="w-10 h-10 text-emerald-600" />
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900">¿Qué son los Conversatorios?</h2>
+            </div>
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-2xl p-8 md:p-12 shadow-lg">
+            <p className="text-lg text-gray-700 leading-relaxed mb-6">
+              Los conversatorios de <span className="font-bold text-emerald-600">Profesionales.ec</span> son eventos
+              diseñados para promover el intercambio de conocimientos, experiencias y mejores prácticas entre
+              profesionales de diversas disciplinas. Estos espacios permiten a expertos y asistentes conectar, aprender
+              y crecer profesionalmente en un ambiente colaborativo.
+            </p>
+
+            <div className="grid md:grid-cols-3 gap-6 mt-8">
+              <div className="flex flex-col items-center text-center p-6 bg-emerald-50 rounded-xl">
+                <MessageSquare className="w-12 h-12 text-emerald-600 mb-4" />
+                <h3 className="font-bold text-gray-900 mb-2">Conocimiento</h3>
+                <p className="text-gray-600 text-sm">
+                  Aprende de expertos reconocidos y adquiere nuevas habilidades relevantes para tu carrera profesional
+                </p>
+              </div>
+
+              <div className="flex flex-col items-center text-center p-6 bg-blue-50 rounded-xl">
+                <Users className="w-12 h-12 text-blue-600 mb-4" />
+                <h3 className="font-bold text-gray-900 mb-2">Networking</h3>
+                <p className="text-gray-600 text-sm">
+                  Conecta con otros profesionales, amplía tu red de contactos y crea oportunidades de colaboración
+                </p>
+              </div>
+
+              <div className="flex flex-col items-center text-center p-6 bg-amber-50 rounded-xl">
+                <Award className="w-12 h-12 text-amber-600 mb-4" />
+                <h3 className="font-bold text-gray-900 mb-2">Crecimiento</h3>
+                <p className="text-gray-600 text-sm">
+                  Desarrolla tu carrera profesional con certificaciones, reconocimientos y nuevas perspectivas
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Próximo Conversatorio - Reduced spacing */}
+      <section className="py-12 px-6 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-8">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Próximos Conversatorios</h2>
             <p className="text-gray-600 text-lg">Próximamente Junio 2025</p>
           </div>
@@ -65,10 +111,10 @@ export default function ConversatoriosPage() {
         </div>
       </section>
 
-      {/* Conversatorios Realizados */}
-      <section className="py-20 px-6 bg-white">
+      {/* Conversatorios Realizados - Reduced spacing */}
+      <section className="py-12 px-6 bg-gray-50">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Conversatorios Realizados</h2>
             <p className="text-gray-600 text-lg">19, 20 y 21 de Marzo de 2025</p>
           </div>
@@ -104,10 +150,10 @@ export default function ConversatoriosPage() {
         </div>
       </section>
 
-      {/* Sé Parte de Profesionales.ec */}
-      <section className="py-20 px-6 bg-gradient-to-b from-gray-50 via-white to-gray-50">
+      {/* Sé Parte de Profesionales.ec - Reduced spacing */}
+      <section className="py-12 px-6 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Sé Parte de Profesionales.ec</h2>
             <p className="text-gray-600 text-lg">Elige tu rol y únete a nuestra comunidad</p>
           </div>
