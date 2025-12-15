@@ -2,8 +2,13 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
-import { ChevronDown } from "lucide-react"
+import { useState } from "react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Button } from "@/components/ui/button"
+import { Filter } from "lucide-react"
 
 const PROFESSIONS = [
   { id: 1, name: "Derecho" },
@@ -448,17 +453,13 @@ export function ProfessionalsFilters({ onFiltersChange }: FilterProps) {
     sortBy: "featured",
   })
 
-  // Cuando los filtros cambian, notifica al componente padre
-  useEffect(() => {
-    onFiltersChange(filters)
-  }, [filters, onFiltersChange])
+  const [showFilters, setShowFilters] = useState(false)
 
   const handleKeywordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilters({ ...filters, keyword: e.target.value })
   }
 
   const handleProfessionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    // Resetear especialidad cuando cambia profesión
     setFilters({
       ...filters,
       profession: e.target.value,
@@ -471,7 +472,6 @@ export function ProfessionalsFilters({ onFiltersChange }: FilterProps) {
   }
 
   const handleProvinceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    // Resetear ciudad cuando cambia provincia
     setFilters({
       ...filters,
       province: e.target.value,
@@ -483,8 +483,8 @@ export function ProfessionalsFilters({ onFiltersChange }: FilterProps) {
     setFilters({ ...filters, city: e.target.value })
   }
 
-  const handleVerifiedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilters({ ...filters, verifiedOnly: e.target.checked })
+  const handleVerifiedChange = (checked: boolean) => {
+    setFilters({ ...filters, verifiedOnly: checked })
   }
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -503,137 +503,198 @@ export function ProfessionalsFilters({ onFiltersChange }: FilterProps) {
     })
   }
 
-  // Obtener especialidades disponibles según profesión seleccionada
   const availableSpecialties = filters.profession
     ? SPECIALTIES[Number.parseInt(filters.profession) as keyof typeof SPECIALTIES] || []
     : []
 
-  // Obtener ciudades disponibles según provincia seleccionada
   const availableCities = filters.province ? CITIES[Number.parseInt(filters.province) as keyof typeof CITIES] || [] : []
 
   return (
     <div className="w-full space-y-6">
-      {/* Search Bar */}
-      <div className="w-full">
-        <input
-          type="text"
-          placeholder="Buscar por nombre o descripción..."
-          value={filters.keyword}
-          onChange={handleKeywordChange}
-          className="w-full px-6 py-4 bg-card border border-border/50 rounded-full text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
-        />
-      </div>
-
-      {/* Filters Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Profession Select */}
-        <div className="relative">
-          <select
-            value={filters.profession}
-            onChange={handleProfessionChange}
-            className="w-full px-4 py-3 bg-card border border-border/50 rounded-lg text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer pr-10"
-          >
-            <option value="">Profesión</option>
-            {PROFESSIONS.map((prof) => (
-              <option key={prof.id} value={prof.id}>
-                {prof.name}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-        </div>
-
-        {/* Specialty Select - Dependent on Profession */}
-        <div className="relative">
-          <select
-            value={filters.specialty}
-            onChange={handleSpecialtyChange}
-            disabled={!filters.profession}
-            className="w-full px-4 py-3 bg-card border border-border/50 rounded-lg text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <option value="">Especialidad</option>
-            {availableSpecialties.map((spec) => (
-              <option key={spec.id} value={spec.id}>
-                {spec.name}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-        </div>
-
-        {/* Province Select */}
-        <div className="relative">
-          <select
-            value={filters.province}
-            onChange={handleProvinceChange}
-            className="w-full px-4 py-3 bg-card border border-border/50 rounded-lg text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer pr-10"
-          >
-            <option value="">Provincia</option>
-            {PROVINCES.map((prov) => (
-              <option key={prov.id} value={prov.id}>
-                {prov.name}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-        </div>
-
-        {/* City Select - Dependent on Province */}
-        <div className="relative">
-          <select
-            value={filters.city}
-            onChange={handleCityChange}
-            disabled={!filters.province}
-            className="w-full px-4 py-3 bg-card border border-border/50 rounded-lg text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <option value="">Ciudad</option>
-            {availableCities.map((city) => (
-              <option key={city.id} value={city.id}>
-                {city.name}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-        </div>
-      </div>
-
-      {/* Second Row of Filters */}
-      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center flex-wrap">
-        {/* Verified Only Checkbox */}
-        <div className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            id="verified"
-            checked={filters.verifiedOnly}
-            onChange={handleVerifiedChange}
-            className="w-5 h-5 rounded border border-border/50 cursor-pointer accent-primary"
-          />
-          <label htmlFor="verified" className="text-sm text-foreground cursor-pointer font-medium">
-            Solo verificados
-          </label>
-        </div>
-
-        {/* Sort Select */}
-        <div className="relative">
-          <select
-            value={filters.sortBy}
-            onChange={handleSortChange}
-            className="px-4 py-2 bg-card border border-border/50 rounded-lg text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer pr-10"
-          >
-            <option value="featured">Destacados</option>
-            <option value="price-low">Precio menor a mayor</option>
-            <option value="price-high">Precio mayor a menor</option>
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-        </div>
-
-        {/* Reset Button */}
+      <div className="md:hidden">
         <button
-          onClick={handleReset}
-          className="px-6 py-2 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-secondary/80 transition-all"
+          onClick={() => setShowFilters(!showFilters)}
+          className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-primary text-primary-foreground rounded-full font-semibold hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
         >
-          Limpiar filtros
+          {/* Animated 3 lines icon */}
+          <div className="relative w-6 h-5 flex flex-col justify-between">
+            <span
+              className="block h-0.5 w-full bg-primary-foreground rounded-full animate-pulse"
+              style={{ animationDelay: "0s" }}
+            />
+            <span
+              className="block h-0.5 w-full bg-primary-foreground rounded-full animate-pulse"
+              style={{ animationDelay: "0.2s" }}
+            />
+            <span
+              className="block h-0.5 w-full bg-primary-foreground rounded-full animate-pulse"
+              style={{ animationDelay: "0.4s" }}
+            />
+          </div>
+          <span>Filtrar</span>
+          <Filter className="w-5 h-5" />
         </button>
+      </div>
+
+      <div
+        className={`space-y-6 transition-all duration-300 ease-in-out ${
+          showFilters ? "block animate-in slide-in-from-top-4 fade-in" : "hidden"
+        } md:block`}
+      >
+        {/* Search Bar */}
+        <div className="w-full">
+          <Input
+            type="text"
+            placeholder="Buscar por nombre o descripción..."
+            value={filters.keyword}
+            onChange={handleKeywordChange}
+            className="w-full px-6 py-4 bg-card border border-border/50 rounded-full text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
+          />
+        </div>
+
+        {/* Filters Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Profession Select */}
+          <div className="relative">
+            <Select
+              value={filters.profession}
+              onChange={handleProfessionChange}
+              className="w-full px-4 py-3 bg-card border border-border/50 rounded-lg text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer pr-10"
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Profesión" />
+              </SelectTrigger>
+              <SelectContent>
+                {PROFESSIONS.map((prof) => (
+                  <SelectItem key={prof.id} value={prof.id.toString()}>
+                    {prof.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Specialty Select - Dependent on Profession */}
+          <div className="relative">
+            <Select
+              value={filters.specialty}
+              onChange={handleSpecialtyChange}
+              disabled={!filters.profession}
+              className="w-full px-4 py-3 bg-card border border-border/50 rounded-lg text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Especialidad" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableSpecialties.map((spec) => (
+                  <SelectItem key={spec.id} value={spec.id.toString()}>
+                    {spec.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Province Select */}
+          <div className="relative">
+            <Select
+              value={filters.province}
+              onChange={handleProvinceChange}
+              className="w-full px-4 py-3 bg-card border border-border/50 rounded-lg text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer pr-10"
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Provincia" />
+              </SelectTrigger>
+              <SelectContent>
+                {PROVINCES.map((prov) => (
+                  <SelectItem key={prov.id} value={prov.id.toString()}>
+                    {prov.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* City Select - Dependent on Province */}
+          <div className="relative">
+            <Select
+              value={filters.city}
+              onChange={handleCityChange}
+              disabled={!filters.province}
+              className="w-full px-4 py-3 bg-card border border-border/50 rounded-lg text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Ciudad" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableCities.map((city) => (
+                  <SelectItem key={city.id} value={city.id.toString()}>
+                    {city.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Second Row of Filters */}
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center flex-wrap">
+          {/* Verified Only Checkbox */}
+          <div className="flex items-center gap-3">
+            <Checkbox id="verified" checked={filters.verifiedOnly} onCheckedChange={handleVerifiedChange} />
+            <Label htmlFor="verified" className="text-sm text-foreground cursor-pointer select-none">
+              Solo verificados
+            </Label>
+          </div>
+
+          {/* Sort By Select */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Select
+              value={filters.sortBy}
+              onChange={handleSortChange}
+              className="w-full px-4 py-2 bg-card border border-border/50 rounded-lg text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer pr-10"
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Ordenar por" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="featured">Destacados</SelectItem>
+                <SelectItem value="price-low">Precio: Menor a Mayor</SelectItem>
+                <SelectItem value="price-high">Precio: Mayor a Menor</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Clear Filters Button */}
+          <Button
+            onClick={handleReset}
+            variant="outline"
+            className="group relative px-6 py-2 text-sm font-medium bg-white hover:bg-primary hover:text-white text-primary border-2 border-primary transition-all duration-300 whitespace-nowrap overflow-hidden hover:scale-105 hover:shadow-lg"
+          >
+            <span className="relative z-10 flex items-center gap-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="group-hover:rotate-180 transition-transform duration-500"
+              >
+                <path d="M3 6h18" />
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                <line x1="10" x2="10" y1="11" y2="17" />
+                <line x1="14" x2="14" y1="11" y2="17" />
+              </svg>
+              Limpiar filtros
+            </span>
+            <span className="absolute inset-0 bg-primary transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+          </Button>
+        </div>
       </div>
     </div>
   )

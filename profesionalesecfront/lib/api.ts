@@ -25,6 +25,7 @@ interface ApiResponse {
   perfil?: any
 }
 
+// Auth API
 export const authApi = {
   async register(data: RegisterData): Promise<ApiResponse> {
     const response = await fetch(`${API_URL}/auth/registro`, {
@@ -61,6 +62,7 @@ export const authApi = {
   },
 }
 
+// Profesional API
 export const profesionalApi = {
   async crearPerfil(data: PerfilProfesionalData, token: string): Promise<ApiResponse> {
     const response = await fetch(`${API_URL}/profesionales/perfil`, {
@@ -100,33 +102,36 @@ export const profesionalApi = {
 
     return response.json()
   },
+}
 
+// Catálogos API
+export const catalogosApi = {
   async obtenerProfesiones(): Promise<any[]> {
-    const response = await fetch(`${API_URL}/profesiones`)
+    const response = await fetch(`${API_URL}/catalogos/profesiones`)
     if (!response.ok) throw new Error("Error al obtener profesiones")
     return response.json()
   },
 
-  async obtenerEspecialidades(profesionId: number): Promise<any[]> {
-    const response = await fetch(`${API_URL}/especialidades?profesion_id=${profesionId}`)
+  async obtenerEspecialidades(): Promise<any[]> {
+    const response = await fetch(`${API_URL}/catalogos/especialidades`)
     if (!response.ok) throw new Error("Error al obtener especialidades")
     return response.json()
   },
 
   async obtenerProvincias(): Promise<any[]> {
-    const response = await fetch(`${API_URL}/provincias`)
+    const response = await fetch(`${API_URL}/catalogos/provincias`)
     if (!response.ok) throw new Error("Error al obtener provincias")
     return response.json()
   },
 
-  async obtenerCiudades(provinciaId: number): Promise<any[]> {
-    const response = await fetch(`${API_URL}/ciudades?provincia_id=${provinciaId}`)
+  async obtenerCiudades(): Promise<any[]> {
+    const response = await fetch(`${API_URL}/catalogos/ciudades`)
     if (!response.ok) throw new Error("Error al obtener ciudades")
     return response.json()
   },
 }
 
-// Funciones helper para el token
+// Token helpers
 export const saveToken = (token: string) => {
   if (typeof window !== "undefined") {
     localStorage.setItem("auth_token", token)

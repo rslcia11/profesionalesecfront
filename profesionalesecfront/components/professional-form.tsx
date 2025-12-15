@@ -343,6 +343,7 @@ export default function ProfessionalForm() {
   const plan = searchParams.get("plan") // Get plan from URL
 
   const [currentStep, setCurrentStep] = useState(0)
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"bank" | "card" | "paypal" | null>(null)
   const [formData, setFormData] = useState<FormData>({
     fullName: "",
     cedula: "", // Added cedula field
@@ -982,37 +983,87 @@ export default function ProfessionalForm() {
                 <>
                   <p className="font-arimo text-muted-foreground mb-6">
                     Has elegido la opción de registro prioritario. Para completar tu inscripción, realiza el pago de
-                    <span className="font-bold text-primary"> $10 USD</span> a través de los siguientes métodos:
+                    <span className="font-bold text-primary"> $10 USD</span> a través de uno de los siguientes métodos:
                   </p>
 
-                  <div className="bg-muted/50 rounded-xl p-6 mb-6 text-left">
-                    <h4 className="font-bold text-foreground mb-4 text-center">Métodos de Pago</h4>
-
-                    <div className="space-y-4">
-                      <div>
-                        <h5 className="font-semibold text-sm text-foreground mb-2">Transferencia Bancaria:</h5>
-                        <div className="text-sm text-muted-foreground space-y-1">
-                          <p>
-                            <span className="font-medium">Banco:</span> Banco del Pacífico
-                          </p>
-                          <p>
-                            <span className="font-medium">Cuenta:</span> 1234567890
-                          </p>
-                          <p>
-                            <span className="font-medium">Titular:</span> Profesionales.ec
-                          </p>
-                          <p>
-                            <span className="font-medium">Tipo:</span> Cuenta Corriente
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="border-t border-border pt-4">
-                        <h5 className="font-semibold text-sm text-foreground mb-2">PayPal:</h5>
-                        <p className="text-sm text-muted-foreground">pagos@profesionales.ec</p>
-                      </div>
+                  {!selectedPaymentMethod ? (
+                    <div className="space-y-3 mb-6">
+                      <button
+                        onClick={() => setSelectedPaymentMethod("bank")}
+                        className="w-full px-6 py-4 bg-primary/10 hover:bg-primary/20 border border-primary/30 rounded-xl text-foreground font-semibold transition-all hover:shadow-lg"
+                      >
+                        Transferencia Bancaria
+                      </button>
+                      <button
+                        onClick={() => setSelectedPaymentMethod("card")}
+                        className="w-full px-6 py-4 bg-primary/10 hover:bg-primary/20 border border-primary/30 rounded-xl text-foreground font-semibold transition-all hover:shadow-lg"
+                      >
+                        Tarjeta de Crédito/Débito (Payphone)
+                      </button>
+                      <button
+                        onClick={() => setSelectedPaymentMethod("paypal")}
+                        className="w-full px-6 py-4 bg-primary/10 hover:bg-primary/20 border border-primary/30 rounded-xl text-foreground font-semibold transition-all hover:shadow-lg"
+                      >
+                        PayPal
+                      </button>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="bg-muted/50 rounded-xl p-6 mb-6 text-left">
+                      {selectedPaymentMethod === "bank" && (
+                        <div>
+                          <h4 className="font-bold text-foreground mb-4 text-center">Transferencia Bancaria</h4>
+                          <div className="text-sm text-muted-foreground space-y-1">
+                            <p>
+                              <span className="font-medium">Banco:</span> Banco del Pacífico
+                            </p>
+                            <p>
+                              <span className="font-medium">Cuenta:</span> 1234567890
+                            </p>
+                            <p>
+                              <span className="font-medium">Titular:</span> Profesionales.ec
+                            </p>
+                            <p>
+                              <span className="font-medium">Tipo:</span> Cuenta Corriente
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedPaymentMethod === "card" && (
+                        <div>
+                          <h4 className="font-bold text-foreground mb-4 text-center">Tarjeta de Crédito/Débito</h4>
+                          <p className="text-sm text-muted-foreground mb-4 text-center">
+                            Haz clic en el botón para ir a Payphone y completar tu pago de forma segura
+                          </p>
+                          <a
+                            href="https://payphone.app/pay/profesionales-ec"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold text-center hover:bg-primary/90 transition-all"
+                          >
+                            Ir a Payphone
+                          </a>
+                        </div>
+                      )}
+
+                      {selectedPaymentMethod === "paypal" && (
+                        <div>
+                          <h4 className="font-bold text-foreground mb-4 text-center">PayPal</h4>
+                          <div className="text-sm text-muted-foreground space-y-2">
+                            <p className="text-center">Envía el pago a:</p>
+                            <p className="text-center font-semibold text-foreground text-lg">pagos@profesionales.ec</p>
+                          </div>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={() => setSelectedPaymentMethod(null)}
+                        className="mt-4 w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        ← Elegir otro método
+                      </button>
+                    </div>
+                  )}
 
                   <p className="text-sm text-muted-foreground mb-6 bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
                     <span className="font-semibold text-blue-600 dark:text-blue-400">Importante:</span> Una vez
