@@ -24,15 +24,7 @@ export default function PageLoader() {
           </div>
 
           <div className="relative z-10 bg-white rounded-2xl p-6 shadow-2xl border border-gray-200 animate-in zoom-in duration-700">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-2xl">P</span>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-gray-900">Profesionales</div>
-                <div className="text-sm text-blue-600 font-semibold">.ec</div>
-              </div>
-            </div>
+            <img src="/logo-black.png" alt="Profesionales.ec" className="h-16 w-auto object-contain" />
           </div>
 
           <div className="w-64 h-1.5 bg-gray-200 rounded-full overflow-hidden animate-in slide-in-from-bottom duration-500 delay-300">

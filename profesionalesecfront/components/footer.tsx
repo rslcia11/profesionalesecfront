@@ -49,13 +49,9 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto">
         <div className="mb-8 pb-6 border-b border-gray-800">
           <div className="flex items-start gap-3 mb-3">
-            <div className="w-10 h-10 bg-white rounded flex items-center justify-center flex-shrink-0">
-              <span className="text-black font-bold text-lg">P</span>
-              <span className="text-black text-[10px]">.ec</span>
-            </div>
+            <img src="/logo-white.png" alt="Profesionales Ecuador" className="w-32 h-auto object-contain" />
             <div>
-              <h2 className="text-lg font-bold mb-1">Profesionales Ecuador</h2>
-              <p className="text-xs text-gray-400 leading-relaxed">
+              <p className="text-xs text-gray-400 leading-relaxed mt-2">
                 Impulsamos el crecimiento profesional en Ecuador. Certifícate, conecta con clientes y accede a
                 oportunidades reales para tu desarrollo profesional.
               </p>
@@ -150,14 +146,6 @@ export default function Footer() {
                   className="text-sm text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block"
                 >
                   Sobre Nosotros
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/como-comenzar"
-                  className="text-sm text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block"
-                >
-                  Cómo comenzar
                 </Link>
               </li>
               <li>
