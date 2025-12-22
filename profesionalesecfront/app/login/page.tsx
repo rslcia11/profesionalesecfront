@@ -1,12 +1,13 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { ShieldCheck, Eye, EyeOff } from "lucide-react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import Link from "next/link"
+import { authApi, saveToken } from "@/lib/api"
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -14,11 +15,42 @@ export default function LoginPage() {
     email: "",
     password: "",
   })
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const router = useRouter()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("[v0] Login attempt:", formData)
-    // Aquí iría la lógica de autenticación
+    setError(null)
+    setLoading(true)
+
+    try {
+      const data = await authApi.login(formData.email, formData.password)
+
+      if (data.token) {
+        saveToken(data.token)
+
+        // Decodificar el token para obtener el rol
+        const tokenPayload = JSON.parse(atob(data.token.split(".")[1]))
+        const rol = tokenPayload.rol
+
+        if (["superadmin", "moderador"].includes(rol)) {
+          router.push("/admin")
+        } else if (rol === "profesional") {
+          router.push("/dashboard/profesional")
+        } else {
+          // Redirección por defecto si el rol no coincide con los esperados
+          router.push("/dashboard")
+        }
+      } else if (data.requiereCambio) {
+        // Opcional: manejo de cambio de contraseña (aunque no se usa para admin)
+        router.push(`/cambiar-contrasena?usuarioId=${data.usuarioId}`)
+      }
+    } catch (err: any) {
+      setError(err.message || "Error al iniciar sesión")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -37,6 +69,12 @@ export default function LoginPage() {
           <div className="animate-in fade-in slide-in-from-bottom duration-700 delay-100">
             <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-xl">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Iniciar Sesión</h2>
+
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Email */}
@@ -102,9 +140,14 @@ export default function LoginPage() {
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  className="w-full py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-blue-500/50 active:scale-[0.98]"
+                  disabled={loading}
+                  className={`w-full py-4 font-semibold rounded-xl transition-all duration-300 shadow-lg active:scale-[0.98] ${
+                    loading
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 hover:shadow-blue-500/50"
+                  }`}
                 >
-                  Iniciar Sesión
+                  {loading ? "Iniciando..." : "Iniciar Sesión"}
                 </button>
               </form>
 
