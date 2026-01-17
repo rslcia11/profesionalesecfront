@@ -6,16 +6,23 @@ import VideoCarousel from "./video-carousel"
 export default function Hero() {
   const videoRef = useRef<HTMLVideoElement>(null)
 
-  const carouselVideos = [
-    "https://cdn.pixabay.com/video/2023/05/02/160966-822707893_large.mp4",
-    "https://cdn.pixabay.com/video/2024/03/04/204740-917035783_large.mp4",
-    "https://cdn.pixabay.com/video/2023/08/15/176297-849318455_large.mp4",
+  const carouselMedia = [
+    { type: 'image' as const, src: '/1.jpg' },
+    { type: 'image' as const, src: '/2.jpg' },
+    { type: 'image' as const, src: '/3.jpg' },
+    { type: 'image' as const, src: '/4.jpg' },
+    { type: 'image' as const, src: '/5.jpg' },
+    { type: 'image' as const, src: '/6.jpg' },
+    { type: 'image' as const, src: '/7.jpg' },
+    { type: 'image' as const, src: '/8.jpg' },
+    { type: 'image' as const, src: '/9.jpg' },
+    { type: 'image' as const, src: '/10.jpg' },
   ]
 
   return (
     <section className="relative w-full h-screen flex items-center justify-start overflow-hidden bg-black">
       <div className="absolute inset-0 w-full h-full">
-        <VideoCarousel videos={carouselVideos} autoplay={true} autoplayInterval={6000} showControls={false} />
+        <VideoCarousel media={carouselMedia} autoplay={true} autoplayInterval={6000} showControls={false} />
       </div>
 
       {/* Content */}

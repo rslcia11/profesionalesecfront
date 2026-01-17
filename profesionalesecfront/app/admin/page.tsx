@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -41,6 +41,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
+import { profesionalApi, adminApi } from "@/lib/api"
 
 type Ponencia = {
   id: number
@@ -55,12 +56,16 @@ type Ponencia = {
 
 type PerfilPendiente = {
   id: number
+  verificado: boolean
+  estado: "pendiente" | "aprobado" | "rechazado"
   nombre: string
   correo: string
-  profesion: string
   telefono: string
-  fecha_registro: Date
-  estado: "pendiente" | "aprobado" | "rechazado"
+  profesion: string
+  fecha_registro: string
+  perfil_estado: {
+    estado: "pendiente" | "aprobado" | "rechazado"
+  }
 }
 
 type Plan = {
@@ -77,49 +82,8 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("conversatorios")
   const { toast } = useToast()
 
-  const [ponencias, setPonencias] = useState<Ponencia[]>([
-    {
-      id: 1,
-      titulo: "Innovación en Tecnología Educativa",
-      descripcion: "Conversatorio sobre las últimas tendencias en EdTech y transformación digital en la educación",
-      fecha_inicio: new Date("2025-02-15"),
-      fecha_fin: new Date("2025-02-15"),
-      precio: 10.0,
-      cupo: 100,
-      estado: "publicada",
-    },
-    {
-      id: 2,
-      titulo: "Liderazgo en la Era Digital",
-      descripcion: "Estrategias de liderazgo para profesionales modernos en un entorno digital cambiante",
-      fecha_inicio: new Date("2025-03-20"),
-      fecha_fin: new Date("2025-03-20"),
-      precio: 15.0,
-      cupo: 50,
-      estado: "borrador",
-    },
-  ])
-
-  const [perfilesPendientes, setPerfilesPendientes] = useState<PerfilPendiente[]>([
-    {
-      id: 1,
-      nombre: "María González",
-      correo: "maria@example.com",
-      profesion: "Abogada Especialista en Derecho Corporativo",
-      telefono: "0999123456",
-      fecha_registro: new Date("2025-01-15"),
-      estado: "pendiente",
-    },
-    {
-      id: 2,
-      nombre: "Carlos Ramírez",
-      correo: "carlos@example.com",
-      profesion: "Médico Cardiólogo",
-      telefono: "0988654321",
-      fecha_registro: new Date("2025-01-20"),
-      estado: "pendiente",
-    },
-  ])
+  const [ponencias, setPonencias] = useState<Ponencia[]>([])
+  const [perfilesPendientes, setPerfilesPendientes] = useState<PerfilPendiente[]>([])
 
   const [planes, setPlanes] = useState<Plan[]>([
     {
@@ -131,29 +95,56 @@ export default function AdminDashboard() {
       duracion_dias: 30,
       activo: true,
     },
-    {
-      id: 2,
-      nombre: "Plan Premium",
-      descripcion: "Acceso completo con beneficios exclusivos y soporte prioritario",
-      precio_base: 25.0,
-      tipo: "suscripcion",
-      duracion_dias: 30,
-      activo: true,
-    },
-    {
-      id: 3,
-      nombre: "Publicación Destacada",
-      descripcion: "Destacar tu perfil por 7 días en la página principal",
-      precio_base: 5.0,
-      tipo: "one_time",
-      duracion_dias: 7,
-      activo: true,
-    },
   ])
+
+  useEffect(() => {
+    const loadData = async () => {
+      const token = localStorage.getItem("auth_token")
+      if (!token) return
+
+      try {
+        const stats = await adminApi.getStats(token)
+        console.log("Stats received in Admin Page:", stats); // DEBUG
+        setPonencias(stats.ponencias)
+
+        // Map backend data to frontend structure
+        const mappedProfiles = stats.profesionales.map((p: any) => ({
+          id: p.usuario_id,
+          verificado: p.verificado,
+          estado: p.estado_id === 1 ? "rechazado" : p.estado_id === 2 ? "pendiente" : "aprobado",
+          nombre: p.usuario?.nombre || "Sin nombre",
+          correo: p.usuario?.correo || "",
+          telefono: p.usuario?.telefono || "",
+          profesion: p.profesion ? p.profesion.nombre : "Sin profesión",
+          fecha_registro: p.usuario?.creado_en || new Date().toISOString(),
+          descripcion: p.descripcion || "Sin descripción",
+          documentos: p.documentos || [],
+          foto_url: p.usuario?.foto_url || null,
+          // Keep original structure for compatibility if needed
+          perfil_estado: {
+            estado: p.estado_id === 1 ? "rechazado" : p.estado_id === 2 ? "pendiente" : "aprobado",
+          },
+        }))
+        setPerfilesPendientes(mappedProfiles)
+
+        setPlanes(stats.planes)
+      } catch (error) {
+        console.error("Error loading admin data:", error)
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los datos del panel.",
+          variant: "destructive",
+        })
+      }
+    }
+    loadData()
+  }, [])
 
   // Dialog states
   const [isConversatorioDialogOpen, setIsConversatorioDialogOpen] = useState(false)
   const [isPlanDialogOpen, setIsPlanDialogOpen] = useState(false)
+  const [isProfileDetailsOpen, setIsProfileDetailsOpen] = useState(false) // Nuevo estado para detalles
+  const [selectedProfile, setSelectedProfile] = useState<any>(null) // Nuevo estado para perfil seleccionado
   const [editingItem, setEditingItem] = useState<any>(null)
 
   // Form states
@@ -176,77 +167,100 @@ export default function AdminDashboard() {
     activo: true,
   })
 
-  const aprobarPerfil = (id: number) => {
-    setPerfilesPendientes(perfilesPendientes.map((p) => (p.id === id ? { ...p, estado: "aprobado" as const } : p)))
-    toast({
-      title: "Perfil Aprobado",
-      description: "El perfil ha sido aprobado exitosamente y ya está visible en la plataforma.",
-    })
+  const aprobarPerfil = async (id: number) => {
+    try {
+      const token = localStorage.getItem("auth_token")
+      if (!token) return
+
+      await adminApi.approveProfile(id, token)
+      setPerfilesPendientes(
+        perfilesPendientes.map((p) =>
+          p.id === id ? { ...p, estado: "aprobado", perfil_estado: { estado: "aprobado" }, verificado: true } : p,
+        ),
+      )
+
+      toast({
+        title: "Perfil Aprobado",
+        description: "El perfil ha sido aprobado exitosamente.",
+      })
+    } catch (e) {
+      toast({ title: "Error", description: "No se pudo aprobar el perfil", variant: "destructive" })
+    }
   }
 
-  const rechazarPerfil = (id: number) => {
-    setPerfilesPendientes(perfilesPendientes.map((p) => (p.id === id ? { ...p, estado: "rechazado" as const } : p)))
-    toast({
-      title: "Perfil Rechazado",
-      description: "El perfil ha sido rechazado. El usuario será notificado.",
-      variant: "destructive",
-    })
+  const rechazarPerfil = async (id: number) => {
+    try {
+      const token = localStorage.getItem("auth_token")
+      if (!token) return
+
+      await adminApi.rejectProfile(id, token)
+      setPerfilesPendientes(
+        perfilesPendientes.map((p) =>
+          p.id === id ? { ...p, estado: "rechazado", perfil_estado: { estado: "rechazado" }, verificado: false } : p,
+        ),
+      )
+
+      toast({
+        title: "Perfil Rechazado",
+        description: "El perfil ha sido rechazado.",
+        variant: "destructive",
+      })
+    } catch (e) {
+      toast({ title: "Error", description: "No se pudo rechazar el perfil", variant: "destructive" })
+    }
   }
 
-  const handleSaveConversatorio = () => {
+  const handleSaveConversatorio = async () => {
     if (!conversatorioForm.titulo || !conversatorioForm.descripcion) {
-      toast({
-        title: "Error",
-        description: "Por favor completa todos los campos obligatorios",
-        variant: "destructive",
-      })
+      toast({ title: "Error", description: "Completa campos obligatorios", variant: "destructive" })
       return
     }
 
-    if (editingItem) {
-      setPonencias(ponencias.map((p) => (p.id === editingItem.id ? { ...conversatorioForm, id: editingItem.id } : p)))
-      toast({
-        title: "Conversatorio Actualizado",
-        description: `"${conversatorioForm.titulo}" ha sido actualizado exitosamente.`,
-      })
-    } else {
-      setPonencias([...ponencias, { ...conversatorioForm, id: Date.now() }])
-      toast({
-        title: "Conversatorio Creado",
-        description: `"${conversatorioForm.titulo}" ha sido creado exitosamente.`,
-      })
+    const token = localStorage.getItem("auth_token")
+    if (!token) return
+
+    try {
+      if (editingItem) {
+        await adminApi.updatePonencia(editingItem.id, conversatorioForm, token)
+        setPonencias(
+          ponencias.map((p) => (p.id === editingItem.id ? { ...conversatorioForm, id: editingItem.id } : p)),
+        )
+        toast({ title: "Conversatorio Actualizado", description: "Actualización exitosa" })
+      } else {
+        const res = await adminApi.createPonencia({ ...conversatorioForm, profesion_id: 1 }, token) // Default ID or selector
+        setPonencias([...ponencias, res.ponencia])
+        toast({ title: "Conversatorio Creado", description: "Creación exitosa" })
+      }
+      setIsConversatorioDialogOpen(false)
+      setEditingItem(null)
+      resetConversatorioForm()
+    } catch (e) {
+      toast({ title: "Error", description: "Error al guardar conversatorio", variant: "destructive" })
     }
-    setIsConversatorioDialogOpen(false)
-    setEditingItem(null)
-    resetConversatorioForm()
   }
 
-  const handleSavePlan = () => {
-    if (!planForm.nombre || !planForm.descripcion) {
-      toast({
-        title: "Error",
-        description: "Por favor completa todos los campos obligatorios",
-        variant: "destructive",
-      })
-      return
-    }
+  const handleSavePlan = async () => {
+    if (!planForm.nombre) return
 
-    if (editingItem) {
-      setPlanes(planes.map((p) => (p.id === editingItem.id ? { ...planForm, id: editingItem.id } : p)))
-      toast({
-        title: "Plan Actualizado",
-        description: `"${planForm.nombre}" ha sido actualizado exitosamente.`,
-      })
-    } else {
-      setPlanes([...planes, { ...planForm, id: Date.now() }])
-      toast({
-        title: "Plan Creado",
-        description: `"${planForm.nombre}" ha sido creado exitosamente.`,
-      })
+    const token = localStorage.getItem("auth_token")
+    if (!token) return
+
+    try {
+      if (editingItem) {
+        await adminApi.updatePlan(editingItem.id, planForm, token)
+        setPlanes(planes.map((p) => (p.id === editingItem.id ? { ...planForm, id: editingItem.id } : p)))
+        toast({ title: "Plan Actualizado" })
+      } else {
+        const res = await adminApi.createPlan(planForm, token)
+        setPlanes([...planes, res])
+        toast({ title: "Plan Creado" })
+      }
+      setIsPlanDialogOpen(false)
+      setEditingItem(null)
+      resetPlanForm()
+    } catch (e) {
+      toast({ title: "Error", description: "Error al guardar plan", variant: "destructive" })
     }
-    setIsPlanDialogOpen(false)
-    setEditingItem(null)
-    resetPlanForm()
   }
 
   const resetConversatorioForm = () => {
@@ -284,25 +298,31 @@ export default function AdminDashboard() {
     setIsPlanDialogOpen(true)
   }
 
-  const handleDeleteConversatorio = (id: number) => {
-    const ponencia = ponencias.find((p) => p.id === id)
-    if (confirm(`¿Estás seguro de eliminar "${ponencia?.titulo}"? Esta acción no se puede deshacer.`)) {
+  const handleDeleteConversatorio = async (id: number) => {
+    if (!confirm("Confirmar eliminación")) return
+    const token = localStorage.getItem("auth_token")
+    if (!token) return
+
+    try {
+      await adminApi.deletePonencia(id, token)
       setPonencias(ponencias.filter((p) => p.id !== id))
-      toast({
-        title: "Conversatorio Eliminado",
-        description: "El conversatorio ha sido eliminado exitosamente.",
-      })
+      toast({ title: "Eliminado", description: "Conversatorio eliminado" })
+    } catch (e) {
+      toast({ title: "Error", variant: "destructive" })
     }
   }
 
-  const handleDeletePlan = (id: number) => {
-    const plan = planes.find((p) => p.id === id)
-    if (confirm(`¿Estás seguro de eliminar "${plan?.nombre}"? Esta acción no se puede deshacer.`)) {
+  const handleDeletePlan = async (id: number) => {
+    if (!confirm("Confirmar eliminación")) return
+    const token = localStorage.getItem("auth_token")
+    if (!token) return
+
+    try {
+      await adminApi.deletePlan(id, token)
       setPlanes(planes.filter((p) => p.id !== id))
-      toast({
-        title: "Plan Eliminado",
-        description: "El plan ha sido eliminado exitosamente.",
-      })
+      toast({ title: "Eliminado", description: "Plan eliminado" })
+    } catch (e) {
+      toast({ title: "Error", variant: "destructive" })
     }
   }
 
@@ -317,6 +337,11 @@ export default function AdminDashboard() {
     }
     const variant = variants[estado] || variants.borrador
     return <Badge className={cn("border", variant.color)}>{variant.text}</Badge>
+  }
+
+  const openProfileDetails = (profile: any) => {
+    setSelectedProfile(profile)
+    setIsProfileDetailsOpen(true)
   }
 
   return (
@@ -408,7 +433,7 @@ export default function AdminDashboard() {
                 Conversatorios
               </TabsTrigger>
               <TabsTrigger value="perfiles" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-                Perfiles Pendientes
+                Profesionales
               </TabsTrigger>
               <TabsTrigger value="planes" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                 Planes de Pago
@@ -670,81 +695,90 @@ export default function AdminDashboard() {
               </div>
             </TabsContent>
 
-            {/* PERFILES PENDIENTES TAB */}
+            {/* PROFESIONALES TAB */}
             <TabsContent value="perfiles" className="space-y-4">
               <div className="animate-in fade-in duration-300">
                 <div className="mb-6">
-                  <h2 className="text-2xl font-semibold mb-1">Perfiles Profesionales Pendientes</h2>
+                  <h2 className="text-2xl font-semibold mb-1">Gestión de Profesionales</h2>
                   <p className="text-sm text-gray-500">
-                    Revisa y aprueba los perfiles profesionales que esperan validación
+                    Administra todos los perfiles profesionales registrados
                   </p>
                 </div>
 
                 <div className="grid gap-4">
-                  {perfilesPendientes.filter((p) => p.estado === "pendiente").length === 0 ? (
+                  {perfilesPendientes.length === 0 ? (
                     <Card className="bg-white border-gray-200">
                       <CardContent className="flex flex-col items-center justify-center py-12">
                         <AlertCircle className="h-12 w-12 text-gray-500 mb-4" />
-                        <h3 className="text-lg font-semibold mb-1">No hay perfiles pendientes</h3>
-                        <p className="text-sm text-gray-500">Todos los perfiles han sido revisados y procesados</p>
+                        <h3 className="text-lg font-semibold mb-1">No hay profesionales registrados</h3>
+                        <p className="text-sm text-gray-500">Aún no hay perfiles profesionales en el sistema</p>
                       </CardContent>
                     </Card>
                   ) : (
-                    perfilesPendientes
-                      .filter((p) => p.estado === "pendiente")
-                      .map((perfil, index) => (
-                        <Card
-                          key={perfil.id}
-                          className="bg-white border-gray-200 hover:border-emerald-300 transition-all duration-300 animate-in fade-in slide-in-from-bottom-4"
-                          style={{ animationDelay: `${index * 100}ms` }}
-                        >
-                          <CardHeader>
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <CardTitle className="text-xl mb-2">{perfil.nombre}</CardTitle>
-                                <CardDescription className="text-base">{perfil.profesion}</CardDescription>
-                              </div>
-                              {getEstadoBadge(perfil.estado)}
+                    perfilesPendientes.map((perfil, index) => (
+                      <Card
+                        key={perfil.id}
+                        className="bg-white border-gray-200 hover:border-emerald-300 transition-all duration-300 animate-in fade-in slide-in-from-bottom-4"
+                        style={{ animationDelay: `${index * 100}ms` }}
+                      >
+                        <CardHeader>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <CardTitle className="text-xl mb-2">{perfil.nombre}</CardTitle>
+                              <CardDescription className="text-base">{perfil.profesion}</CardDescription>
                             </div>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                              <div className="flex items-center gap-2 text-sm">
-                                <FileText className="h-4 w-4 text-gray-500" />
-                                <span className="text-gray-500">Correo:</span>
-                                <span>{perfil.correo}</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-sm">
-                                <FileText className="h-4 w-4 text-gray-500" />
-                                <span className="text-gray-500">Teléfono:</span>
-                                <span>{perfil.telefono}</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-sm">
-                                <Clock className="h-4 w-4 text-gray-500" />
-                                <span className="text-gray-500">Registro:</span>
-                                <span>{format(perfil.fecha_registro, "dd/MM/yyyy")}</span>
-                              </div>
+                            {getEstadoBadge(perfil.estado)}
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div className="flex items-center gap-2 text-sm">
+                              <FileText className="h-4 w-4 text-gray-500" />
+                              <span className="text-gray-500">Correo:</span>
+                              <span>{perfil.correo}</span>
                             </div>
-                            <div className="flex gap-3">
+                            <div className="flex items-center gap-2 text-sm">
+                              <FileText className="h-4 w-4 text-gray-500" />
+                              <span className="text-gray-500">Teléfono:</span>
+                              <span>{perfil.telefono || "No registrado"}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm">
+                              <Clock className="h-4 w-4 text-gray-500" />
+                              <span className="text-gray-500">Registro:</span>
+                              <span>{format(new Date(perfil.fecha_registro), "dd/MM/yyyy")}</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-3">
+                            <Button
+                              variant="outline"
+                              onClick={() => openProfileDetails(perfil)}
+                              className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800 transition-all"
+                            >
+                              Ver Detalles
+                            </Button>
+                            {perfil.estado !== "aprobado" && (
                               <Button
                                 onClick={() => aprobarPerfil(perfil.id)}
                                 className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300 hover:scale-105"
                               >
                                 <Check className="mr-2 h-4 w-4" />
-                                Aprobar Perfil
+                                Aprobar
                               </Button>
+                            )}
+                            {perfil.estado !== "rechazado" && (
                               <Button
                                 onClick={() => rechazarPerfil(perfil.id)}
                                 variant="destructive"
                                 className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 transition-all duration-300 hover:scale-105"
                               >
                                 <X className="mr-2 h-4 w-4" />
-                                Rechazar Perfil
+                                Rechazar
                               </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
                   )}
                 </div>
               </div>
@@ -955,6 +989,130 @@ export default function AdminDashboard() {
               </div>
             </TabsContent>
           </Tabs>
+
+          {/* Dialog Detalle Perfil */}
+          <Dialog open={isProfileDetailsOpen} onOpenChange={setIsProfileDetailsOpen}>
+            <DialogContent className="bg-white border-gray-200 max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                  {selectedProfile?.nombre}
+                  {selectedProfile && getEstadoBadge(selectedProfile.estado)}
+                </DialogTitle>
+                <DialogDescription className="text-gray-500 text-lg">
+                  {selectedProfile?.profesion}
+                </DialogDescription>
+              </DialogHeader>
+
+              {selectedProfile && (
+                <div className="grid gap-6 py-4">
+                  {/* Info Personal */}
+                  <Card className="bg-gray-50 border-none shadow-none">
+                    <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-gray-500" />
+                        <span className="font-semibold text-gray-700">Correo:</span>
+                        <span>{selectedProfile.correo}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-gray-500" />
+                        <span className="font-semibold text-gray-700">Teléfono:</span>
+                        <span>{selectedProfile.telefono || "No registrado"}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-gray-500" />
+                        <span className="font-semibold text-gray-700">Fecha Registro:</span>
+                        <span>{format(new Date(selectedProfile.fecha_registro), "dd/MM/yyyy HH:mm")}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-700">Verificado:</span>
+                        <span className={selectedProfile.verificado ? "text-emerald-600 font-bold" : "text-gray-500"}>
+                          {selectedProfile.verificado ? "SÍ" : "NO"}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Descripción */}
+                  <div>
+                    <h3 className="font-semibold mb-2 text-lg">Descripción Profesional</h3>
+                    <div className="p-4 bg-white border rounded-lg text-gray-700 whitespace-pre-wrap shadow-sm min-h-[100px]">
+                      {selectedProfile.descripcion}
+                    </div>
+                  </div>
+
+                  {/* Documentos */}
+                  <div>
+                    <h3 className="font-semibold mb-2 text-lg">Documentos de Verificación ({selectedProfile.documentos?.length || 0})</h3>
+                    {selectedProfile.documentos && selectedProfile.documentos.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {selectedProfile.documentos.map((doc: any, index: number) => (
+                          <a
+                            key={index}
+                            href={doc.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 p-3 border rounded-lg hover:bg-blue-50 transition-colors group bg-white"
+                          >
+                            <div className="p-2 bg-blue-100 rounded-full group-hover:bg-blue-200 text-blue-600">
+                              <FileText className="h-5 w-5" />
+                            </div>
+                            <div className="flex flex-col overflow-hidden">
+                              <span className="font-medium text-gray-900 truncate">{doc.tipo || "Documento"}</span>
+                              <span className="text-xs text-gray-500">Clic para ver</span>
+                            </div>
+                          </a>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 italic p-4 border border-dashed rounded-lg bg-gray-50">
+                        No hay documentos adjuntos a este perfil.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Foto Referencia (si hay) */}
+                  {selectedProfile.foto_url && (
+                    <div className="mt-2">
+                      <h3 className="font-semibold mb-2 text-lg">Foto de Perfil</h3>
+                      <img src={selectedProfile.foto_url} alt="Foto Perfil" className="w-32 h-32 rounded-full object-cover border-2 border-gray-200" />
+                    </div>
+                  )}
+
+                  {/* Acciones Footer */}
+                  <div className="flex gap-3 justify-end mt-6 pt-6 border-t">
+                    <Button variant="outline" onClick={() => setIsProfileDetailsOpen(false)}>
+                      Cerrar
+                    </Button>
+                    {selectedProfile.estado !== "aprobado" && (
+                      <Button
+                        onClick={() => {
+                          aprobarPerfil(selectedProfile.id)
+                          setIsProfileDetailsOpen(false)
+                        }}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                      >
+                        <Check className="mr-2 h-4 w-4" />
+                        Aprobar Perfil
+                      </Button>
+                    )}
+                    {selectedProfile.estado !== "rechazado" && (
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          rechazarPerfil(selectedProfile.id)
+                          setIsProfileDetailsOpen(false)
+                        }}
+                      >
+                        <X className="mr-2 h-4 w-4" />
+                        Rechazar Perfil
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+
         </div>
       </main>
 

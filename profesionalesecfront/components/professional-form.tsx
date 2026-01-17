@@ -4,7 +4,7 @@ import type React from "react"
 import { useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { CheckCircle2, ChevronLeft, ChevronRight, Home, Upload } from "lucide-react"
+import { CheckCircle2, ChevronLeft, ChevronRight, Home, Upload, Eye, EyeOff } from "lucide-react"
 import { Check } from "lucide-react" // Declared the Check variable
 import { authApi, profesionalApi, saveToken } from "@/lib/api"
 
@@ -431,6 +431,7 @@ interface FormData {
   cedula: string // Added cedula field
   email: string
   password: string
+  confirmPassword: string
   phone: string
   profileImage: File | null
   profession: string
@@ -466,6 +467,7 @@ export default function ProfessionalForm() {
     cedula: "", // Added cedula field
     email: "",
     password: "",
+    confirmPassword: "",
     phone: "",
     profileImage: null,
     profession: "",
@@ -488,6 +490,8 @@ export default function ProfessionalForm() {
   const [errors, setErrors] = useState<FormErrors>({})
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right")
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const steps = [
     { title: "Datos Personales", description: "Información básica" },
@@ -559,8 +563,20 @@ export default function ProfessionalForm() {
         if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
           newErrors.email = "Email válido requerido"
         }
-        if (!formData.password || formData.password.length < 8) {
-          newErrors.password = "Contraseña de al menos 8 caracteres"
+        if (!formData.password) {
+          newErrors.password = "Contraseña requerida"
+        } else {
+          if (formData.password.length < 8) {
+            newErrors.password = "Mínimo 8 caracteres"
+          } else if (!/[A-Z]/.test(formData.password)) {
+            newErrors.password = "Debe incluir una mayúscula"
+          } else if (!/[a-z]/.test(formData.password)) {
+            newErrors.password = "Debe incluir una minúscula"
+          }
+        }
+
+        if (formData.password !== formData.confirmPassword) {
+          newErrors.confirmPassword = "Las contraseñas no coinciden"
         }
         if (!formData.phone.trim()) newErrors.phone = "Teléfono requerido"
         if (!formData.profileImage) newErrors.profileImage = "Foto de perfil requerida"
@@ -727,18 +743,49 @@ export default function ProfessionalForm() {
           />
           {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
         </div>
-        <div>
+        <div className="relative">
           <label className="block text-sm font-medium text-muted-foreground mb-2">
-            Contraseña (mínimo 8 caracteres) *
+            Contraseña (mínimo 8 caracteres, mayúscula y minúscula) *
           </label>
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleInputChange}
-            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              value={formData.password}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
           {errors.password && <p className="text-red-400 text-sm mt-1">{errors.password}</p>}
+        </div>
+        <div className="relative">
+          <label className="block text-sm font-medium text-muted-foreground mb-2">
+            Confirmar Contraseña *
+          </label>
+          <div className="relative">
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
+          {errors.confirmPassword && <p className="text-red-400 text-sm mt-1">{errors.confirmPassword}</p>}
         </div>
       </div>
       <div>
@@ -1082,13 +1129,12 @@ export default function ProfessionalForm() {
             {steps.map((step, index) => (
               <div key={index} className="flex flex-col items-center flex-1">
                 <div
-                  className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg transition-all ${
-                    index < currentStep
-                      ? "bg-primary text-primary-foreground"
-                      : index === currentStep
-                        ? "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2 ring-offset-background"
-                        : "bg-muted text-muted-foreground"
-                  }`}
+                  className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg transition-all ${index < currentStep
+                    ? "bg-primary text-primary-foreground"
+                    : index === currentStep
+                      ? "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2 ring-offset-background"
+                      : "bg-muted text-muted-foreground"
+                    }`}
                 >
                   {index < currentStep ? <Check size={20} /> : index + 1}
                 </div>
@@ -1110,9 +1156,8 @@ export default function ProfessionalForm() {
 
         <div className="relative overflow-hidden">
           <div
-            className={`transition-all duration-500 ease-in-out ${
-              slideDirection === "right" ? "animate-in slide-in-from-right" : "animate-in slide-in-from-left"
-            }`}
+            className={`transition-all duration-500 ease-in-out ${slideDirection === "right" ? "animate-in slide-in-from-right" : "animate-in slide-in-from-left"
+              }`}
           >
             {currentStep === 0 && renderPersonalInfo()}
             {currentStep === 1 && renderProfessionalInfo()}

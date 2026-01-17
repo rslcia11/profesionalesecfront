@@ -5,6 +5,8 @@ import { MapPin, ArrowRight } from "lucide-react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { ProfessionalsFilters, type FilterState } from "@/components/professionals-filters"
+import { profesionalApi } from "@/lib/api"
+import { useEffect } from "react"
 
 export default function ProfessionalsPage() {
   const [filters, setFilters] = useState<FilterState>({
@@ -14,212 +16,78 @@ export default function ProfessionalsPage() {
     province: "",
     city: "",
     verifiedOnly: false,
-    minRating: 0,
+
     sortBy: "featured",
   })
 
-  const professionals = [
-    {
-      id: 1,
-      name: "Dr. Carlos López",
-      specialty: "Médico Cirujano",
-      location: "Quito, Ecuador",
-      image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=800&h=1000&fit=crop",
-      price: "$150",
-      unit: "hora",
-      experience: "15 años",
-      category: "salud",
-      featured: true,
-      verified: true,
-      profession: "1",
-      specialty_id: "1",
-      province: "19",
-      city: "4",
-    },
-    {
-      id: 2,
-      name: "Lic. María Gómez",
-      specialty: "Abogada Especialista",
-      location: "Guayaquil, Ecuador",
-      image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&h=1000&fit=crop",
-      price: "$120",
-      unit: "hora",
-      experience: "12 años",
-      category: "legal",
-      featured: true,
-      verified: true,
-      profession: "2",
-      specialty_id: "4",
-      province: "10",
-      city: "1",
-    },
-    {
-      id: 3,
-      name: "Ing. Juan Rodríguez",
-      specialty: "Ingeniero de Software",
-      location: "Quito, Ecuador",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=1000&fit=crop",
-      price: "$180",
-      unit: "hora",
-      experience: "10 años",
-      category: "tecnologia",
-      featured: true,
-      verified: true,
-      profession: "3",
-      specialty_id: "7",
-      province: "19",
-      city: "4",
-    },
-    {
-      id: 4,
-      name: "Dra. Ana Martínez",
-      specialty: "Psicóloga Clínica",
-      location: "Cuenca, Ecuador",
-      image: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=800&h=1000&fit=crop",
-      price: "$100",
-      unit: "hora",
-      experience: "8 años",
-      category: "salud",
-      featured: false,
-      verified: true,
-      profession: "1",
-      specialty_id: "2",
-      province: "1",
-      city: "7",
-    },
-    {
-      id: 5,
-      name: "Arq. Felipe Torres",
-      specialty: "Arquitecto Diseñador",
-      location: "Quito, Ecuador",
-      image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=800&h=1000&fit=crop",
-      price: "$140",
-      unit: "proyecto",
-      experience: "18 años",
-      category: "diseño",
-      featured: false,
-      verified: true,
-      profession: "4",
-      specialty_id: "10",
-      province: "19",
-      city: "4",
-    },
-    {
-      id: 6,
-      name: "Dra. Patricia Sánchez",
-      specialty: "Dentista Estética",
-      location: "Quito, Ecuador",
-      image: "https://images.unsplash.com/photo-15598397342b71ea197ec2?w=800&h=1000&fit=crop",
-      price: "$90",
-      unit: "consulta",
-      experience: "14 años",
-      category: "salud",
-      featured: false,
-      verified: false,
-      profession: "1",
-      specialty_id: "3",
-      province: "19",
-      city: "4",
-    },
-    {
-      id: 7,
-      name: "Cons. Roberto Díaz",
-      specialty: "Asesor Financiero",
-      location: "Guayaquil, Ecuador",
-      image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&h=1000&fit=crop",
-      price: "$160",
-      unit: "sesión",
-      experience: "16 años",
-      category: "finanzas",
-      featured: false,
-      verified: true,
-      profession: "5",
-      specialty_id: "13",
-      province: "10",
-      city: "1",
-    },
-    {
-      id: 8,
-      name: "Lic. Sofia Reyes",
-      specialty: "Coach Empresarial",
-      location: "Ambato, Ecuador",
-      image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&h=1000&fit=crop",
-      price: "$130",
-      unit: "hora",
-      experience: "11 años",
-      category: "coaching",
-      featured: false,
-      verified: true,
-      profession: "6",
-      specialty_id: "16",
-      province: "23",
-      city: "",
-    },
-    {
-      id: 9,
-      name: "Ing. Marco Flores",
-      specialty: "Especialista en Energía",
-      location: "Quito, Ecuador",
-      image: "https://images.unsplash.com/photo-1507842217343-583f20270319?w=800&h=1000&fit=crop",
-      price: "$150",
-      unit: "consulta",
-      experience: "13 años",
-      category: "ingenieria",
-      featured: false,
-      verified: true,
-      profession: "7",
-      specialty_id: "19",
-      province: "19",
-      city: "4",
-    },
-  ]
+  // State for professionals and loading
+  const [professionals, setProfessionals] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const filteredProfessionals = professionals.filter((prof) => {
-    // Filtrar por palabra clave
-    if (filters.keyword) {
-      const keyword = filters.keyword.toLowerCase()
-      if (!prof.name.toLowerCase().includes(keyword) && !prof.specialty.toLowerCase().includes(keyword)) {
-        return false
+  // Fetch professionals when filters change
+  useEffect(() => {
+    const fetchProfessionals = async () => {
+      setLoading(true)
+      try {
+        // Prepare filters for API
+        // Mapping frontend filter names to backend expected parameters if needed
+        const apiFilters: any = {
+          verificado: true // Always show verified only by default for this page?
+        }
+
+        if (filters.keyword) apiFilters.nombre = filters.keyword
+        if (filters.profession) apiFilters.profesion_id = filters.profession
+        if (filters.specialty) apiFilters.especialidad_id = filters.specialty
+        if (filters.province) apiFilters.provincia_id = filters.province
+        if (filters.city) apiFilters.ciudad_id = filters.city
+
+        // Call API
+        console.log("Fetching public profiles with filters:", apiFilters); // DEBUG
+        const data = await profesionalApi.buscar(apiFilters)
+        console.log("Public API response data:", data); // DEBUG
+
+        // Maps backend response to frontend UI format
+        const mapped = data.map((p: any) => ({
+          id: p.usuario_id,
+          name: p.usuario?.nombre || "Usuario",
+          specialty: p.especialidad?.nombre || p.profesion?.nombre || "Profesional",
+          location: p.ciudad ? `${p.ciudad.nombre}, ${p.ciudad.provincia?.nombre}` : "Ecuador",
+          image: p.usuario?.foto_url || "/placeholder.svg",
+          price: `$${p.tarifa_hora || 0}`,
+          unit: "hora", // This might need to be dynamic if backend supports it
+          experience: "Experiencia verificada", // Placeholder as backend might not return years yet
+          category: "general", // Placeholder
+          featured: false,
+          verified: p.verificado,
+          profession: p.profesion_id?.toString(),
+          specialty_id: p.especialidad_id?.toString(),
+          province: p.ciudad?.provincia_id?.toString(),
+          city: p.ciudad_id?.toString(),
+          description: p.descripcion
+        }))
+
+        setProfessionals(mapped)
+      } catch (error) {
+        console.error("Error fetching professionals:", error)
+      } finally {
+        setLoading(false)
       }
     }
 
-    // Filtrar por profesión
-    if (filters.profession && prof.profession !== filters.profession) {
-      return false
-    }
+    fetchProfessionals()
+  }, [filters])
 
-    // Filtrar por especialidad
-    if (filters.specialty && prof.specialty_id !== filters.specialty) {
-      return false
-    }
-
-    // Filtrar por provincia
-    if (filters.province && prof.province !== filters.province) {
-      return false
-    }
-
-    // Filtrar por ciudad
-    if (filters.city && prof.city !== filters.city) {
-      return false
-    }
-
-    // Filtrar solo verificados
-    if (filters.verifiedOnly && !prof.verified) {
-      return false
-    }
-
-    return true
-  })
-
-  const sortedProfessionals = [...filteredProfessionals].sort((a, b) => {
+  // Sorting logic (can still be done client-side for these results)
+  const sortedProfessionals = [...professionals].sort((a, b) => {
     switch (filters.sortBy) {
       case "price-low":
-        return Number.parseInt(a.price.replace("$", "")) - Number.parseInt(b.price.replace("$", ""))
+        return Number.parseFloat(a.price.replace("$", "")) - Number.parseFloat(b.price.replace("$", ""))
       case "price-high":
-        return Number.parseInt(b.price.replace("$", "")) - Number.parseInt(a.price.replace("$", ""))
+        return Number.parseFloat(b.price.replace("$", "")) - Number.parseFloat(a.price.replace("$", ""))
       case "featured":
       default:
-        return (b.featured ? 1 : 0) - (a.featured ? 1 : 0)
+        // Featured logic if backend provides it, otherwise default sort
+        return 0
     }
   })
 
@@ -335,7 +203,6 @@ export default function ProfessionalsPage() {
                   province: "",
                   city: "",
                   verifiedOnly: false,
-                  minRating: 0,
                   sortBy: "featured",
                 })
               }
