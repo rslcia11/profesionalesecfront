@@ -36,6 +36,7 @@ import {
   AlertCircle,
   TrendingUp,
   Clock,
+  MapPin,
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -115,7 +116,12 @@ export default function AdminDashboard() {
           nombre: p.usuario?.nombre || "Sin nombre",
           correo: p.usuario?.correo || "",
           telefono: p.usuario?.telefono || "",
+          cedula: p.usuario?.cedula || "No registrada",
           profesion: p.profesion ? p.profesion.nombre : "Sin profesión",
+          especialidad: p.especialidad ? p.especialidad.nombre : "Sin especialidad",
+          ciudad: p.ciudad ? p.ciudad.nombre : "",
+          provincia: p.ciudad?.provincia ? p.ciudad.provincia.nombre : "",
+          tarifa: p.tarifa_hora ? `$${p.tarifa_hora}` : "No definida",
           fecha_registro: p.usuario?.creado_en || new Date().toISOString(),
           descripcion: p.descripcion || "Sin descripción",
           documentos: p.documentos || [],
@@ -1010,6 +1016,11 @@ export default function AdminDashboard() {
                     <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-gray-500" />
+                        <span className="font-semibold text-gray-700">Cédula:</span>
+                        <span>{selectedProfile.cedula}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-gray-500" />
                         <span className="font-semibold text-gray-700">Correo:</span>
                         <span>{selectedProfile.correo}</span>
                       </div>
@@ -1017,6 +1028,19 @@ export default function AdminDashboard() {
                         <FileText className="h-4 w-4 text-gray-500" />
                         <span className="font-semibold text-gray-700">Teléfono:</span>
                         <span>{selectedProfile.telefono || "No registrado"}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-gray-500" />
+                        <span className="font-semibold text-gray-700">Ubicación:</span>
+                        <span>
+                          {selectedProfile.ciudad}
+                          {selectedProfile.provincia ? `, ${selectedProfile.provincia}` : ""}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4 text-gray-500" />
+                        <span className="font-semibold text-gray-700">Tarifa:</span>
+                        <span>{selectedProfile.tarifa}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-gray-500" />

@@ -96,8 +96,20 @@ export const profesionalApi = {
     })
 
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || "Error al subir documento")
+      let errorMessage = "Error al subir documento"
+      try {
+        const text = await response.text()
+        try {
+          const error = JSON.parse(text)
+          errorMessage = error.error || errorMessage
+        } catch {
+          // Si falla el parseo JSON, usar el texto plano (recortado) o el status
+          errorMessage = `Error del servidor (${response.status}): ${text.slice(0, 50) || response.statusText}`
+        }
+      } catch (e) {
+        errorMessage = `Error de conexión (${response.status} ${response.statusText})`
+      }
+      throw new Error(errorMessage)
     }
 
     return response.json()
@@ -150,6 +162,55 @@ export const catalogosApi = {
     return response.json()
   },
 
+}
+
+// Citas API
+export const citasApi = {
+  async agendarPublico(data: {
+    profesional_id: number
+    nombres_completos: string
+    correo?: string
+    telefono?: string
+    comentario?: string
+    fecha_cita: string
+    hora_cita: string
+  }): Promise<any> {
+    const response = await fetch(`${API_URL}/citas/publico`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || "Error al agendar cita")
+    }
+
+    return response.json()
+  },
+
+  async listar(token: string): Promise<any[]> {
+    const response = await fetch(`${API_URL}/citas`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (!response.ok) throw new Error("Error al obtener citas")
+    return response.json()
+  },
+
+  async cambiarEstado(id: number, estado_id: number, token: string): Promise<any> {
+    const response = await fetch(`${API_URL}/citas/${id}/estado`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ estado_id })
+    })
+    if (!response.ok) throw new Error("Error al cambiar estado de cita")
+    return response.json()
+  }
 }
 
 // Admin API
@@ -229,7 +290,7 @@ export const adminApi = {
 
   // Perfiles - Obtener TODOS los profesionales (para admin)
   async getAllProfiles(token: string) {
-    const response = await fetch(`${API_URL}/profesionales`, {
+    const response = await fetch(`${API_URL}/profesionales/buscar?todos=true`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     if (!response.ok) throw new Error("Error al obtener profesionales")

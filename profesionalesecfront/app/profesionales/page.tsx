@@ -7,6 +7,7 @@ import Footer from "@/components/footer"
 import { ProfessionalsFilters, type FilterState } from "@/components/professionals-filters"
 import { profesionalApi } from "@/lib/api"
 import { useEffect } from "react"
+import BookingModal from "@/components/booking-modal"
 
 export default function ProfessionalsPage() {
   const [filters, setFilters] = useState<FilterState>({
@@ -23,6 +24,10 @@ export default function ProfessionalsPage() {
   // State for professionals and loading
   const [professionals, setProfessionals] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+
+  // State for booking modal
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedProfessional, setSelectedProfessional] = useState<any>(null)
 
   // Fetch professionals when filters change
   useEffect(() => {
@@ -180,7 +185,13 @@ export default function ProfessionalsPage() {
                       <div className="text-2xl font-bold text-primary">{professional.price}</div>
                       <div className="text-xs text-muted-foreground">por {professional.unit}</div>
                     </div>
-                    <button className="group/btn px-6 py-2.5 bg-primary text-primary-foreground rounded-full font-medium hover:bg-primary/90 transition-all hover:shadow-lg hover:shadow-primary/20 flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setSelectedProfessional(professional)
+                        setIsModalOpen(true)
+                      }}
+                      className="group/btn px-6 py-2.5 bg-primary text-primary-foreground rounded-full font-medium hover:bg-primary/90 transition-all hover:shadow-lg hover:shadow-primary/20 flex items-center gap-2"
+                    >
                       Contactar
                       <ArrowRight size={16} className="group-hover/btn:translate-x-1 transition-transform" />
                     </button>
@@ -229,6 +240,22 @@ export default function ProfessionalsPage() {
       </section>
 
       <Footer />
+
+      {/* Booking Modal */}
+      {selectedProfessional && (
+        <BookingModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false)
+            setSelectedProfessional(null)
+          }}
+          professional={{
+            id: selectedProfessional.id,
+            name: selectedProfessional.name,
+            specialty: selectedProfessional.specialty,
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -504,10 +504,20 @@ export default function ProfessionalForm() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
 
+    // Nombres: no permite números
+    if (name === "fullName") {
+      if (/\d/.test(value)) {
+        return // No actualiza si hay números
+      }
+    }
+
+    // Cédula y teléfono: solo números, máximo 10 dígitos
     if (name === "cedula" || name === "phone") {
-      // Only allow numeric characters
       if (!/^\d*$/.test(value)) {
-        return // Don't update if non-numeric
+        return // No actualiza si hay caracteres no numéricos
+      }
+      if (value.length > 10) {
+        return // No permite más de 10 dígitos
       }
     }
 
@@ -559,7 +569,13 @@ export default function ProfessionalForm() {
     switch (currentStep) {
       case 0:
         if (!formData.fullName.trim()) newErrors.fullName = "Nombre requerido"
-        if (!formData.cedula.trim()) newErrors.cedula = "Cédula requerida"
+
+        if (!formData.cedula.trim()) {
+          newErrors.cedula = "Cédula requerida"
+        } else if (formData.cedula.length !== 10) {
+          newErrors.cedula = "Debe tener 10 dígitos"
+        }
+
         if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
           newErrors.email = "Email válido requerido"
         }
@@ -578,7 +594,13 @@ export default function ProfessionalForm() {
         if (formData.password !== formData.confirmPassword) {
           newErrors.confirmPassword = "Las contraseñas no coinciden"
         }
-        if (!formData.phone.trim()) newErrors.phone = "Teléfono requerido"
+
+        if (!formData.phone.trim()) {
+          newErrors.phone = "Teléfono requerido"
+        } else if (formData.phone.length !== 10) {
+          newErrors.phone = "Debe tener 10 dígitos"
+        }
+
         if (!formData.profileImage) newErrors.profileImage = "Foto de perfil requerida"
         break
       case 1:
@@ -666,26 +688,45 @@ export default function ProfessionalForm() {
 
         // Step 4: Upload documents if provided (optional)
         if (authResponse.token) {
-          if (formData.identity) {
-            console.log("[v0] Uploading identity document")
-            await profesionalApi.subirDocumento("cedula", formData.identity, authResponse.token)
-          }
+          try {
+            const uploadPromises = []
 
-          if (formData.title) {
-            console.log("[v0] Uploading title document")
-            await profesionalApi.subirDocumento("titulo", formData.title, authResponse.token)
-          }
+            // Helper para subir solo si existe
+            const uploadIfHasFile = async (file: File | null, tipo: string) => {
+              if (file) return profesionalApi.subirDocumento(tipo, file, authResponse.token!)
+            }
 
-          if (formData.license) {
-            console.log("[v0] Uploading license document")
-            await profesionalApi.subirDocumento("licencia", formData.license, authResponse.token)
+            if (formData.identity) uploadPromises.push(uploadIfHasFile(formData.identity, "cedula"))
+            if (formData.title) uploadPromises.push(uploadIfHasFile(formData.title, "titulo"))
+            if (formData.license) uploadPromises.push(uploadIfHasFile(formData.license, "licencia")) // opcional
+            if (formData.profileImage) uploadPromises.push(uploadIfHasFile(formData.profileImage, "foto_perfil"))
+
+            await Promise.all(uploadPromises)
+            console.log("[v0] Documents uploaded successfully")
+          } catch (uploadError: any) {
+            console.error("Error subiendo documentos:", uploadError)
+            // Assuming 'toast' is available in this scope
+            // toast({
+            //   title: "Registro exitoso con advertencia",
+            //   description: "Tu perfil se creó, pero hubo un error al subir algunos documentos: " + uploadError.message,
+            //   variant: "warning",
+            // })
+            // No hacemos throw aquí, permitimos que continúe al éxito
           }
         }
 
-        console.log("[v0] Registration completed successfully")
         setShowSuccessModal(true)
-      } catch (error) {
-        console.error("[v0] Error submitting form:", error)
+      } catch (error: any) {
+        console.error("[v0] Registration error:", error)
+        // Check if error is "User already exists" (status 409 or similar message) to guide user?
+        // Assuming 'setErrors' and 'toast' are available in this scope
+        // setErrors((prev) => ({ ...prev, form: error.message || "Error al registrar profesional" }))
+
+        // toast({
+        //     title: "Error de registro",
+        //     description: error.message,
+        //     variant: "destructive"
+        // })
         alert(`Error al registrar: ${error instanceof Error ? error.message : "Error desconocido"}`)
       }
     }
