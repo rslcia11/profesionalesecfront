@@ -110,13 +110,13 @@ export default function AdminDashboard() {
 
         // Map backend data to frontend structure
         const mappedProfiles = stats.profesionales.map((p: any) => ({
-          id: p.usuario_id,
+          id: p.usuario_id, // Important: using user ID as main ID? or profile ID? Using user_id for actions likely.
           verificado: p.verificado,
           estado: p.estado_id === 1 ? "rechazado" : p.estado_id === 2 ? "pendiente" : "aprobado",
           nombre: p.usuario?.nombre || "Sin nombre",
           correo: p.usuario?.correo || "",
-          telefono: p.usuario?.telefono || "",
-          cedula: p.usuario?.cedula || "No registrada",
+          telefono: p.usuario?.telefono || "No disponible (API)",
+          cedula: p.usuario?.cedula || "No disponible (API)",
           profesion: p.profesion ? p.profesion.nombre : "Sin profesión",
           especialidad: p.especialidad ? p.especialidad.nombre : "Sin especialidad",
           ciudad: p.ciudad ? p.ciudad.nombre : "",
@@ -126,6 +126,8 @@ export default function AdminDashboard() {
           descripcion: p.descripcion || "Sin descripción",
           documentos: p.documentos || [],
           foto_url: p.usuario?.foto_url || null,
+          direccion_texto: p.direccion ? `${p.direccion.calle_principal} ${p.direccion.referencia ? `(${p.direccion.referencia})` : ""}` : "No registrada",
+          link_maps: p.direccion?.link_maps || null,
           // Keep original structure for compatibility if needed
           perfil_estado: {
             estado: p.estado_id === 1 ? "rechazado" : p.estado_id === 2 ? "pendiente" : "aprobado",
@@ -240,8 +242,15 @@ export default function AdminDashboard() {
       setIsConversatorioDialogOpen(false)
       setEditingItem(null)
       resetConversatorioForm()
-    } catch (e) {
-      toast({ title: "Error", description: "Error al guardar conversatorio", variant: "destructive" })
+      setIsConversatorioDialogOpen(false)
+      setEditingItem(null)
+      resetConversatorioForm()
+    } catch (e: any) {
+      toast({
+        title: "Error al actualizar",
+        description: e.message || "Error desconocido",
+        variant: "destructive"
+      })
     }
   }
 
@@ -582,7 +591,7 @@ export default function AdminDashboard() {
                               onChange={(e) =>
                                 setConversatorioForm({
                                   ...conversatorioForm,
-                                  precio: Number.parseFloat(e.target.value),
+                                  precio: e.target.value === "" ? 0 : Number.parseFloat(e.target.value),
                                 })
                               }
                               className="focus:border-blue-500/50 transition-colors"
@@ -597,9 +606,12 @@ export default function AdminDashboard() {
                               type="number"
                               min="1"
                               placeholder="100"
-                              value={conversatorioForm.cupo}
+                              value={conversatorioForm.cupo || ""}
                               onChange={(e) =>
-                                setConversatorioForm({ ...conversatorioForm, cupo: Number.parseInt(e.target.value) })
+                                setConversatorioForm({
+                                  ...conversatorioForm,
+                                  cupo: e.target.value === "" ? 0 : Number.parseInt(e.target.value)
+                                })
                               }
                               className="focus:border-blue-500/50 transition-colors"
                             />
@@ -668,7 +680,7 @@ export default function AdminDashboard() {
                             <TableRow key={ponencia.id} className="border-gray-200 hover:bg-gray-50 transition-colors">
                               <TableCell className="font-medium">{ponencia.titulo}</TableCell>
                               <TableCell>{format(ponencia.fecha_inicio, "dd/MM/yyyy")}</TableCell>
-                              <TableCell>${ponencia.precio.toFixed(2)}</TableCell>
+                              <TableCell>${Number(ponencia.precio || 0).toFixed(2)}</TableCell>
                               <TableCell>{ponencia.cupo}</TableCell>
                               <TableCell>{getEstadoBadge(ponencia.estado)}</TableCell>
                               <TableCell className="text-right">
@@ -856,9 +868,12 @@ export default function AdminDashboard() {
                               min="0"
                               step="0.01"
                               placeholder="0.00"
-                              value={planForm.precio_base}
+                              value={planForm.precio_base || ""}
                               onChange={(e) =>
-                                setPlanForm({ ...planForm, precio_base: Number.parseFloat(e.target.value) })
+                                setPlanForm({
+                                  ...planForm,
+                                  precio_base: e.target.value === "" ? 0 : Number.parseFloat(e.target.value)
+                                })
                               }
                               className="focus:border-amber-500/50 transition-colors"
                             />
@@ -893,7 +908,10 @@ export default function AdminDashboard() {
                               placeholder="30"
                               value={planForm.duracion_dias || ""}
                               onChange={(e) =>
-                                setPlanForm({ ...planForm, duracion_dias: Number.parseInt(e.target.value) || null })
+                                setPlanForm({
+                                  ...planForm,
+                                  duracion_dias: e.target.value === "" ? 0 : (Number.parseInt(e.target.value) || 0)
+                                })
                               }
                               className="focus:border-amber-500/50 transition-colors"
                             />
@@ -953,7 +971,7 @@ export default function AdminDashboard() {
                           <div className="flex items-center gap-2 text-sm">
                             <DollarSign className="h-4 w-4 text-amber-600" />
                             <span className="text-gray-500">Precio:</span>
-                            <span className="font-semibold">${plan.precio_base.toFixed(2)}</span>
+                            <span className="font-semibold">${Number(plan.precio_base).toFixed(2)}</span>
                           </div>
                           <div className="flex items-center gap-2 text-sm">
                             <FileText className="h-4 w-4 text-amber-600" />
@@ -1029,13 +1047,21 @@ export default function AdminDashboard() {
                         <span className="font-semibold text-gray-700">Teléfono:</span>
                         <span>{selectedProfile.telefono || "No registrado"}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-gray-500" />
-                        <span className="font-semibold text-gray-700">Ubicación:</span>
-                        <span>
-                          {selectedProfile.ciudad}
-                          {selectedProfile.provincia ? `, ${selectedProfile.provincia}` : ""}
-                        </span>
+                      <div className="flex items-start gap-2 col-span-1 md:col-span-2">
+                        <MapPin className="h-4 w-4 text-gray-500 mt-1" />
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-gray-700">Ubicación:</span>
+                          <span>
+                            {selectedProfile.ciudad}
+                            {selectedProfile.provincia ? `, ${selectedProfile.provincia}` : ""}
+                          </span>
+                          <span className="text-sm text-gray-500">{selectedProfile.direccion_texto}</span>
+                          {selectedProfile.link_maps && (
+                            <a href={selectedProfile.link_maps} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-sm">
+                              Ver en Google Maps
+                            </a>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <DollarSign className="h-4 w-4 text-gray-500" />

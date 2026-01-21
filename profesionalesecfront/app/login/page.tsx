@@ -25,28 +25,46 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const data = await authApi.login(formData.email, formData.password)
+      const data = await authApi.login({
+        correo: formData.email,
+        contrasena: formData.password
+      })
 
-      if (data.token) {
+      console.log("Login successful, received data:", data)
+
+      if (data && data.token) {
         saveToken(data.token)
 
-        // Decodificar el token para obtener el rol
-        const tokenPayload = JSON.parse(atob(data.token.split(".")[1]))
-        const rol = tokenPayload.rol
+        try {
+          const parts = data.token.split(".")
+          if (parts.length !== 3) {
+            console.error("Token appears invalid")
+            router.push("/dashboard")
+            return
+          }
 
-        if (["superadmin", "moderador"].includes(rol)) {
-          router.push("/admin")
-        } else if (rol === "profesional") {
-          router.push("/dashboard/profesional")
-        } else {
-          // Redirección por defecto si el rol no coincide con los esperados
+          const payload = JSON.parse(atob(parts[1]))
+          const rol = payload.rol
+
+          if (["superadmin", "moderador"].includes(rol)) {
+            router.push("/admin")
+          } else if (rol === "profesional") {
+            router.push("/dashboard/profesional")
+          } else {
+            router.push("/dashboard")
+          }
+        } catch (e) {
+          console.error("Error decoding token:", e)
           router.push("/dashboard")
         }
-      } else if (data.requiereCambio) {
-        // Opcional: manejo de cambio de contraseña (aunque no se usa para admin)
+      } else if (data && data.requiereCambio) {
         router.push(`/cambiar-contrasena?usuarioId=${data.usuarioId}`)
+      } else {
+        // Login successful but no token? rare but handleable
+        setError("Error: No se recibió token de sesión.")
       }
     } catch (err: any) {
+      console.error("Login error:", err)
       setError(err.message || "Error al iniciar sesión")
     } finally {
       setLoading(false)
@@ -141,11 +159,10 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`w-full py-4 font-semibold rounded-xl transition-all duration-300 shadow-lg active:scale-[0.98] ${
-                    loading
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 hover:shadow-blue-500/50"
-                  }`}
+                  className={`w-full py-4 font-semibold rounded-xl transition-all duration-300 shadow-lg active:scale-[0.98] ${loading
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 hover:shadow-blue-500/50"
+                    }`}
                 >
                   {loading ? "Iniciando..." : "Iniciar Sesión"}
                 </button>

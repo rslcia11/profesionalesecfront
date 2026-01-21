@@ -1,447 +1,32 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { CheckCircle2, ChevronLeft, ChevronRight, Home, Upload, Eye, EyeOff } from "lucide-react"
 import { Check } from "lucide-react" // Declared the Check variable
-import { authApi, profesionalApi, saveToken } from "@/lib/api"
+import { authApi, profesionalApi, catalogosApi, saveToken } from "@/lib/api"
 
-const mockData = {
-  professions: [
-    { id: 1, nombre: "Derecho" },
-    { id: 2, nombre: "Salud" },
-    { id: 3, nombre: "Economia y Administracion" },
-    { id: 4, nombre: "Oficios y mas" },
-    { id: 5, nombre: "Comunicacion" },
-    { id: 6, nombre: "Educacion" },
-    { id: 7, nombre: "Ingenieria y Tecnologia" },
-    { id: 8, nombre: "Diseño y Construccion" },
-    { id: 9, nombre: "Agraria" },
-    { id: 10, nombre: "Arte y Cultura" },
-    { id: 11, nombre: "Salud Mental" },
-  ],
-  specialties: {
-    Derecho: [
-      { id: 1, nombre: "Derecho Penal" },
-      { id: 2, nombre: "Derecho Civil" },
-      { id: 3, nombre: "Derecho Laboral" },
-      { id: 4, nombre: "Derecho Constitucional" },
-      { id: 5, nombre: "Derecho Administrativo" },
-      { id: 6, nombre: "Derecho Mercantil" },
-      { id: 7, nombre: "Derecho Internacional" },
-      { id: 8, nombre: "Derecho Ambiental" },
-    ],
-    Salud: [
-      { id: 9, nombre: "Medicina General" },
-      { id: 10, nombre: "Enfermería" },
-      { id: 11, nombre: "Odontología" },
-      { id: 12, nombre: "Nutrición" },
-      { id: 13, nombre: "Laboratorio Clínico" },
-      { id: 14, nombre: "Obstetricia" },
-      { id: 15, nombre: "Terapia Física" },
-    ],
-    "Economia y Administracion": [
-      { id: 16, nombre: "Contabilidad" },
-      { id: 17, nombre: "Auditoría" },
-      { id: 18, nombre: "Finanzas" },
-      { id: 19, nombre: "Administración de Empresas" },
-      { id: 20, nombre: "Gestión de Talento Humano" },
-      { id: 21, nombre: "Comercio Exterior" },
-      { id: 22, nombre: "Logística y Operaciones" },
-    ],
-    "Oficios y mas": [
-      { id: 23, nombre: "Cocinero/a" },
-      { id: 24, nombre: "Mesero/a" },
-      { id: 25, nombre: "Maestro Panadero" },
-      { id: 26, nombre: "Mecánico Automotriz" },
-      { id: 27, nombre: "Maestro Albañil" },
-      { id: 28, nombre: "Carpintero" },
-      { id: 29, nombre: "Electricista" },
-      { id: 30, nombre: "Soldador" },
-      { id: 31, nombre: "Pintor de Obra" },
-      { id: 32, nombre: "Plomero" },
-      { id: 33, nombre: "Chofer Profesional" },
-    ],
-    Comunicacion: [
-      { id: 34, nombre: "Periodismo" },
-      { id: 35, nombre: "Comunicación Corporativa" },
-      { id: 36, nombre: "Producción Audiovisual" },
-      { id: 37, nombre: "Relaciones Públicas" },
-      { id: 38, nombre: "Locución" },
-      { id: 39, nombre: "Diseño Publicitario" },
-      { id: 40, nombre: "Gestión de Redes Sociales" },
-    ],
-    Educacion: [
-      { id: 41, nombre: "Educación Inicial" },
-      { id: 42, nombre: "Educación Básica" },
-      { id: 43, nombre: "Educación Especial" },
-      { id: 44, nombre: "Docencia en Matemáticas" },
-      { id: 45, nombre: "Docencia en Lengua y Literatura" },
-      { id: 46, nombre: "Docencia en Ciencias Sociales" },
-      { id: 47, nombre: "Docencia en Ciencias Naturales" },
-      { id: 48, nombre: "Educación Física" },
-    ],
-    "Ingenieria y Tecnologia": [
-      { id: 49, nombre: "Ingeniería en Sistemas" },
-      { id: 50, nombre: "Ingeniería Eléctrica" },
-      { id: 51, nombre: "Ingeniería Electrónica" },
-      { id: 52, nombre: "Ingeniería Mecánica" },
-      { id: 53, nombre: "Ingeniería Industrial" },
-      { id: 54, nombre: "Ingeniería en Telecomunicaciones" },
-      { id: 55, nombre: "Ingeniería Civil" },
-      { id: 56, nombre: "Ingeniería Química" },
-      { id: 57, nombre: "Ingeniería Biomédica" },
-      { id: 58, nombre: "Ingeniería en Energías Renovables" },
-      { id: 59, nombre: "Ingeniería en Minas" },
-      { id: 60, nombre: "Ingeniería en Petróleos" },
-      { id: 61, nombre: "Ingeniería Geológica" },
-      { id: 62, nombre: "Ingeniería en Transporte" },
-      { id: 63, nombre: "Automatización Industrial" },
-      { id: 64, nombre: "Desarrollo de Software" },
-      { id: 65, nombre: "Ciberseguridad" },
-      { id: 66, nombre: "Big Data" },
-      { id: 67, nombre: "Inteligencia Artificial" },
-    ],
-    "Diseño y Construccion": [
-      { id: 68, nombre: "Arquitectura" },
-      { id: 69, nombre: "Dibujo Técnico" },
-      { id: 70, nombre: "Topografía" },
-      { id: 71, nombre: "Diseño de Interiores" },
-      { id: 72, nombre: "Urbanismo" },
-      { id: 73, nombre: "Construcción y Obra" },
-      { id: 74, nombre: "Modelado 3D y Render" },
-    ],
-    Agraria: [
-      { id: 75, nombre: "Ingeniería Agrícola" },
-      { id: 76, nombre: "Ingeniería Forestal" },
-      { id: 77, nombre: "Veterinaria" },
-      { id: 78, nombre: "Agroindustria" },
-      { id: 79, nombre: "Zootecnia" },
-      { id: 80, nombre: "Gestión Ambiental Rural" },
-      { id: 81, nombre: "Producción Agropecuaria" },
-      { id: 82, nombre: "Riego y Drenaje" },
-      { id: 83, nombre: "Silvicultura" },
-    ],
-    "Arte y Cultura": [
-      { id: 84, nombre: "Música" },
-      { id: 85, nombre: "Pintura" },
-      { id: 86, nombre: "Danza" },
-      { id: 87, nombre: "Teatro" },
-      { id: 88, nombre: "Fotografía" },
-      { id: 89, nombre: "Escultura" },
-      { id: 90, nombre: "Diseño Gráfico" },
-      { id: 91, nombre: "Cine y Dirección" },
-    ],
-    "Salud Mental": [
-      { id: 92, nombre: "Psicología Clínica" },
-      { id: 93, nombre: "Psicopedagogía" },
-      { id: 94, nombre: "Terapia Ocupacional" },
-      { id: 95, nombre: "Neuropsicología" },
-      { id: 96, nombre: "Psicología Infantil" },
-      { id: 97, nombre: "Psicología Organizacional" },
-    ],
-  },
-  provinces: [
-    { id: 1, nombre: "Azuay" },
-    { id: 2, nombre: "Bolívar" },
-    { id: 3, nombre: "Cañar" },
-    { id: 4, nombre: "Carchi" },
-    { id: 5, nombre: "Chimborazo" },
-    { id: 6, nombre: "Cotopaxi" },
-    { id: 7, nombre: "El Oro" },
-    { id: 8, nombre: "Esmeraldas" },
-    { id: 9, nombre: "Galápagos" },
-    { id: 10, nombre: "Guayas" },
-    { id: 11, nombre: "Imbabura" },
-    { id: 12, nombre: "Loja" },
-    { id: 13, nombre: "Los Ríos" },
-    { id: 14, nombre: "Manabí" },
-    { id: 15, nombre: "Morona Santiago" },
-    { id: 16, nombre: "Napo" },
-    { id: 17, nombre: "Orellana" },
-    { id: 18, nombre: "Pastaza" },
-    { id: 19, nombre: "Pichincha" },
-    { id: 20, nombre: "Santa Elena" },
-    { id: 21, nombre: "Santo Domingo de los Tsáchilas" },
-    { id: 22, nombre: "Sucumbíos" },
-    { id: 23, nombre: "Tungurahua" },
-    { id: 24, nombre: "Zamora Chinchipe" },
-  ],
-  cities: {
-    Azuay: [
-      { id: 1, nombre: "Cuenca" },
-      { id: 2, nombre: "Gualaceo" },
-      { id: 3, nombre: "Paute" },
-      { id: 4, nombre: "Sevilla de Oro" },
-      { id: 5, nombre: "Santa Isabel" },
-      { id: 6, nombre: "Sigsig" },
-      { id: 7, nombre: "Oña" },
-      { id: 8, nombre: "Nabón" },
-      { id: 9, nombre: "Guachapala" },
-      { id: 10, nombre: "Camilo Ponce Enríquez" },
-    ],
-    Bolívar: [
-      { id: 11, nombre: "Guaranda" },
-      { id: 12, nombre: "Caluma" },
-      { id: 13, nombre: "Chillanes" },
-      { id: 14, nombre: "Chimbo" },
-      { id: 15, nombre: "Echeandía" },
-      { id: 16, nombre: "Las Naves" },
-      { id: 17, nombre: "San Miguel" },
-    ],
-    Cañar: [
-      { id: 18, nombre: "Azogues" },
-      { id: 19, nombre: "Biblián" },
-      { id: 20, nombre: "La Troncal" },
-      { id: 21, nombre: "Cañar" },
-      { id: 22, nombre: "El Tambo" },
-      { id: 23, nombre: "Suscal" },
-      { id: 24, nombre: "Déleg" },
-    ],
-    Carchi: [
-      { id: 25, nombre: "Tulcán" },
-      { id: 26, nombre: "San Gabriel" },
-      { id: 27, nombre: "El Ángel" },
-      { id: 28, nombre: "Mira" },
-      { id: 29, nombre: "Huaca" },
-      { id: 30, nombre: "Bolívar" },
-    ],
-    Chimborazo: [
-      { id: 31, nombre: "Riobamba" },
-      { id: 32, nombre: "Alausí" },
-      { id: 33, nombre: "Colta" },
-      { id: 34, nombre: "Chambo" },
-      { id: 35, nombre: "Guano" },
-      { id: 36, nombre: "Pallatanga" },
-      { id: 37, nombre: "Penipe" },
-      { id: 38, nombre: "Cumandá" },
-    ],
-    Cotopaxi: [
-      { id: 39, nombre: "Latacunga" },
-      { id: 40, nombre: "La Maná" },
-      { id: 41, nombre: "Pujilí" },
-      { id: 42, nombre: "Salcedo" },
-      { id: 43, nombre: "Sigchos" },
-      { id: 44, nombre: "Saquisilí" },
-    ],
-    "El Oro": [
-      { id: 45, nombre: "Machala" },
-      { id: 46, nombre: "Arenillas" },
-      { id: 47, nombre: "Atahualpa" },
-      { id: 48, nombre: "Balsas" },
-      { id: 49, nombre: "Chilla" },
-      { id: 50, nombre: "El Guabo" },
-      { id: 51, nombre: "Huaquillas" },
-      { id: 52, nombre: "Las Lajas" },
-      { id: 53, nombre: "Marcabelí" },
-      { id: 54, nombre: "Pasaje" },
-      { id: 55, nombre: "Piñas" },
-      { id: 56, nombre: "Portovelo" },
-      { id: 57, nombre: "Santa Rosa" },
-      { id: 58, nombre: "Zaruma" },
-    ],
-    Esmeraldas: [
-      { id: 59, nombre: "Esmeraldas" },
-      { id: 60, nombre: "Valdez" },
-      { id: 61, nombre: "Muisne" },
-      { id: 62, nombre: "Rosa Zárate" },
-      { id: 63, nombre: "San Lorenzo" },
-      { id: 64, nombre: "Rioverde" },
-    ],
-    Galápagos: [
-      { id: 65, nombre: "Puerto Baquerizo Moreno" },
-      { id: 66, nombre: "Puerto Ayora" },
-      { id: 67, nombre: "Puerto Villamil" },
-    ],
-    Guayas: [
-      { id: 68, nombre: "Guayaquil" },
-      { id: 69, nombre: "Alfredo Baquerizo Moreno" },
-      { id: 70, nombre: "Balao" },
-      { id: 71, nombre: "Balzar" },
-      { id: 72, nombre: "Colimes" },
-      { id: 73, nombre: "Daule" },
-      { id: 74, nombre: "Durán" },
-      { id: 75, nombre: "El Empalme" },
-      { id: 76, nombre: "El Triunfo" },
-      { id: 77, nombre: "General Antonio Elizalde" },
-      { id: 78, nombre: "Isidro Ayora" },
-      { id: 79, nombre: "Lomas de Sargentillo" },
-      { id: 80, nombre: "Marcelino Maridueña" },
-      { id: 81, nombre: "Milagro" },
-      { id: 82, nombre: "Naranjal" },
-      { id: 83, nombre: "Naranjito" },
-      { id: 84, nombre: "Palestina" },
-      { id: 85, nombre: "Pedro Carbo" },
-      { id: 86, nombre: "Playas" },
-      { id: 87, nombre: "Salitre" },
-      { id: 88, nombre: "Samborondón" },
-      { id: 89, nombre: "Santa Lucía" },
-      { id: 90, nombre: "Simón Bolívar" },
-      { id: 91, nombre: "Yaguachi" },
-    ],
-    Imbabura: [
-      { id: 92, nombre: "Ibarra" },
-      { id: 93, nombre: "Atuntaqui" },
-      { id: 94, nombre: "Cotacachi" },
-      { id: 95, nombre: "Otavalo" },
-      { id: 96, nombre: "Pimampiro" },
-      { id: 97, nombre: "Urcuquí" },
-    ],
-    Loja: [
-      { id: 98, nombre: "Loja" },
-      { id: 99, nombre: "Cariamanga" },
-      { id: 100, nombre: "Catacocha" },
-      { id: 101, nombre: "Catamayo" },
-      { id: 102, nombre: "Celica" },
-      { id: 103, nombre: "Gonzanamá" },
-      { id: 104, nombre: "Macará" },
-      { id: 105, nombre: "Paltas" },
-      { id: 106, nombre: "Pindal" },
-      { id: 107, nombre: "Puyango" },
-      { id: 108, nombre: "Quilanga" },
-      { id: 109, nombre: "Saraguro" },
-      { id: 110, nombre: "Sozoranga" },
-      { id: 111, nombre: "Zapotillo" },
-    ],
-    "Los Ríos": [
-      { id: 112, nombre: "Babahoyo" },
-      { id: 113, nombre: "Baba" },
-      { id: 114, nombre: "Buena Fe" },
-      { id: 115, nombre: "Mocache" },
-      { id: 116, nombre: "Montalvo" },
-      { id: 117, nombre: "Palenque" },
-      { id: 118, nombre: "Pimocha" },
-      { id: 119, nombre: "Quevedo" },
-      { id: 120, nombre: "Quinsaloma" },
-      { id: 121, nombre: "Ventanas" },
-      { id: 122, nombre: "Vinces" },
-    ],
-    Manabí: [
-      { id: 123, nombre: "Portoviejo" },
-      { id: 124, nombre: "Bolívar" },
-      { id: 125, nombre: "Chone" },
-      { id: 126, nombre: "El Carmen" },
-      { id: 127, nombre: "Flavio Alfaro" },
-      { id: 128, nombre: "Jama" },
-      { id: 129, nombre: "Jaramijó" },
-      { id: 130, nombre: "Jipijapa" },
-      { id: 131, nombre: "Junín" },
-      { id: 132, nombre: "Manta" },
-      { id: 133, nombre: "Montecristi" },
-      { id: 134, nombre: "Olmedo" },
-      { id: 135, nombre: "Paján" },
-      { id: 136, nombre: "Pedernales" },
-      { id: 137, nombre: "Pichincha" },
-      { id: 138, nombre: "Puerto López" },
-      { id: 139, nombre: "Rocafuerte" },
-      { id: 140, nombre: "San Vicente" },
-      { id: 141, nombre: "Santa Ana" },
-      { id: 142, nombre: "Sucre" },
-      { id: 143, nombre: "Tosagua" },
-      { id: 144, nombre: "24 de Mayo" },
-    ],
-    "Morona Santiago": [
-      { id: 145, nombre: "Macas" },
-      { id: 146, nombre: "Gualaquiza" },
-      { id: 147, nombre: "Sucúa" },
-      { id: 148, nombre: "Huamboya" },
-      { id: 149, nombre: "San Juan Bosco" },
-      { id: 150, nombre: "Taisha" },
-      { id: 151, nombre: "Logroño" },
-      { id: 152, nombre: "Santiago de Méndez" },
-      { id: 153, nombre: "Tiwintza" },
-      { id: 154, nombre: "Pablo Sexto" },
-    ],
-    Napo: [
-      { id: 155, nombre: "Tena" },
-      { id: 156, nombre: "Archidona" },
-      { id: 157, nombre: "Baeza" },
-      { id: 158, nombre: "Carlos Julio Arosemena Tola" },
-      { id: 159, nombre: "El Chaco" },
-    ],
-    Orellana: [
-      { id: 160, nombre: "Coca" },
-      { id: 161, nombre: "Nuevo Rocafuerte" },
-      { id: 162, nombre: "La Joya de los Sachas" },
-      { id: 163, nombre: "Loreto" },
-      { id: 164, nombre: "Tiputini" },
-    ],
-    Pastaza: [
-      { id: 165, nombre: "Puyo" },
-      { id: 166, nombre: "Arajuno" },
-      { id: 167, nombre: "Mera" },
-      { id: 168, nombre: "Santa Clara" },
-    ],
-    Pichincha: [
-      { id: 169, nombre: "Quito" },
-      { id: 170, nombre: "Cayambe" },
-      { id: 171, nombre: "Machachi" },
-      { id: 172, nombre: "Puerto Quito" },
-      { id: 173, nombre: "Pedro Vicente Maldonado" },
-      { id: 174, nombre: "Sangolquí" },
-      { id: 175, nombre: "Tabacundo" },
-    ],
-    "Santa Elena": [
-      { id: 176, nombre: "Santa Elena" },
-      { id: 177, nombre: "La Libertad" },
-      { id: 178, nombre: "Salinas" },
-    ],
-    "Santo Domingo de los Tsáchilas": [
-      { id: 179, nombre: "Santo Domingo" },
-      { id: 180, nombre: "La Concordia" },
-    ],
-    Sucumbíos: [
-      { id: 181, nombre: "Nueva Loja" },
-      { id: 182, nombre: "Cáscales" },
-      { id: 183, nombre: "Gonzalo Pizarro" },
-      { id: 184, nombre: "Putumayo" },
-      { id: 185, nombre: "Shushufindi" },
-      { id: 186, nombre: "Sucumbíos" },
-      { id: 187, nombre: "Tarapoa" },
-    ],
-    Tungurahua: [
-      { id: 188, nombre: "Ambato" },
-      { id: 189, nombre: "Baños" },
-      { id: 190, nombre: "Cevallos" },
-      { id: 191, nombre: "Mocha" },
-      { id: 192, nombre: "Patate" },
-      { id: 193, nombre: "Pelileo" },
-      { id: 194, nombre: "Píllaro" },
-      { id: 195, nombre: "Quero" },
-      { id: 196, nombre: "Tisaleo" },
-    ],
-    "Zamora Chinchipe": [
-      { id: 197, nombre: "Zamora" },
-      { id: 198, nombre: "Yantzaza" },
-      { id: 199, nombre: "Zumbi" },
-      { id: 200, nombre: "El Pangui" },
-      { id: 201, nombre: "Zapotillo" },
-      { id: 202, nombre: "Palanda" },
-      { id: 203, nombre: "Chinchipe" },
-      { id: 204, nombre: "Nangaritza" },
-    ],
-  },
-  workModes: ["Presencial", "Virtual", "Ambas modalidades"],
-}
+const workModes = ["Presencial", "Virtual", "Ambas modalidades"]
+
 
 interface FormData {
   fullName: string
-  cedula: string // Added cedula field
+  cedula: string
   email: string
   password: string
   confirmPassword: string
   phone: string
   profileImage: File | null
-  profession: string
-  specialty: string
+  profession: string // Stores ID as string
+  specialty: string // Stores ID as string
   description: string
   yearsExperience: number
   rate: number
   workMode: string
-  province: string
-  city: string
+  province: string // Stores ID as string
+  city: string // Stores ID as string
   address: string
   reference: string
   identity: File | null
@@ -451,6 +36,12 @@ interface FormData {
   showEmail: boolean
   tags: string
 }
+
+interface CatalogItem {
+  id: number;
+  nombre: string;
+}
+
 
 interface FormErrors {
   [key: string]: string
@@ -493,7 +84,31 @@ export default function ProfessionalForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
+  // Catalogs State
+  const [professions, setProfessions] = useState<CatalogItem[]>([])
+  const [specialties, setSpecialties] = useState<CatalogItem[]>([])
+  const [provinces, setProvinces] = useState<CatalogItem[]>([])
+  const [cities, setCities] = useState<CatalogItem[]>([])
+
+  // Load initial catalogs
+  useEffect(() => {
+    const loadCatalogs = async () => {
+      try {
+        const [profRes, provRes] = await Promise.all([
+          catalogosApi.obtenerProfesiones(),
+          catalogosApi.obtenerProvincias()
+        ])
+        setProfessions(profRes || [])
+        setProvinces(provRes || [])
+      } catch (error) {
+        console.error("Error loading catalogs:", error)
+      }
+    }
+    loadCatalogs()
+  }, [])
+
   const steps = [
+
     { title: "Datos Personales", description: "Información básica" },
     { title: "Información Profesional", description: "Tu experiencia" },
     { title: "Ubicación", description: "Dónde trabajas" },
@@ -543,14 +158,43 @@ export default function ProfessionalForm() {
     }
   }
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData({ ...formData, [name]: value })
+  const handleSelectChange = async (name: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [name]: value }))
+
     if (name === "profession") {
       setFormData((prev) => ({ ...prev, specialty: "" }))
+      setSpecialties([]) // Clear previous
+      if (value) {
+        try {
+          // Backend returns ALL specialties, filter client-side
+          const res = await catalogosApi.obtenerEspecialidades(Number(value))
+          // Assuming response array has 'profesion_id' based on user SQL
+          const filtered = Array.isArray(res) ? res.filter((s: any) => s.profesion_id === Number(value)) : []
+          setSpecialties(filtered)
+        } catch (error) {
+          console.error("Error loading specialties:", error)
+        }
+      }
     }
+
     if (name === "province") {
       setFormData((prev) => ({ ...prev, city: "" }))
+      setCities([])
+      if (value) {
+        try {
+          // Backend returns ALL cities, filter client-side
+          const res = await catalogosApi.obtenerCiudades(Number(value))
+          // Assuming response array has 'provincia_id' or 'provincia.id'
+          // Standard sequelize include usually nests, but plain ID is often available too.
+          // Let's safe check both or just provincia_id as it is standard FK
+          const filtered = Array.isArray(res) ? res.filter((c: any) => c.provincia_id === Number(value) || (c.provincia && c.provincia.id === Number(value))) : []
+          setCities(filtered)
+        } catch (error) {
+          console.error("Error loading cities:", error)
+        }
+      }
     }
+
     if (errors[name]) {
       setErrors({ ...errors, [name]: "" })
     }
@@ -649,7 +293,7 @@ export default function ProfessionalForm() {
         const registerData = {
           nombre: formData.fullName,
           correo: formData.email,
-          contrasena_hash: formData.password,
+          contrasena: formData.password,
           rol_id: 2, // Always 2 for professionals (handled by backend)
           telefono: formData.phone,
           cedula: formData.cedula,
@@ -659,32 +303,24 @@ export default function ProfessionalForm() {
         const authResponse = await authApi.register(registerData)
         console.log("[v0] User registered successfully:", authResponse)
 
-        // Step 2: Save token
+        // Step 2: Token available for next steps but NOT saved to storage (prevent auto-login)
         if (authResponse.token) {
-          saveToken(authResponse.token)
-          console.log("[v0] Token saved")
+          console.log("[v0] Token received for profile creation")
         }
 
         // Step 3: Create professional profile
-        // Get IDs from the selected values
-        const selectedProfession = mockData.professions.find((p) => p.nombre === formData.profession)
-        const selectedSpecialty = mockData.specialties[formData.profession]?.find(
-          (s) => s.nombre === formData.specialty,
-        )
-        const selectedProvince = mockData.provinces.find((p) => p.nombre === formData.province)
-        const selectedCity = mockData.cities[formData.province]?.find((c) => c.nombre === formData.city)
-
         const perfilData = {
-          profesion_id: selectedProfession?.id || 0,
-          especialidad_id: selectedSpecialty?.id,
-          ciudad_id: selectedCity?.id,
+          profesion_id: Number(formData.profession),
+          especialidad_id: Number(formData.specialty),
+          ciudad_id: Number(formData.city),
           descripcion: formData.description,
-          tarifa_hora: formData.rate || undefined,
+          tarifa_hora: formData.rate || 0,
         }
 
         console.log("[v0] Creating professional profile:", perfilData)
-        const perfilResponse = await profesionalApi.crearPerfil(perfilData, authResponse.token!)
+        const perfilResponse = await profesionalApi.crearPerfil(perfilData, authResponse.token!) // Use token from reponse for safety
         console.log("[v0] Professional profile created:", perfilResponse)
+
 
         // Step 4: Upload documents if provided (optional)
         if (authResponse.token) {
@@ -784,11 +420,11 @@ export default function ProfessionalForm() {
           />
           {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
         </div>
-        <div className="relative">
+        <div className="flex flex-col">
           <label className="block text-sm font-medium text-muted-foreground mb-2">
             Contraseña (mínimo 8 caracteres, mayúscula y minúscula) *
           </label>
-          <div className="relative">
+          <div className="relative mt-auto">
             <input
               type={showPassword ? "text" : "password"}
               name="password"
@@ -806,11 +442,11 @@ export default function ProfessionalForm() {
           </div>
           {errors.password && <p className="text-red-400 text-sm mt-1">{errors.password}</p>}
         </div>
-        <div className="relative">
+        <div className="flex flex-col">
           <label className="block text-sm font-medium text-muted-foreground mb-2">
             Confirmar Contraseña *
           </label>
-          <div className="relative">
+          <div className="relative mt-auto">
             <input
               type={showConfirmPassword ? "text" : "password"}
               name="confirmPassword"
@@ -867,8 +503,8 @@ export default function ProfessionalForm() {
             className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="">Selecciona tu profesión</option>
-            {mockData.professions.map((prof) => (
-              <option key={prof.id} value={prof.nombre}>
+            {professions.map((prof) => (
+              <option key={prof.id} value={prof.id}>
                 {prof.nombre}
               </option>
             ))}
@@ -885,12 +521,11 @@ export default function ProfessionalForm() {
             className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
           >
             <option value="">Selecciona tu especialidad</option>
-            {formData.profession &&
-              mockData.specialties[formData.profession as keyof typeof mockData.specialties]?.map((spec) => (
-                <option key={spec.id} value={spec.nombre}>
-                  {spec.nombre}
-                </option>
-              ))}
+            {specialties.map((spec) => (
+              <option key={spec.id} value={spec.id}>
+                {spec.nombre}
+              </option>
+            ))}
           </select>
           {errors.specialty && <p className="text-red-400 text-sm mt-1">{errors.specialty}</p>}
         </div>
@@ -932,7 +567,7 @@ export default function ProfessionalForm() {
             className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="">Selecciona la modalidad</option>
-            {mockData.workModes.map((mode) => (
+            {workModes.map((mode) => (
               <option key={mode} value={mode}>
                 {mode}
               </option>
@@ -972,8 +607,8 @@ export default function ProfessionalForm() {
             className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="">Selecciona provincia</option>
-            {mockData.provinces.map((prov) => (
-              <option key={prov.id} value={prov.nombre}>
+            {provinces.map((prov) => (
+              <option key={prov.id} value={prov.id}>
                 {prov.nombre}
               </option>
             ))}
@@ -990,12 +625,11 @@ export default function ProfessionalForm() {
             className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
           >
             <option value="">Selecciona ciudad</option>
-            {formData.province &&
-              mockData.cities[formData.province as keyof typeof mockData.cities]?.map((city) => (
-                <option key={city.id} value={city.nombre}>
-                  {city.nombre}
-                </option>
-              ))}
+            {cities.map((city) => (
+              <option key={city.id} value={city.id}>
+                {city.nombre}
+              </option>
+            ))}
           </select>
           {errors.city && <p className="text-red-400 text-sm mt-1">{errors.city}</p>}
         </div>
