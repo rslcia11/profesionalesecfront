@@ -1,0 +1,2790 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Profesionales API",
+    "version": "1.0.0",
+    "description": "Documentación de la API de Profesionales"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api",
+      "description": "Servidor de desarrollo"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/articulos": {
+      "get": {
+        "summary": "Listar artículos publicados (Público)",
+        "tags": [
+          "Articulos"
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de artículos publicados"
+          }
+        }
+      },
+      "post": {
+        "summary": "Crear nuevo artículo (Profesional)",
+        "tags": [
+          "Articulos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "titulo",
+                  "contenido"
+                ],
+                "properties": {
+                  "titulo": {
+                    "type": "string"
+                  },
+                  "contenido": {
+                    "type": "string"
+                  },
+                  "resumen": {
+                    "type": "string"
+                  },
+                  "imagen_url": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Artículo creado"
+          }
+        }
+      }
+    },
+    "/articulos/mios": {
+      "get": {
+        "summary": "Listar mis artículos (Profesional)",
+        "tags": [
+          "Articulos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de mis artículos"
+          }
+        }
+      }
+    },
+    "/articulos/{id}": {
+      "put": {
+        "summary": "Actualizar artículo propio",
+        "tags": [
+          "Articulos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "titulo": {
+                    "type": "string"
+                  },
+                  "contenido": {
+                    "type": "string"
+                  },
+                  "resumen": {
+                    "type": "string"
+                  },
+                  "imagen_url": {
+                    "type": "string"
+                  },
+                  "estado": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Artículo actualizado"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar artículo propio",
+        "tags": [
+          "Articulos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Artículo eliminado"
+          }
+        }
+      }
+    },
+    "/articulos/{id}/moderar": {
+      "put": {
+        "summary": "Moderar artículo (Admin/Moderador)",
+        "tags": [
+          "Articulos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Artículo moderado"
+          }
+        }
+      }
+    },
+    "/articulos/{id}/archivar": {
+      "put": {
+        "summary": "Archivar artículo (Admin/Moderador)",
+        "tags": [
+          "Articulos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Artículo archivado"
+          }
+        }
+      }
+    },
+    "/auditoria": {
+      "post": {
+        "summary": "Registrar evento de auditoría",
+        "tags": [
+          "Auditoria"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "modulo",
+                  "accion",
+                  "descripcion"
+                ],
+                "properties": {
+                  "modulo": {
+                    "type": "string"
+                  },
+                  "accion": {
+                    "type": "string"
+                  },
+                  "descripcion": {
+                    "type": "string"
+                  },
+                  "ip_origen": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Evento registrado"
+          }
+        }
+      },
+      "get": {
+        "summary": "Listar auditorías (Admin)",
+        "tags": [
+          "Auditoria"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de eventos de auditoría"
+          }
+        }
+      }
+    },
+    "/auditoria/usuario/{id}": {
+      "get": {
+        "summary": "Listar auditorías por usuario (Admin)",
+        "tags": [
+          "Auditoria"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de eventos del usuario"
+          }
+        }
+      }
+    },
+    "/auditoria/{id}": {
+      "get": {
+        "summary": "Obtener detalle de auditoría (Admin)",
+        "tags": [
+          "Auditoria"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle del evento"
+          },
+          "404": {
+            "description": "Evento no encontrado"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar evento de auditoría (Admin)",
+        "tags": [
+          "Auditoria"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Evento eliminado"
+          }
+        }
+      }
+    },
+    "/auth/registro": {
+      "post": {
+        "summary": "Registrar un nuevo usuario",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "nombre",
+                  "correo",
+                  "contrasena"
+                ],
+                "properties": {
+                  "nombre": {
+                    "type": "string"
+                  },
+                  "correo": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "contrasena": {
+                    "type": "string",
+                    "format": "password"
+                  },
+                  "rol_id": {
+                    "type": "integer",
+                    "description": "ID del rol (opcional, default 2)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuario registrado exitosamente"
+          },
+          "400": {
+            "description": "Datos faltantes o correo ya registrado"
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Iniciar sesión",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "correo",
+                  "contrasena"
+                ],
+                "properties": {
+                  "correo": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "contrasena": {
+                    "type": "string",
+                    "format": "password"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login exitoso"
+          },
+          "401": {
+            "description": "Credenciales incorrectas"
+          },
+          "403": {
+            "description": "Requiere cambio de contraseña"
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "summary": "Cerrar sesión",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sesión cerrada correctamente"
+          }
+        }
+      }
+    },
+    "/auth/renovar": {
+      "get": {
+        "summary": "Renovar token JWT",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token renovado"
+          }
+        }
+      }
+    },
+    "/auth/cambiar-contrasena": {
+      "post": {
+        "summary": "Cambiar contraseña temporal",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "usuario_id",
+                  "nueva_contrasena"
+                ],
+                "properties": {
+                  "usuario_id": {
+                    "type": "integer"
+                  },
+                  "nueva_contrasena": {
+                    "type": "string",
+                    "format": "password"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Contraseña actualizada"
+          }
+        }
+      }
+    },
+    "/catalogos/profesiones": {
+      "get": {
+        "summary": "Listar todas las profesiones",
+        "tags": [
+          "Catálogos"
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de profesiones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "nombre": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/catalogos/especialidades": {
+      "get": {
+        "summary": "Listar especialidades por profesión",
+        "tags": [
+          "Catálogos"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "profesion_id",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID de la profesión para filtrar"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de especialidades",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "nombre": {
+                        "type": "string"
+                      },
+                      "profesion_id": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/catalogos/provincias": {
+      "get": {
+        "summary": "Listar todas las provincias",
+        "tags": [
+          "Catálogos"
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de provincias",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "nombre": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/catalogos/ciudades": {
+      "get": {
+        "summary": "Listar ciudades por provincia",
+        "tags": [
+          "Catálogos"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "provincia_id",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID de la provincia para filtrar"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de ciudades",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "nombre": {
+                        "type": "string"
+                      },
+                      "provincia_id": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/certificados": {
+      "post": {
+        "summary": "Generar certificado (Admin)",
+        "tags": [
+          "Certificados"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "usuario_id",
+                  "ponencia_id",
+                  "url_pdf"
+                ],
+                "properties": {
+                  "usuario_id": {
+                    "type": "integer"
+                  },
+                  "ponencia_id": {
+                    "type": "integer"
+                  },
+                  "url_pdf": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Certificado generado"
+          }
+        }
+      },
+      "get": {
+        "summary": "Listar todos los certificados (Admin)",
+        "tags": [
+          "Certificados"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de certificados"
+          }
+        }
+      }
+    },
+    "/certificados/mios": {
+      "get": {
+        "summary": "Listar mis certificados (Usuario autenticado)",
+        "tags": [
+          "Certificados"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de mis certificados"
+          }
+        }
+      }
+    },
+    "/certificados/descargar/{codigo}": {
+      "get": {
+        "summary": "Descargar certificado por código",
+        "tags": [
+          "Certificados"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "codigo",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirección al PDF"
+          },
+          "404": {
+            "description": "Certificado no encontrado"
+          }
+        }
+      }
+    },
+    "/chat/sesion": {
+      "post": {
+        "summary": "Crear sesión de chat",
+        "tags": [
+          "Chats"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "direccion_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Sesión creada"
+          }
+        }
+      }
+    },
+    "/chat/mensaje": {
+      "post": {
+        "summary": "Enviar mensaje",
+        "tags": [
+          "Chats"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "chat_sesion_id",
+                  "rol",
+                  "contenido"
+                ],
+                "properties": {
+                  "chat_sesion_id": {
+                    "type": "integer"
+                  },
+                  "rol": {
+                    "type": "string",
+                    "enum": [
+                      "usuario",
+                      "asistente"
+                    ]
+                  },
+                  "contenido": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Mensaje enviado"
+          }
+        }
+      }
+    },
+    "/chat/{id}": {
+      "get": {
+        "summary": "Obtener conversación",
+        "tags": [
+          "Chats"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Historial de mensajes"
+          }
+        }
+      }
+    },
+    "/citas/publico": {
+      "post": {
+        "summary": "Agendar cita pública (sin registro)",
+        "tags": [
+          "Citas"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "profesional_id",
+                  "nombres_completos",
+                  "fecha_cita",
+                  "hora_cita"
+                ],
+                "properties": {
+                  "profesional_id": {
+                    "type": "integer"
+                  },
+                  "nombres_completos": {
+                    "type": "string"
+                  },
+                  "correo": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "telefono": {
+                    "type": "string"
+                  },
+                  "comentario": {
+                    "type": "string"
+                  },
+                  "fecha_cita": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "hora_cita": {
+                    "type": "string",
+                    "format": "time"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Cita registrada"
+          }
+        }
+      }
+    },
+    "/citas": {
+      "post": {
+        "summary": "Agendar cita (Usuario autenticado)",
+        "tags": [
+          "Citas"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "profesional_id",
+                  "fecha_cita",
+                  "hora_cita"
+                ],
+                "properties": {
+                  "profesional_id": {
+                    "type": "integer"
+                  },
+                  "fecha_cita": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "hora_cita": {
+                    "type": "string",
+                    "format": "time"
+                  },
+                  "comentario": {
+                    "type": "string"
+                  },
+                  "nombres_completos": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Cita agendada"
+          }
+        }
+      },
+      "get": {
+        "summary": "Listar citas (según rol)",
+        "tags": [
+          "Citas"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de citas"
+          }
+        }
+      }
+    },
+    "/citas/{id}/estado": {
+      "put": {
+        "summary": "Cambiar estado de la cita",
+        "tags": [
+          "Citas"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "estado_id"
+                ],
+                "properties": {
+                  "estado_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Estado actualizado"
+          }
+        }
+      }
+    },
+    "/citas/{id}/reagendar": {
+      "put": {
+        "summary": "Reagendar cita (Usuario dueño)",
+        "tags": [
+          "Citas"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "fecha_cita",
+                  "hora_cita"
+                ],
+                "properties": {
+                  "fecha_cita": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "hora_cita": {
+                    "type": "string",
+                    "format": "time"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cita reagendada"
+          }
+        }
+      }
+    },
+    "/estadisticas/{tipo}": {
+      "get": {
+        "summary": "Obtener estadísticas por tipo (Admin)",
+        "tags": [
+          "Estadísticas"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tipo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "usuarios",
+                "pagos",
+                "citas",
+                "profesionales"
+              ]
+            },
+            "description": "Tipo de estadística a consultar"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Datos estadísticos recuperados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer"
+                    },
+                    "detalles": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No autorizado"
+          }
+        }
+      }
+    },
+    "/pagos": {
+      "post": {
+        "summary": "Registrar un nuevo pago (Profesional)",
+        "tags": [
+          "Pagos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "plan_id",
+                  "monto",
+                  "metodo"
+                ],
+                "properties": {
+                  "plan_id": {
+                    "type": "integer"
+                  },
+                  "monto": {
+                    "type": "number"
+                  },
+                  "metodo": {
+                    "type": "string"
+                  },
+                  "referencia": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pago registrado"
+          }
+        }
+      },
+      "get": {
+        "summary": "Listar pagos (Admin)",
+        "tags": [
+          "Pagos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de pagos"
+          }
+        }
+      }
+    },
+    "/pagos/{id}/confirmar": {
+      "put": {
+        "summary": "Confirmar un pago (Admin)",
+        "tags": [
+          "Pagos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pago confirmado"
+          },
+          "404": {
+            "description": "Pago no encontrado"
+          }
+        }
+      }
+    },
+    "/planes/listar-planes": {
+      "get": {
+        "summary": "Listar todos los planes (Admin)",
+        "tags": [
+          "Planes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de planes"
+          }
+        }
+      }
+    },
+    "/planes/crear": {
+      "post": {
+        "summary": "Crear un nuevo plan (Admin)",
+        "tags": [
+          "Planes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "nombre",
+                  "precio_base",
+                  "duracion_dias"
+                ],
+                "properties": {
+                  "nombre": {
+                    "type": "string"
+                  },
+                  "descripcion": {
+                    "type": "string"
+                  },
+                  "precio_base": {
+                    "type": "number"
+                  },
+                  "duracion_dias": {
+                    "type": "integer"
+                  },
+                  "tipo": {
+                    "type": "string",
+                    "enum": [
+                      "suscripcion",
+                      "one_time"
+                    ]
+                  },
+                  "activo": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Plan creado"
+          }
+        }
+      }
+    },
+    "/planes/{id}": {
+      "put": {
+        "summary": "Actualizar un plan existente (Admin)",
+        "tags": [
+          "Planes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nombre": {
+                    "type": "string"
+                  },
+                  "descripcion": {
+                    "type": "string"
+                  },
+                  "precio_base": {
+                    "type": "number"
+                  },
+                  "duracion_dias": {
+                    "type": "integer"
+                  },
+                  "tipo": {
+                    "type": "string",
+                    "enum": [
+                      "suscripcion",
+                      "one_time"
+                    ]
+                  },
+                  "activo": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Plan actualizado"
+          },
+          "404": {
+            "description": "Plan no encontrado"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar un plan existente (Admin)",
+        "tags": [
+          "Planes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plan eliminado"
+          },
+          "404": {
+            "description": "Plan no encontrado"
+          }
+        }
+      }
+    },
+    "/planes/{id}/profesionales": {
+      "get": {
+        "summary": "Obtener profesionales que han pagado el plan (Admin)",
+        "description": "Lista de profesionales con al menos un pago en estado \"pagado\" para este plan (muestra el más reciente por profesional).",
+        "tags": [
+          "Planes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID del plan"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de profesionales",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "plan_id": {
+                      "type": "integer"
+                    },
+                    "plan_nombre": {
+                      "type": "string"
+                    },
+                    "total_profesionales": {
+                      "type": "integer"
+                    },
+                    "profesionales": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "usuario_id": {
+                            "type": "integer"
+                          },
+                          "nombre": {
+                            "type": "string"
+                          },
+                          "telefono": {
+                            "type": "string"
+                          },
+                          "foto_url": {
+                            "type": "string"
+                          },
+                          "verificado": {
+                            "type": "boolean"
+                          },
+                          "descripcion": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "profesion_id": {
+                            "type": "integer"
+                          },
+                          "especialidad_id": {
+                            "type": "integer"
+                          },
+                          "ciudad_id": {
+                            "type": "integer"
+                          },
+                          "permitir_reagendar": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Plan no encontrado"
+          },
+          "500": {
+            "description": "Error interno"
+          }
+        }
+      }
+    },
+    "/ponencias": {
+      "get": {
+        "summary": "Listar ponencias publicadas",
+        "tags": [
+          "Ponencias"
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de ponencias"
+          }
+        }
+      },
+      "post": {
+        "summary": "Crear una nueva ponencia (Admin)",
+        "tags": [
+          "Ponencias"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "titulo",
+                  "fecha_inicio",
+                  "fecha_fin",
+                  "precio"
+                ],
+                "properties": {
+                  "titulo": {
+                    "type": "string"
+                  },
+                  "descripcion": {
+                    "type": "string"
+                  },
+                  "fecha_inicio": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "fecha_fin": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "profesion_id": {
+                    "type": "integer"
+                  },
+                  "precio": {
+                    "type": "number"
+                  },
+                  "cupo": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Ponencia creada"
+          }
+        }
+      }
+    },
+    "/ponencias/{id}/publicar": {
+      "put": {
+        "summary": "Publicar una ponencia existente (Admin)",
+        "tags": [
+          "Ponencias"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ponencia publicada"
+          },
+          "404": {
+            "description": "Ponencia no encontrada"
+          }
+        }
+      }
+    },
+    "/ponencias/inscripcion": {
+      "post": {
+        "summary": "Registrar inscripción a una ponencia",
+        "tags": [
+          "Ponencias"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "ponencia_id",
+                  "cedula",
+                  "correo"
+                ],
+                "properties": {
+                  "ponencia_id": {
+                    "type": "integer"
+                  },
+                  "cedula": {
+                    "type": "string"
+                  },
+                  "correo": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "celular": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Inscripción registrada"
+          }
+        }
+      }
+    },
+    "/ponencias/{id}/asistencia": {
+      "post": {
+        "summary": "Registrar asistencia",
+        "tags": [
+          "Ponencias"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "inscripcion_id"
+                ],
+                "properties": {
+                  "inscripcion_id": {
+                    "type": "integer"
+                  },
+                  "metodo_verificacion": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Asistencia registrada"
+          }
+        }
+      }
+    },
+    "/ponencias/certificado": {
+      "post": {
+        "summary": "Generar certificado (Usuario autenticado)",
+        "tags": [
+          "Ponencias"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "ponencia_id",
+                  "url_pdf"
+                ],
+                "properties": {
+                  "ponencia_id": {
+                    "type": "integer"
+                  },
+                  "url_pdf": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Certificado generado"
+          }
+        }
+      }
+    },
+    "/ponencias/todas": {
+      "get": {
+        "summary": "Listar todas las ponencias (Roles 3, 4, 5)",
+        "tags": [
+          "Ponencias"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista completa de ponencias"
+          }
+        }
+      }
+    },
+    "/ponencias/{id}": {
+      "put": {
+        "summary": "Actualizar ponencia (Roles 3, 4, 5)",
+        "tags": [
+          "Ponencias"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ponencia actualizada"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar ponencia (Roles 3, 4, 5)",
+        "tags": [
+          "Ponencias"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ponencia eliminada"
+          }
+        }
+      }
+    },
+    "/ponentes/asignar": {
+      "post": {
+        "summary": "Asignar ponente a una ponencia (Admin)",
+        "tags": [
+          "Ponentes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "ponencia_id",
+                  "usuario_id"
+                ],
+                "properties": {
+                  "ponencia_id": {
+                    "type": "integer"
+                  },
+                  "usuario_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Ponente asignado"
+          }
+        }
+      }
+    },
+    "/ponentes/{id}": {
+      "delete": {
+        "summary": "Eliminar ponente de una ponencia (Admin)",
+        "tags": [
+          "Ponentes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ponente eliminado"
+          }
+        }
+      }
+    },
+    "/ponentes": {
+      "get": {
+        "summary": "Listar ponentes asignados (Admin)",
+        "tags": [
+          "Ponentes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de ponentes"
+          }
+        }
+      }
+    },
+    "/ponentes/mis-ponencias": {
+      "get": {
+        "summary": "Listar mis ponencias (Ponente)",
+        "tags": [
+          "Ponentes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de mis ponencias"
+          }
+        }
+      }
+    },
+    "/profesionales/buscar": {
+      "get": {
+        "summary": "Buscar profesionales con filtros avanzados",
+        "tags": [
+          "Profesionales"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "profesion_id",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "especialidad_id",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ciudad_id",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "nombre",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "verificado",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "true = solo profesionales verificados"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista filtrada de profesionales"
+          }
+        }
+      }
+    },
+    "/profesionales": {
+      "get": {
+        "summary": "Listar todos los profesionales (solo admin)",
+        "tags": [
+          "Profesionales"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de perfiles profesionales"
+          }
+        }
+      }
+    },
+    "/profesionales/perfil": {
+      "get": {
+        "summary": "Obtener mi perfil profesional",
+        "tags": [
+          "Profesionales"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Perfil completo del usuario autenticado (incluye foto_url y teléfono)"
+          }
+        }
+      }
+    },
+    "/profesionales/crear-perfil": {
+      "post": {
+        "summary": "Crear perfil profesional",
+        "tags": [
+          "Profesionales"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "profesion_id": {
+                    "type": "integer"
+                  },
+                  "especialidad_id": {
+                    "type": "integer"
+                  },
+                  "ciudad_id": {
+                    "type": "integer"
+                  },
+                  "descripcion": {
+                    "type": "string"
+                  },
+                  "telefono": {
+                    "type": "string",
+                    "description": "Se guarda en la tabla usuarios"
+                  },
+                  "foto_url": {
+                    "type": "string",
+                    "description": "Se guarda en la tabla usuarios"
+                  },
+                  "latitud": {
+                    "type": "number"
+                  },
+                  "longitud": {
+                    "type": "number"
+                  },
+                  "calle_principal": {
+                    "type": "string"
+                  },
+                  "referencia": {
+                    "type": "string"
+                  },
+                  "permitir_reagendar": {
+                    "type": "boolean"
+                  },
+                  "tarifa": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Perfil creado exitosamente"
+          }
+        }
+      }
+    },
+    "/profesionales/actualizar-perfil": {
+      "put": {
+        "summary": "Actualizar perfil profesional",
+        "tags": [
+          "Profesionales"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "profesion_id": {
+                    "type": "integer"
+                  },
+                  "especialidad_id": {
+                    "type": "integer"
+                  },
+                  "provincia_id": {
+                    "type": "integer"
+                  },
+                  "ciudad_id": {
+                    "type": "integer"
+                  },
+                  "descripcion": {
+                    "type": "string"
+                  },
+                  "telefono": {
+                    "type": "string",
+                    "description": "Actualiza el teléfono en la tabla usuarios"
+                  },
+                  "foto_url": {
+                    "type": "string",
+                    "description": "Actualiza la foto en la tabla usuarios"
+                  },
+                  "latitud": {
+                    "type": "number"
+                  },
+                  "longitud": {
+                    "type": "number"
+                  },
+                  "calle_principal": {
+                    "type": "string"
+                  },
+                  "referencia": {
+                    "type": "string"
+                  },
+                  "permitir_reagendar": {
+                    "type": "boolean"
+                  },
+                  "tarifa": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Perfil actualizado exitosamente (retorna el perfil completo actualizado)"
+          }
+        }
+      }
+    },
+    "/profesionales/documentos": {
+      "post": {
+        "summary": "Subir documento profesional",
+        "tags": [
+          "Profesionales"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "archivo": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "tipo": {
+                    "type": "string",
+                    "description": "Ejemplo \"cedula\", \"titulo\", \"certificado\""
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Documento subido correctamente"
+          }
+        }
+      }
+    },
+    "/profesionales/ubicacion": {
+      "get": {
+        "summary": "Obtener ubicación principal del usuario autenticado",
+        "tags": [
+          "Profesionales"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Crear o actualizar ubicación principal",
+        "tags": [
+          "Profesionales"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "latitud",
+                  "longitud"
+                ],
+                "properties": {
+                  "latitud": {
+                    "type": "number"
+                  },
+                  "longitud": {
+                    "type": "number"
+                  },
+                  "calle_principal": {
+                    "type": "string"
+                  },
+                  "referencia": {
+                    "type": "string"
+                  },
+                  "ciudad_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/profesionales/cercanos": {
+      "get": {
+        "summary": "Buscar profesionales cercanos",
+        "tags": [
+          "Profesionales"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "lat",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "lng",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "radio",
+            "schema": {
+              "type": "number",
+              "default": 10
+            }
+          }
+        ]
+      }
+    },
+    "/profesionales/estado-perfil/{id}": {
+      "put": {
+        "summary": "Cambiar estado del perfil (solo admin)",
+        "tags": [
+          "Profesionales"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "estado"
+                ],
+                "properties": {
+                  "estado": {
+                    "type": "string",
+                    "enum": [
+                      "borrador",
+                      "pendiente",
+                      "aprobado",
+                      "rechazado",
+                      1,
+                      2,
+                      3,
+                      4
+                    ],
+                    "description": "Acepta número o nombre del estado"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/publicidades/crear": {
+      "post": {
+        "summary": "Crear publicidad (Profesional/Admin)",
+        "tags": [
+          "Publicidad"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "usuario_id",
+                  "ubicacion_slug",
+                  "tipo",
+                  "titulo",
+                  "fecha_inicio",
+                  "fecha_fin"
+                ],
+                "properties": {
+                  "usuario_id": {
+                    "type": "integer"
+                  },
+                  "ubicacion_slug": {
+                    "type": "string"
+                  },
+                  "tipo": {
+                    "type": "string"
+                  },
+                  "titulo": {
+                    "type": "string"
+                  },
+                  "contenido": {
+                    "type": "string"
+                  },
+                  "url_destino": {
+                    "type": "string"
+                  },
+                  "fecha_inicio": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "fecha_fin": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "archivo": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Publicidad creada"
+          }
+        }
+      }
+    },
+    "/publicidades/{id}/aprobar": {
+      "put": {
+        "summary": "Aprobar publicidad (Admin)",
+        "tags": [
+          "Publicidad"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Publicidad aprobada"
+          }
+        }
+      }
+    },
+    "/publicidades/listar": {
+      "get": {
+        "summary": "Listar publicidades",
+        "tags": [
+          "Publicidad"
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de publicidades"
+          }
+        }
+      }
+    },
+    "/usuarios/perfil": {
+      "get": {
+        "summary": "Obtener perfil del usuario autenticado",
+        "tags": [
+          "Usuarios"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Perfil del usuario"
+          },
+          "404": {
+            "description": "Usuario no encontrado"
+          }
+        }
+      },
+      "put": {
+        "summary": "Actualizar perfil del usuario autenticado",
+        "tags": [
+          "Usuarios"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nombre": {
+                    "type": "string"
+                  },
+                  "telefono": {
+                    "type": "string"
+                  },
+                  "foto_url": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Perfil actualizado"
+          }
+        }
+      }
+    },
+    "/usuarios": {
+      "get": {
+        "summary": "Listar todos los usuarios (Admin)",
+        "tags": [
+          "Usuarios"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de usuarios"
+          },
+          "403": {
+            "description": "No autorizado"
+          }
+        }
+      },
+      "post": {
+        "summary": "Crear un nuevo usuario (Admin)",
+        "tags": [
+          "Usuarios"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "nombre",
+                  "correo",
+                  "contrasena"
+                ],
+                "properties": {
+                  "nombre": {
+                    "type": "string"
+                  },
+                  "correo": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "contrasena": {
+                    "type": "string",
+                    "format": "password"
+                  },
+                  "rol_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuario creado"
+          }
+        }
+      }
+    },
+    "/usuarios/profesional": {
+      "post": {
+        "summary": "Crear credenciales para un profesional (Admin)",
+        "tags": [
+          "Usuarios"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "nombre",
+                  "correo",
+                  "contrasena"
+                ],
+                "properties": {
+                  "nombre": {
+                    "type": "string"
+                  },
+                  "correo": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "contrasena": {
+                    "type": "string",
+                    "format": "password"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Profesional creado"
+          }
+        }
+      }
+    },
+    "/usuarios/crear-profesional": {
+      "post": {
+        "summary": "Crear credenciales para un profesional (Alias)",
+        "tags": [
+          "Usuarios"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "nombre",
+                  "correo",
+                  "contrasena"
+                ],
+                "properties": {
+                  "nombre": {
+                    "type": "string"
+                  },
+                  "correo": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "contrasena": {
+                    "type": "string",
+                    "format": "password"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Profesional creado"
+          }
+        }
+      }
+    },
+    "/usuarios/{id}": {
+      "delete": {
+        "summary": "Eliminar usuario (Admin)",
+        "tags": [
+          "Usuarios"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usuario eliminado"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Articulos",
+      "description": "Gestión de artículos y blog"
+    },
+    {
+      "name": "Auditoria",
+      "description": "Registro y consulta de auditoría"
+    },
+    {
+      "name": "Auth",
+      "description": "Autenticación y gestión de usuarios"
+    },
+    {
+      "name": "Catálogos",
+      "description": "Consultas públicas de catálogos"
+    },
+    {
+      "name": "Certificados",
+      "description": "Gestión de certificados"
+    },
+    {
+      "name": "Chats",
+      "description": "Chatbot y sesiones de mensajería"
+    },
+    {
+      "name": "Citas",
+      "description": "Gestión de citas médicas"
+    },
+    {
+      "name": "Estadísticas",
+      "description": "Consultas de estadísticas del sistema"
+    },
+    {
+      "name": "Pagos",
+      "description": "Gestión de pagos y planes"
+    },
+    {
+      "name": "Planes",
+      "description": "Gestión de planes de suscripción y consulta de profesionales asociados"
+    },
+    {
+      "name": "Ponencias",
+      "description": "Gestión de ponencias, inscripciones y certificados"
+    },
+    {
+      "name": "Ponentes",
+      "description": "Gestión de ponentes"
+    },
+    {
+      "name": "Profesionales",
+      "description": "Gestión de perfiles profesionales y búsqueda pública"
+    },
+    {
+      "name": "Publicidad",
+      "description": "Gestión de publicidad"
+    },
+    {
+      "name": "Usuarios",
+      "description": "Gestión de usuarios y perfiles"
+    }
+  ]
+}

@@ -109,30 +109,41 @@ export default function AdminDashboard() {
         setPonencias(stats.ponencias)
 
         // Map backend data to frontend structure
-        const mappedProfiles = stats.profesionales.map((p: any) => ({
-          id: p.usuario_id, // Important: using user ID as main ID? or profile ID? Using user_id for actions likely.
-          verificado: p.verificado,
-          estado: p.estado_id === 1 ? "rechazado" : p.estado_id === 2 ? "pendiente" : "aprobado",
-          nombre: p.usuario?.nombre || "Sin nombre",
-          correo: p.usuario?.correo || "",
-          telefono: p.usuario?.telefono || "No disponible (API)",
-          cedula: p.usuario?.cedula || "No disponible (API)",
-          profesion: p.profesion ? p.profesion.nombre : "Sin profesión",
-          especialidad: p.especialidad ? p.especialidad.nombre : "Sin especialidad",
-          ciudad: p.ciudad ? p.ciudad.nombre : "",
-          provincia: p.ciudad?.provincia ? p.ciudad.provincia.nombre : "",
-          tarifa: p.tarifa_hora ? `$${p.tarifa_hora}` : "No definida",
-          fecha_registro: p.usuario?.creado_en || new Date().toISOString(),
-          descripcion: p.descripcion || "Sin descripción",
-          documentos: p.documentos || [],
-          foto_url: p.usuario?.foto_url || null,
-          direccion_texto: p.direccion ? `${p.direccion.calle_principal} ${p.direccion.referencia ? `(${p.direccion.referencia})` : ""}` : "No registrada",
-          link_maps: p.direccion?.link_maps || null,
-          // Keep original structure for compatibility if needed
-          perfil_estado: {
-            estado: p.estado_id === 1 ? "rechazado" : p.estado_id === 2 ? "pendiente" : "aprobado",
-          },
-        }))
+        const mappedProfiles = stats.profesionales.map((p: any) => {
+          // Backend states: 1=borrador, 2=pendiente, 3=aprobado, 4=rechazado
+          const getEstado = (estado_id: number) => {
+            switch (estado_id) {
+              case 1: return "borrador";
+              case 2: return "pendiente";
+              case 3: return "aprobado";
+              case 4: return "rechazado";
+              default: return "pendiente";
+            }
+          };
+          const estado = getEstado(p.estado_id);
+
+          return {
+            id: p.usuario_id,
+            verificado: p.verificado,
+            estado,
+            nombre: p.usuario?.nombre || "Sin nombre",
+            correo: p.usuario?.correo || "",
+            telefono: p.usuario?.telefono || "No disponible (API)",
+            cedula: p.usuario?.cedula || "No disponible (API)",
+            profesion: p.profesion ? p.profesion.nombre : "Sin profesión",
+            especialidad: p.especialidad ? p.especialidad.nombre : "Sin especialidad",
+            ciudad: p.ciudad ? p.ciudad.nombre : "",
+            provincia: p.ciudad?.provincia ? p.ciudad.provincia.nombre : "",
+            tarifa: p.tarifa_hora ? `$${p.tarifa_hora}` : "No definida",
+            fecha_registro: p.usuario?.creado_en || new Date().toISOString(),
+            descripcion: p.descripcion || "Sin descripción",
+            documentos: p.documentos || [],
+            foto_url: p.usuario?.foto_url || null,
+            direccion_texto: p.direccion ? `${p.direccion.calle_principal} ${p.direccion.referencia ? `(${p.direccion.referencia})` : ""}` : "No registrada",
+            link_maps: p.direccion?.link_maps || null,
+            perfil_estado: { estado },
+          };
+        })
         setPerfilesPendientes(mappedProfiles)
 
         setPlanes(stats.planes)

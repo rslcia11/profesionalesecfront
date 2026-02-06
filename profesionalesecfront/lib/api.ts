@@ -447,11 +447,8 @@ export const pagosApi = {
 // Planes API (Admin mostly)
 export const planesApi = {
   async listar(token?: string) {
-    // Public or Admin? Swagger says Admin for /planes, but usually plans are public. 
-    // Swagger says "/planes Get: Listar todos los planes (Admin)"
-    // Let's assume auth is needed if swagger says so, or maybe optional.
     const headers = token ? authHeader(token) : {};
-    return fetchApi("/planes", { headers });
+    return fetchApi("/planes/listar-planes", { headers });
   },
   async crear(data: Partial<Plan>, token: string) {
     return fetchApi("/planes/crear", { method: "POST", headers: authHeader(token), body: JSON.stringify(data) });
@@ -551,10 +548,15 @@ export const adminApi = {
       planesApi.listar(token)
     ]);
 
+    // Extract arrays from API responses (APIs return { ponencias: [...] }, { planes: [...] }, etc.)
+    const ponenciasData = ponenciasRes.status === 'fulfilled' ? ponenciasRes.value : {};
+    const profesionalesData = profesionalesRes.status === 'fulfilled' ? profesionalesRes.value : [];
+    const planesData = planesRes.status === 'fulfilled' ? planesRes.value : {};
+
     return {
-      ponencias: ponenciasRes.status === 'fulfilled' ? ponenciasRes.value : [],
-      profesionales: profesionalesRes.status === 'fulfilled' ? profesionalesRes.value : [],
-      planes: planesRes.status === 'fulfilled' ? planesRes.value : []
+      ponencias: Array.isArray(ponenciasData) ? ponenciasData : (ponenciasData.ponencias || []),
+      profesionales: Array.isArray(profesionalesData) ? profesionalesData : [],
+      planes: Array.isArray(planesData) ? planesData : (planesData.planes || [])
     }
   },
 
@@ -582,22 +584,22 @@ export const adminApi = {
 
   // Profiles Management
   async getAllProfiles(token: string) {
-    return fetchApi("/profesionales/buscar", { headers: authHeader(token) });
+    return fetchApi("/profesionales", { headers: authHeader(token) });
   },
 
   async approveProfile(id: number, token: string) {
-    return fetchApi(`/profesionales/${id}/estado`, {
+    return fetchApi(`/profesionales/estado-perfil/${id}`, {
       method: "PUT",
       headers: authHeader(token),
-      body: JSON.stringify({ estado_id: 3, verificado: true })
+      body: JSON.stringify({ estado: "aprobado" })
     });
   },
 
   async rejectProfile(id: number, token: string) {
-    return fetchApi(`/profesionales/${id}/estado`, {
+    return fetchApi(`/profesionales/estado-perfil/${id}`, {
       method: "PUT",
       headers: authHeader(token),
-      body: JSON.stringify({ estado_id: 1, verificado: false })
+      body: JSON.stringify({ estado: "rechazado" })
     });
   },
 
@@ -607,18 +609,21 @@ export const adminApi = {
   },
 
   async updatePonencia(id: number, data: any, token: string) {
-    // Backend only supports publishing via specific endpoint
     if (data.estado === 'publicada') {
       return this.publishPonencia(id, token);
     }
-    // For other updates, we cannot persist them. We'll return the data as if updated 
-    // to allow UI to reflect changes temporarily, but warn user.
-    console.warn("Backend does not support full updates, only publishing.");
-    return { ...data, id };
+    return fetchApi(`/ponencias/${id}`, {
+      method: "PUT",
+      headers: authHeader(token),
+      body: JSON.stringify(data)
+    });
   },
 
   async deletePonencia(id: number, token: string) {
-    throw new Error("La eliminación de ponencias no está disponible en el servidor actual.");
+    return fetchApi(`/ponencias/${id}`, {
+      method: "DELETE",
+      headers: authHeader(token)
+    });
   },
 
   async publishPonencia(id: number, token: string) {
@@ -639,7 +644,10 @@ export const adminApi = {
   },
 
   async deletePlan(id: number, token: string) {
-    throw new Error("La eliminación de planes no está disponible en el servidor actual.");
+    return fetchApi(`/planes/${id}`, {
+      method: "DELETE",
+      headers: authHeader(token)
+    });
   }
 }
 
