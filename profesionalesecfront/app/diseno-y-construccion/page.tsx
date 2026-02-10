@@ -3,7 +3,7 @@
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import ProfessionalHeroCarousel from "@/components/shared/professional-hero-carousel"
-import FeaturedProfessional from "@/components/shared/featured-professional"
+import ProfessionalsCategoryList from "@/components/shared/professionals-category-list"
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
 import { Building2, Home, Mountain, Hammer, Ruler, PenTool } from "lucide-react"
@@ -141,7 +141,11 @@ export default function DisenoYConstruccionPage() {
         basePath="/diseno-y-construccion"
       />
 
-      <FeaturedProfessional professional={featuredProfessional} categorySlug="diseno-y-construccion" />
+      <ProfessionalsCategoryList
+        professionIds={[4, 8]}
+        title="Arquitectos y Constructores"
+        description="Diseña y construye tus sueños con expertos verificados"
+      />
 
       <BlogSection posts={blogPosts} />
 

@@ -156,6 +156,8 @@ export default function BookingModal({ isOpen, onClose, professional }: BookingM
                                     onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
                                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     placeholder="0991234567"
+                                    maxLength={10}
+                                    pattern="[0-9]{10}"
                                 />
                             </div>
                         </div>
@@ -216,8 +218,8 @@ export default function BookingModal({ isOpen, onClose, professional }: BookingM
                             type="submit"
                             disabled={loading}
                             className={`w-full py-3 rounded-xl font-semibold transition-all ${loading
-                                    ? "bg-gray-300 cursor-not-allowed"
-                                    : "bg-blue-600 text-white hover:bg-blue-700"
+                                ? "bg-gray-300 cursor-not-allowed"
+                                : "bg-blue-600 text-white hover:bg-blue-700"
                                 }`}
                         >
                             {loading ? "Agendando..." : "Confirmar Cita"}

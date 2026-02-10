@@ -2,7 +2,7 @@
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import ProfessionalHeroCarousel from "@/components/shared/professional-hero-carousel"
-import FeaturedProfessional from "@/components/shared/featured-professional"
+import ProfessionalsCategoryList from "@/components/shared/professionals-category-list"
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
 import { Sprout, Beef, Factory, TrendingUp, UtensilsCrossed } from "lucide-react"
@@ -136,7 +136,11 @@ export default function AgrariaPage() {
           categories={serviceCategories}
           basePath="/agraria"
         />
-        <FeaturedProfessional professional={featuredProfessional} categorySlug="agraria" />
+        <ProfessionalsCategoryList
+          professionIds={[]}
+          title="Ingenieros Agrónomos y Veterinarios"
+          description="Especialistas verificados para el sector agropecuario"
+        />
         <BlogSection posts={blogPosts} />
       </main>
       <Footer />

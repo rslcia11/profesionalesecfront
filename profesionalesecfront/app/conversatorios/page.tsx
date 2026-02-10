@@ -1,13 +1,47 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { Calendar, MapPin, Users, Award, MessageSquare, DollarSign, ArrowRight, BookOpen } from "lucide-react"
 import Link from "next/link"
+import { ponenciasApi } from "@/lib/api"
 
 export default function ConversatoriosPage() {
   const [selectedRole, setSelectedRole] = useState<"ponente" | "asistente" | "patrocinador" | null>(null)
+  const [proximos, setProximos] = useState<any[]>([])
+  const [realizados, setRealizados] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await ponenciasApi.listar()
+        if (data && data.ponencias) {
+          const now = new Date()
+          const prox = []
+          const real = []
+
+          data.ponencias.forEach((p: any) => {
+            const fechaInicio = new Date(p.fecha_inicio)
+            if (fechaInicio >= now) {
+              prox.push(p)
+            } else {
+              real.push(p)
+            }
+          })
+
+          setProximos(prox)
+          setRealizados(real)
+        }
+      } catch (error) {
+        console.error("Error loading ponencias:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [])
 
   return (
     <main className="min-h-screen bg-white">
@@ -77,37 +111,52 @@ export default function ConversatoriosPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Próximos Conversatorios</h2>
-            <p className="text-gray-600 text-lg">Próximamente Junio 2025</p>
+            <p className="text-gray-600 text-lg">Inscríbete y participa</p>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-2xl p-8 md:p-12 hover:shadow-xl transition-all duration-300">
-            <div className="flex items-start gap-4 mb-6">
-              <div className="bg-emerald-100 p-4 rounded-xl">
-                <Calendar className="w-8 h-8 text-emerald-600" />
-              </div>
-              <div>
-                <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-                  Segundo Conversatorio Nacional Multidisciplinario de P.ec
-                </h3>
-                <p className="text-lg text-emerald-600 font-medium">
-                  Innovación, Conocimiento y Futuro: Desafíos y Oportunidades en el Mundo Profesional
-                </p>
-              </div>
-            </div>
+          {loading ? (
+            <div className="text-center py-12">Checking events...</div>
+          ) : proximos.length > 0 ? (
+            <div className="grid gap-8">
+              {proximos.map((evento) => (
+                <div key={evento.id} className="bg-white border border-gray-200 rounded-2xl p-8 md:p-12 hover:shadow-xl transition-all duration-300">
+                  <div className="flex items-start gap-4 mb-6">
+                    <div className="bg-emerald-100 p-4 rounded-xl">
+                      <Calendar className="w-8 h-8 text-emerald-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+                        {evento.titulo}
+                      </h3>
+                      <p className="text-lg text-emerald-600 font-medium">
+                        {new Date(evento.fecha_inicio).toLocaleDateString()}
+                      </p>
+                      <p className="text-gray-600 mt-2">
+                        {evento.descripcion}
+                      </p>
+                    </div>
+                  </div>
 
-            <div className="flex items-center gap-2 text-gray-600 mb-6">
-              <MapPin className="w-5 h-5" />
-              <span>Lugar: Por Confirmarse</span>
-            </div>
+                  <div className="flex items-center gap-2 text-gray-600 mb-6">
+                    <MapPin className="w-5 h-5" />
+                    <span>Lugar: Por Confirmarse</span>
+                  </div>
 
-            <Link
-              href="/preparando-conversatorio"
-              className="inline-flex items-center gap-2 bg-emerald-500 text-white px-6 py-3 rounded-full font-medium hover:bg-emerald-600 transition-all duration-300 hover:scale-105 active:scale-95"
-            >
-              Más Información del Evento
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-          </div>
+                  <Link
+                    href={`/conversatorios/${evento.id}`}
+                    className="inline-flex items-center gap-2 bg-emerald-500 text-white px-6 py-3 rounded-full font-medium hover:bg-emerald-600 transition-all duration-300 hover:scale-105 active:scale-95"
+                  >
+                    Más Información del Evento
+                    <ArrowRight className="w-5 h-5" />
+                  </Link>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-gray-50 rounded-2xl">
+              <p className="text-gray-500">No hay próximos eventos programados por el momento.</p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -116,37 +165,48 @@ export default function ConversatoriosPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Conversatorios Realizados</h2>
-            <p className="text-gray-600 text-lg">19, 20 y 21 de Marzo de 2025</p>
+            <p className="text-gray-600 text-lg">Eventos anteriores</p>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-2xl p-8 md:p-12 hover:shadow-xl transition-all duration-300">
-            <div className="flex items-start gap-4 mb-6">
-              <div className="bg-emerald-100 p-4 rounded-xl">
-                <Award className="w-8 h-8 text-emerald-600" />
-              </div>
-              <div>
-                <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-                  Primer Conversatorio Nacional Multidisciplinario de P.ec
-                </h3>
-                <p className="text-lg text-gray-700 mb-4">
-                  Innovación, Derecho y Aprendizaje Colaborativo, avalado por el Colegio de Abogado de Loja y sus
-                  avales.
-                </p>
-                <div className="flex items-center gap-2 text-gray-600">
-                  <MapPin className="w-5 h-5" />
-                  <span>Auditorio Manuel Carrión Pinzano, Judicatura de Loja</span>
+          {loading ? (
+            <div className="text-center py-12">Loading...</div>
+          ) : realizados.length > 0 ? (
+            <div className="grid gap-8">
+              {realizados.map((evento) => (
+                <div key={evento.id} className="bg-white border border-gray-200 rounded-2xl p-8 md:p-12 hover:shadow-xl transition-all duration-300">
+                  <div className="flex items-start gap-4 mb-6">
+                    <div className="bg-emerald-100 p-4 rounded-xl">
+                      <Award className="w-8 h-8 text-emerald-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+                        {evento.titulo}
+                      </h3>
+                      <p className="text-lg text-gray-700 mb-4">
+                        {evento.descripcion}
+                      </p>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <MapPin className="w-5 h-5" />
+                        <span>Lugar: Por Confirmarse</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Link
+                    href={`/conversatorios/${evento.id}`}
+                    className="inline-flex items-center gap-2 bg-gray-100 text-gray-900 px-6 py-3 rounded-full font-medium hover:bg-gray-200 transition-all duration-300 border border-gray-300"
+                  >
+                    Ver detalle
+                    <ArrowRight className="w-5 h-5" />
+                  </Link>
                 </div>
-              </div>
+              ))}
             </div>
-
-            <Link
-              href="/educacion/1er-cnmp"
-              className="inline-flex items-center gap-2 bg-gray-100 text-gray-900 px-6 py-3 rounded-full font-medium hover:bg-gray-200 transition-all duration-300 border border-gray-300"
-            >
-              Ver evento gratis
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-          </div>
+          ) : (
+            <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
+              <p className="text-gray-500">No hay eventos pasados registrados.</p>
+            </div>
+          )}
         </div>
       </section>
 

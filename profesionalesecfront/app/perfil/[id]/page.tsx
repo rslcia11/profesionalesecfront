@@ -1,0 +1,191 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { profesionalApi } from "@/lib/api"
+import { MapPin, Phone, Mail, Facebook, Instagram, Twitter } from "lucide-react"
+import Link from "next/link"
+import { useParams } from "next/navigation"
+import Header from "@/components/header"
+import Footer from "@/components/footer"
+import BookingForm from "@/components/booking-form"
+
+export default function ProfessionalProfile() {
+    const params = useParams()
+    const [professional, setProfessional] = useState<any>(null)
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            if (!params.id) return
+            try {
+                setLoading(true)
+                const allData = await profesionalApi.obtenerVerificados()
+                if (Array.isArray(allData)) {
+                    const found = allData.find((p: any) => p.usuario_id.toString() === params.id)
+                    setProfessional(found || null)
+                }
+            } catch (error) {
+                console.error("Error fetching profile:", error)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchProfile()
+    }, [params.id])
+
+    // Loading State
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-white flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+            </div>
+        )
+    }
+
+    // Not Found State
+    if (!professional) {
+        return (
+            <div className="min-h-screen bg-white font-sans flex flex-col">
+                <Header />
+                <div className="flex-1 flex flex-col items-center justify-center p-4">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-4">Profesional no encontrado</h2>
+                    <Link href="/profesionales" className="text-black underline">Volver al directorio</Link>
+                </div>
+                <Footer />
+            </div>
+        )
+    }
+
+    // Data Mapping
+    const { usuario, profesion, especialidad, descripcion, tarifa, ciudad } = professional
+    const name = usuario?.nombre || "Profesional"
+    const title = profesion?.nombre || "Profesional"
+    const subTitle = especialidad?.nombre ? `${title} Especializada en ${especialidad.nombre}` : title
+    const specialty = especialidad?.nombre || ""
+    const bio = descripcion || "Profesional verificado con amplia experiencia en su campo."
+    const image = usuario?.foto_url || "/placeholder.svg"
+    const price = tarifa ? `$${tarifa}` : "A convenir"
+    const locationName = ciudad?.nombre || "Ecuador"
+    const phone = usuario?.telefono || ""
+    const email = usuario?.correo || ""
+    const whatsappLink = `https://wa.me/593${phone.replace(/^0/, "")}?text=Hola, deseo agendar una cita.`
+
+
+
+    return (
+        <div className="min-h-screen bg-white font-sans flex flex-col">
+            <Header />
+
+            {/* SPACER for Fixed Header (Adjusted for h-16 header + top bar) */}
+            <div className="h-24 md:h-28 bg-black"></div>
+
+            {/* NAME BAR (Black Background) */}
+            <div className="bg-black text-white py-8 text-center">
+                <h1 className="text-3xl md:text-5xl font-bold">{name}</h1>
+            </div>
+
+            {/* MAIN CONTENT CONTAINER */}
+            <div className="w-full max-w-7xl mx-auto px-4 md:px-8 py-12">
+
+                {/* TOP SECTION: Photo & Branding/Info */}
+                <div className="flex flex-col md:flex-row gap-12 mb-16 items-center md:items-start">
+
+                    {/* LEFT: Photo (Circle) - Centered visually in this column */}
+                    <div className="w-full md:w-1/2 flex justify-center md:justify-end pr-0 md:pr-12">
+                        <div className="w-64 h-64 md:w-[450px] md:h-[450px] rounded-full overflow-hidden shadow-2xl border-[10px] border-white -mt-4 bg-gray-200">
+                            <img src={image} alt={name} className="w-full h-full object-cover" />
+                        </div>
+                    </div>
+
+                    {/* RIGHT: Info & Branding */}
+                    <div className="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-left pt-4">
+                        {/* P.ec Logo Block */}
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="text-6xl font-serif font-black tracking-tighter leading-none">P<span className="text-3xl">.ec</span></div>
+                            <div className="text-sm uppercase tracking-widest text-gray-800 border-l-2 border-black pl-3 py-1 text-left leading-tight">
+                                Directorio<br />digital de<br />profesionales
+                            </div>
+                        </div>
+
+                        {/* Name & Subtitle */}
+                        <h2 className="text-3xl font-bold text-gray-900 mb-2">{name}</h2>
+                        <p className="text-gray-500 text-lg mb-6 max-w-md">{subTitle}</p>
+
+                        {/* Social Icons */}
+                        <div className="flex gap-4 mt-2">
+                            <a href="#" className="bg-black text-white p-3 rounded-full hover:bg-gray-800 transition"><Facebook size={20} /></a>
+                            {phone && <a href={whatsappLink} className="bg-black text-white p-3 rounded-full hover:bg-gray-800 transition"><Phone size={20} /></a>}
+                            <a href="#" className="bg-black text-white p-3 rounded-full hover:bg-gray-800 transition"><Instagram size={20} /></a>
+                            {email && <a href={`mailto:${email}`} className="bg-black text-white p-3 rounded-full hover:bg-gray-800 transition"><Mail size={20} /></a>}
+                        </div>
+                    </div>
+                </div>
+
+                {/* MIDDLE SECTION: Form, Bio & Contact */}
+                <div className="flex flex-col md:flex-row gap-16 mb-20 border-t border-gray-100 pt-16">
+
+                    {/* LEFT: Agenda Form */}
+                    <div className="w-full md:w-1/2">
+                        <h3 className="text-xl font-bold uppercase text-gray-800 mb-8 border-b pb-4">AGENDA UNA CITA</h3>
+                        <BookingForm
+                            professional={{
+                                id: professional.usuario_id,
+                                name: name,
+                                specialty: specialty
+                            }}
+                        />
+                    </div>
+
+                    {/* RIGHT: Conóceme & Contact */}
+                    <div className="w-full md:w-1/2 flex flex-col gap-12">
+                        {/* Conóceme */}
+                        <div>
+                            <h3 className="text-xl font-bold uppercase text-gray-800 mb-6 border-b pb-4">CONÓCEME</h3>
+                            <p className="text-gray-500 leading-relaxed text-sm md:text-base text-justify">
+                                {bio}
+                            </p>
+                        </div>
+
+                        {/* Contact Info (Moved here since Map is gone) */}
+                        <div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-8">Contacto</h3>
+                            <div className="space-y-6 text-gray-600 text-sm">
+                                <div className="flex flex-col">
+                                    <span className="text-xs text-gray-400 uppercase tracking-widest">Ubicación</span>
+                                    <span className="font-semibold text-gray-800 flex items-center gap-2">
+                                        <MapPin size={16} />
+                                        {locationName}
+                                    </span>
+                                </div>
+
+                                <div className="flex gap-4 pt-4">
+                                    {phone && (
+                                        <a href={whatsappLink} target="_blank" className="bg-transparent text-gray-900 px-6 py-3 rounded text-sm font-medium border border-gray-300 hover:bg-gray-50 transition flex items-center gap-2">
+                                            <Phone size={16} /> WhatsApp
+                                        </a>
+                                    )}
+                                    {email && (
+                                        <a href={`mailto:${email}`} className="bg-transparent text-gray-900 px-6 py-3 rounded text-sm font-medium border border-gray-300 hover:bg-gray-50 transition flex items-center gap-2">
+                                            <Mail size={16} /> Email
+                                        </a>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            {/* Floating WhatsApp fixed again just in case */}
+            <div className="fixed bottom-6 left-6 z-50">
+                <a href={whatsappLink} target="_blank" className="bg-[#25D366] p-4 rounded-full shadow-lg text-white block hover:scale-110 transition">
+                    <Phone size={28} fill="white" />
+                </a>
+            </div>
+
+            <Footer />
+        </div>
+    )
+}

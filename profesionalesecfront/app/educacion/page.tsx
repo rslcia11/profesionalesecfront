@@ -3,7 +3,7 @@
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import ProfessionalHeroCarousel from "@/components/shared/professional-hero-carousel"
-import FeaturedProfessional from "@/components/shared/featured-professional"
+import ProfessionalsCategoryList from "@/components/shared/professionals-category-list"
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
 import { BookOpen, GraduationCap, Users, Globe, School, Microscope } from "lucide-react"
@@ -141,7 +141,11 @@ export default function EducacionPage() {
         basePath="/educacion"
       />
 
-      <FeaturedProfessional professional={featuredProfessional} categorySlug="educacion" />
+      <ProfessionalsCategoryList
+        professionIds={[]}
+        title="Docentes y Educadores Verificados"
+        description="Encuentra los mejores profesionales para tu formación académica"
+      />
 
       <BlogSection posts={blogPosts} />
 

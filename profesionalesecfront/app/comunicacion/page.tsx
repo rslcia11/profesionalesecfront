@@ -2,7 +2,7 @@
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import ProfessionalHeroCarousel from "@/components/shared/professional-hero-carousel"
-import FeaturedProfessional from "@/components/shared/featured-professional"
+import ProfessionalsCategoryList from "@/components/shared/professionals-category-list"
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
 import {
@@ -195,7 +195,11 @@ export default function ComunicacionPage() {
       />
 
       {/* Featured Professional */}
-      <FeaturedProfessional professional={featuredProfessional} categorySlug="comunicacion" />
+      <ProfessionalsCategoryList
+        professionIds={[]}
+        title="Comunicadores Profesionales"
+        description="Periodistas, locutores y expertos en medios verificados"
+      />
 
       {/* Blog Section */}
       <BlogSection posts={blogPosts} />

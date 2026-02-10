@@ -3,7 +3,7 @@
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import ProfessionalHeroCarousel from "@/components/shared/professional-hero-carousel"
-import FeaturedProfessional from "@/components/shared/featured-professional"
+import ProfessionalsCategoryList from "@/components/shared/professionals-category-list"
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
 import { Brain, BookOpen, Briefcase, Shield, Baby, Activity, Target, Pill, School, Home } from "lucide-react"
@@ -182,7 +182,11 @@ export default function SaludMentalPage() {
           categories={serviceCategories}
           basePath="/salud-mental"
         />
-        <FeaturedProfessional professional={featuredProfessional} categorySlug="salud-mental" />
+        <ProfessionalsCategoryList
+          professionIds={[6]}
+          title="Psicólogos y Terapeutas"
+          description="Profesionales de la salud mental verificados y comprometidos"
+        />
         <BlogSection posts={blogPosts} />
       </main>
       <Footer />

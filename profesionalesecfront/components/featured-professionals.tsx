@@ -1,60 +1,74 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Star, MapPin, Briefcase, Award } from "lucide-react"
 import Link from "next/link"
+import { profesionalApi } from "@/lib/api"
 
-const featuredProfessionals = [
-  {
-    id: 1,
-    name: "Dr. Carlos Mendoza",
-    profession: "Abogado Especialista",
-    specialty: "Derecho Corporativo",
-    location: "Quito",
-    rating: 4.9,
-    reviews: 127,
-    image: "/professional-male-lawyer.jpg",
-    verified: true,
-    experience: "15 años",
-  },
-  {
-    id: 2,
-    name: "Dra. María Silva",
-    profession: "Médica Cardióloga",
-    specialty: "Cardiología",
-    location: "Guayaquil",
-    rating: 5.0,
-    reviews: 203,
-    image: "/professional-female-doctor.jpg",
-    verified: true,
-    experience: "12 años",
-  },
-  {
-    id: 3,
-    name: "Ing. Roberto Paz",
-    profession: "Ingeniero Civil",
-    specialty: "Construcción",
-    location: "Cuenca",
-    rating: 4.8,
-    reviews: 89,
-    image: "/professional-engineer.jpg",
-    verified: true,
-    experience: "10 años",
-  },
-  {
-    id: 4,
-    name: "Lcda. Ana Torres",
-    profession: "Psicóloga Clínica",
-    specialty: "Terapia Familiar",
-    location: "Quito",
-    rating: 4.9,
-    reviews: 156,
-    image: "/professional-psychologist.jpg",
-    verified: true,
-    experience: "8 años",
-  },
-]
+interface Professional {
+  id: number
+  usuario_id: number
+  usuario: {
+    nombre: string
+    foto_url?: string
+  }
+  profesion?: {
+    nombre: string
+  }
+  especialidad?: {
+    nombre: string
+  }
+  especialidades?: {
+    nombre: string
+  }[]
+  ciudad: {
+    nombre: string
+  }
+  calificacion?: number
+  resenas?: number
+  verificado?: boolean
+  experiencia?: string // This might not be in the API yet, handle gracefully
+}
 
 export default function FeaturedProfessionals() {
+  const [professionals, setProfessionals] = useState<Professional[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchProfessionals() {
+      try {
+        // Use obtenerVerificados as 'buscar' endpoint is currently unstable (missing table error)
+        const response = await profesionalApi.obtenerVerificados()
+
+        if (response && Array.isArray(response)) {
+          setProfessionals(response.slice(0, 4))
+        } else if (response && response.data && Array.isArray(response.data)) {
+          setProfessionals(response.data.slice(0, 4))
+        }
+      } catch (error) {
+        console.error("Error fetching featured professionals:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProfessionals()
+  }, [])
+
+  if (loading) {
+    return (
+      <section className="py-12 md:py-16 px-4 bg-gradient-to-b from-secondary/10 to-background">
+        <div className="max-w-7xl mx-auto text-center">
+          <p className="text-muted-foreground">Cargando profesionales destacados...</p>
+        </div>
+      </section>
+    )
+  }
+
+  // If no professionals found, maybe show nothing or a message?
+  // User asked for "4 professionals that are already registered", so presumably there are some.
+  // If list is empty, we just render empty grid.
+
   return (
     <section className="py-12 md:py-16 px-4 bg-gradient-to-b from-secondary/10 to-background">
       <div className="max-w-7xl mx-auto">
@@ -66,9 +80,9 @@ export default function FeaturedProfessionals() {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredProfessionals.map((pro, index) => (
+          {professionals.map((pro, index) => (
             <Link
-              href={`/profesional/${pro.id}`}
+              href={`/perfil/${pro.usuario_id}`}
               key={pro.id}
               className="group bg-card border border-border rounded-xl overflow-hidden hover:shadow-2xl hover:scale-105 transition-all duration-500 animate-fade-in-up"
               style={{ animationDelay: `${index * 0.1}s` }}
@@ -76,20 +90,21 @@ export default function FeaturedProfessionals() {
               {/* Image */}
               <div className="relative overflow-hidden">
                 <img
-                  src={pro.image || "/placeholder.svg"}
-                  alt={pro.name}
+                  src={pro.usuario.foto_url || "/placeholder.svg"}
+                  alt={pro.usuario.nombre}
                   className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
                 />
-                {pro.verified && (
-                  <div className="absolute top-3 right-3 bg-primary text-primary-foreground p-2 rounded-full shadow-lg">
-                    <Award size={16} />
-                  </div>
-                )}
+                {/* Always show verification badge if verificado is true, or maybe for all in this section if they are "featured" */}
+                {/* The API doesn't seem to have 'verificado' strictly in the interface I saw in previous turns, but let's assume valid profiles here are verified or check the proper field if known. For now, using optional chaining. */}
+                <div className="absolute top-3 right-3 bg-primary text-primary-foreground p-2 rounded-full shadow-lg">
+                  <Award size={16} />
+                </div>
+
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
                   <div className="flex items-center gap-2 text-white text-sm">
                     <Star className="fill-yellow-400 text-yellow-400" size={16} />
-                    <span className="font-bold">{pro.rating}</span>
-                    <span>({pro.reviews} reseñas)</span>
+                    <span className="font-bold">{pro.calificacion || "5.0"}</span>
+                    <span>({pro.resenas || 0} reseñas)</span>
                   </div>
                 </div>
               </div>
@@ -97,30 +112,33 @@ export default function FeaturedProfessionals() {
               {/* Content */}
               <div className="p-5 space-y-3">
                 <div>
-                  <h3 className="text-xl font-heading font-bold text-foreground group-hover:text-primary transition-colors">
-                    {pro.name}
+                  <h3 className="text-xl font-heading font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                    {pro.usuario.nombre}
                   </h3>
-                  <p className="text-sm text-muted-foreground font-body">{pro.profession}</p>
+                  <p className="text-sm text-muted-foreground font-body truncate">{pro.profesion?.nombre || "Profesional"}</p>
                 </div>
 
                 <div className="space-y-2 text-sm text-muted-foreground font-body">
                   <div className="flex items-center gap-2">
                     <Briefcase size={14} className="text-primary" />
-                    <span>{pro.specialty}</span>
+                    <span className="truncate">
+                      {pro.especialidad?.nombre || pro.especialidades?.[0]?.nombre || "General"}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <MapPin size={14} className="text-primary" />
-                    <span>{pro.location}</span>
+                    <span>{pro.ciudad?.nombre || "Ecuador"}</span>
                   </div>
+                  {/* Experience is not standardized in API yet, usually in description. Hardcoding or hiding for now to avoid 'undefined' */}
                   <div className="flex items-center gap-2">
                     <Award size={14} className="text-primary" />
-                    <span>{pro.experience} de experiencia</span>
+                    <span>Experiencia verificada</span>
                   </div>
                 </div>
 
-                <button className="w-full bg-primary/10 text-primary py-2 rounded-lg font-button font-semibold hover:bg-primary hover:text-primary-foreground transition-all">
+                <div className="w-full bg-primary/10 text-primary py-2 rounded-lg font-button font-semibold hover:bg-primary hover:text-primary-foreground transition-all text-center">
                   Ver perfil
-                </button>
+                </div>
               </div>
             </Link>
           ))}

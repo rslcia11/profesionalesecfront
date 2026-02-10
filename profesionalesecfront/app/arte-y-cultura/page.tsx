@@ -3,7 +3,7 @@
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import ProfessionalHeroCarousel from "@/components/shared/professional-hero-carousel"
-import FeaturedProfessional from "@/components/shared/featured-professional"
+import ProfessionalsCategoryList from "@/components/shared/professionals-category-list"
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
 import { Music, Palette, Theater, Camera, Mic, Brush } from "lucide-react"
@@ -141,7 +141,11 @@ export default function ArteCulturaPage() {
         basePath="/arte-y-cultura"
       />
 
-      <FeaturedProfessional professional={featuredProfessional} categorySlug="arte-y-cultura" />
+      <ProfessionalsCategoryList
+        professionIds={[]}
+        title="Artistas y Gestores Culturales"
+        description="Talento creativo verificado para tus proyectos culturales"
+      />
 
       <BlogSection posts={blogPosts} />
 

@@ -11,265 +11,124 @@ export default function Footer() {
   const professionalFAQs = [
     {
       question: "¿Qué es Profesionales.ec?",
-      answer:
-        "Profesionales.ec es la plataforma líder en Ecuador que conecta profesionales certificados con clientes que necesitan sus servicios. Certificamos tu experiencia y te ayudamos a crecer profesionalmente.",
+      answer: "Plataforma que conecta profesionales certificados con clientes.",
     },
     {
-      question: "¿Cómo me registro como profesional?",
-      answer:
-        'Para registrarte, haz clic en "Crear Perfil Profesional" en el menú principal, completa tus datos, adjunta tus certificaciones y espera la aprobación de nuestro equipo.',
+      question: "¿Registro?",
+      answer: 'Clic en "Crear Perfil Profesional" y completa tus datos.',
     },
     {
-      question: "¿Tiene algún costo el registro?",
-      answer:
-        "El registro básico es gratuito. Ofrecemos planes premium con mayor visibilidad y funcionalidades adicionales para impulsar tu presencia profesional.",
+      question: "¿Costo?",
+      answer: "Registro básico gratuito. Planes premium disponibles.",
     },
   ]
 
   const conversatorioFAQs = [
     {
-      question: "¿Qué son los Conversatorios Multidisciplinarios?",
-      answer:
-        "Son eventos educativos donde expertos comparten conocimientos y experiencias en diferentes áreas profesionales. Una oportunidad única de aprendizaje y networking.",
+      question: "¿Conversatorios?",
+      answer: "Eventos educativos para networking y aprendizaje.",
     },
     {
-      question: "¿Cómo me inscribo a los Conversatorios?",
-      answer:
-        'Desde la plataforma puedes inscribirte como asistente, ponente o patrocinador. Solo debes ingresar a la sección "Educación" y completar el formulario correspondiente.',
+      question: "¿Inscripción?",
+      answer: 'Sección "Educación" y completa el formulario.',
     },
     {
-      question: "¿Recibo un certificado al asistir a un conversatorio?",
-      answer:
-        "Sí, todos los asistentes reciben un certificado digital de participación al finalizar el conversatorio, válido para tu desarrollo profesional continuo.",
+      question: "¿Certificado?",
+      answer: "Sí, certificado digital de participación incluido.",
     },
   ]
 
   return (
-    <footer className="bg-black text-white py-10 px-4">
+    <footer className="bg-black text-white py-6 px-4 text-xs">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8 pb-6 border-b border-gray-800">
-          <div className="flex items-start gap-3 mb-3">
-            <img src="/logo-white.png" alt="Profesionales Ecuador" className="w-32 h-auto object-contain" />
-            <div>
-              <p className="text-xs text-gray-400 leading-relaxed mt-2">
-                Impulsamos el crecimiento profesional en Ecuador. Certifícate, conecta con clientes y accede a
-                oportunidades reales para tu desarrollo profesional.
-              </p>
-            </div>
+        {/* Top Section: Logo & Description */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 border-b border-gray-900 pb-4">
+          <div className="flex items-center gap-3">
+            <img src="/logo-white.png" alt="Profesionales Ecuador" className="w-20 h-auto object-contain" />
+            <p className="text-gray-500 max-w-xs leading-tight hidden md:block">
+              Conectando profesionales y oportunidades en Ecuador.
+            </p>
+          </div>
+          <div className="flex gap-4">
+            <Link href="https://www.facebook.com/profile.php?id=61556825827660" target="_blank" className="hover:opacity-80">
+              <Facebook size={18} />
+            </Link>
+            <Link href="https://www.instagram.com/profesionalesec/" target="_blank" className="hover:opacity-80">
+              <Instagram size={18} />
+            </Link>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-          <div className="space-y-3">
-            <h3 className="text-base font-bold mb-3 text-blue-400">SÉ PARTE DE PROFESIONALES.EC</h3>
-            <div className="space-y-4">
-              <div className="group">
-                <h4 className="text-sm font-bold mb-2 text-white">PONENTE</h4>
-                <p className="text-xs text-gray-400 leading-relaxed mb-2">
-                  Únete al selecto grupo de expertos que lideran los conversatorios. Comparte tu experiencia y
-                  conocimientos con una audiencia ávida de aprender.
-                </p>
-                <Link
-                  href="https://wa.link/i65ui8"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-blue-400 hover:text-blue-300 transition-all duration-200 inline-block hover:translate-x-1"
-                >
-                  Más información →
-                </Link>
-              </div>
-            </div>
-          </div>
+        {/* Middle Section: Compact Columns */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
 
-          <div className="space-y-3">
-            <h3 className="text-base font-bold mb-3 text-transparent">.</h3>
-            <div className="group">
-              <h4 className="text-sm font-bold mb-2 text-white">ASISTENTE</h4>
-              <p className="text-xs text-gray-400 leading-relaxed mb-2">
-                Participa en los conversatorios y adquiere conocimientos directamente de expertos en diversas áreas. Haz
-                que tu desarrollo profesional sea más dinámico.
-              </p>
-              <Link
-                href="https://wa.link/soekak"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-blue-400 hover:text-blue-300 transition-all duration-200 inline-block hover:translate-x-1"
-              >
-                Más información →
-              </Link>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <h3 className="text-base font-bold mb-3 text-transparent">.</h3>
-            <div className="group">
-              <h4 className="text-sm font-bold mb-2 text-white">PATROCINADOR</h4>
-              <p className="text-xs text-gray-400 leading-relaxed mb-2">
-                Impulsa tu marca apoyando los conversatorios. Posiciona tu marca frente a una comunidad en crecimiento y
-                refuerza tu compromiso con el desarrollo profesional.
-              </p>
-              <Link
-                href="https://wa.link/55n3u5"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-blue-400 hover:text-blue-300 transition-all duration-200 inline-block hover:translate-x-1"
-              >
-                Más información →
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 pt-6 border-t border-gray-800">
+          {/* Column 1: Links */}
           <div>
-            <h3 className="text-base font-bold mb-4">Nuestros Servicios</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link
-                  href="/profesionales"
-                  className="text-sm text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block"
-                >
-                  Directorio Profesional
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/conversatorios"
-                  className="text-sm text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block"
-                >
-                  Educación
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/sobre-nosotros"
-                  className="text-sm text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block"
-                >
-                  Sobre Nosotros
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/contacto"
-                  className="text-sm text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block"
-                >
-                  Contáctanos
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/terminos-y-condiciones"
-                  className="text-sm text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block"
-                >
-                  Términos y Condiciones
-                </Link>
-              </li>
+            <h3 className="font-bold text-gray-300 mb-2 uppercase tracking-wider">Enlaces</h3>
+            <ul className="space-y-1 text-gray-500">
+              <li><Link href="/profesionales" className="hover:text-white transition">Directorio</Link></li>
+              <li><Link href="/conversatorios" className="hover:text-white transition">Educación</Link></li>
+              <li><Link href="/sobre-nosotros" className="hover:text-white transition">Nosotros</Link></li>
+              <li><Link href="/contacto" className="hover:text-white transition">Contacto</Link></li>
             </ul>
           </div>
 
+          {/* Column 2: Únete */}
           <div>
-            <h3 className="text-base font-bold mb-4">Preguntas Profesionales</h3>
-            <div className="space-y-2">
-              {professionalFAQs.map((faq, index) => (
-                <div key={index} className="border-b border-gray-800 pb-2">
-                  <button
-                    onClick={() => setOpenProfessional(openProfessional === index ? null : index)}
-                    className="w-full flex items-center justify-between text-left group"
-                  >
-                    <span className="text-sm text-blue-400 group-hover:text-blue-300 transition-colors duration-200">
-                      {faq.question}
-                    </span>
-                    <ChevronDown
-                      size={16}
-                      className={`text-blue-400 flex-shrink-0 ml-2 transition-transform duration-300 ${
-                        openProfessional === index ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-                  <div
-                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                      openProfessional === index ? "max-h-48 opacity-100 mt-2" : "max-h-0 opacity-0"
-                    }`}
-                  >
-                    <p className="text-xs text-gray-400 leading-relaxed">{faq.answer}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-base font-bold mb-4">Preguntas Conversatorios</h3>
-            <div className="space-y-2">
-              {conversatorioFAQs.map((faq, index) => (
-                <div key={index} className="border-b border-gray-800 pb-2">
-                  <button
-                    onClick={() => setOpenConversatorio(openConversatorio === index ? null : index)}
-                    className="w-full flex items-center justify-between text-left group"
-                  >
-                    <span className="text-sm text-blue-400 group-hover:text-blue-300 transition-colors duration-200">
-                      {faq.question}
-                    </span>
-                    <ChevronDown
-                      size={16}
-                      className={`text-blue-400 flex-shrink-0 ml-2 transition-transform duration-300 ${
-                        openConversatorio === index ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-                  <div
-                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                      openConversatorio === index ? "max-h-48 opacity-100 mt-2" : "max-h-0 opacity-0"
-                    }`}
-                  >
-                    <p className="text-xs text-gray-400 leading-relaxed">{faq.answer}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="pt-6 border-t border-gray-800">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex flex-col md:flex-row items-center gap-3 md:gap-6 text-xs text-gray-400">
-              <span>Legal</span>
-              <span className="hidden md:inline">|</span>
-              <span>Contacto directo</span>
-              <span className="hidden md:inline">|</span>
-              <a
-                href="mailto:info@profesionales.ec"
-                className="text-gray-300 hover:text-white transition-colors duration-200"
-              >
-                info@profesionales.ec
-              </a>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-400">Síguenos en redes sociales</span>
-              <div className="flex gap-2">
-                <Link
-                  href="https://www.facebook.com/profile.php?id=61556825827660"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 hover:scale-110 transition-all duration-200 flex items-center justify-center"
-                >
-                  <Facebook size={16} fill="white" stroke="white" />
-                </Link>
-                <Link
-                  href="https://www.instagram.com/profesionalesec/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 hover:scale-110 transition-all duration-200 flex items-center justify-center"
-                >
-                  <Instagram size={16} stroke="white" />
-                </Link>
+            <h3 className="font-bold text-gray-300 mb-2 uppercase tracking-wider">Únete</h3>
+            <div className="space-y-2 text-gray-500">
+              <div>
+                <p className="font-semibold text-gray-400">Ponente</p>
+                <Link href="https://wa.link/i65ui8" target="_blank" className="text-blue-500 hover:text-blue-400 text-[10px]">Más info →</Link>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-400">Asistente</p>
+                <Link href="https://wa.link/soekak" target="_blank" className="text-blue-500 hover:text-blue-400 text-[10px]">Más info →</Link>
               </div>
             </div>
           </div>
 
-          <div className="text-center mt-6 pt-6 border-t border-gray-800">
-            <p className="text-xs text-gray-500">1998 - Desarrollo Digital y Marketing</p>
+          {/* Column 3: FAQs Profesionales */}
+          <div>
+            <h3 className="font-bold text-gray-300 mb-2 uppercase tracking-wider">FAQs Prof.</h3>
+            <div className="space-y-1">
+              {professionalFAQs.map((faq, index) => (
+                <div key={index}>
+                  <button onClick={() => setOpenProfessional(openProfessional === index ? null : index)} className="text-left hover:text-white text-gray-500 flex items-center gap-1 w-full">
+                    <span className="truncate">{faq.question}</span>
+                    <ChevronDown size={10} className={`transform transition ${openProfessional === index ? 'rotate-180' : ''}`} />
+                  </button>
+                  {openProfessional === index && <p className="text-[10px] text-gray-600 mt-1 pl-1">{faq.answer}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Column 4: FAQs Eventos */}
+          <div>
+            <h3 className="font-bold text-gray-300 mb-2 uppercase tracking-wider">FAQs Eventos</h3>
+            <div className="space-y-1">
+              {conversatorioFAQs.map((faq, index) => (
+                <div key={index}>
+                  <button onClick={() => setOpenConversatorio(openConversatorio === index ? null : index)} className="text-left hover:text-white text-gray-500 flex items-center gap-1 w-full">
+                    <span className="truncate">{faq.question}</span>
+                    <ChevronDown size={10} className={`transform transition ${openConversatorio === index ? 'rotate-180' : ''}`} />
+                  </button>
+                  {openConversatorio === index && <p className="text-[10px] text-gray-600 mt-1 pl-1">{faq.answer}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+
+        {/* Bottom Section */}
+        <div className="pt-4 border-t border-gray-900 flex flex-col md:flex-row justify-between items-center text-[10px] text-gray-600">
+          <p>© 1998 - Desarrollo Digital y Marketing</p>
+          <div className="flex gap-4 mt-2 md:mt-0">
+            <Link href="/terminos-y-condiciones" className="hover:text-gray-400">Términos</Link>
+            <span>|</span>
+            <a href="mailto:info@profesionales.ec" className="hover:text-gray-400">info@profesionales.ec</a>
           </div>
         </div>
       </div>

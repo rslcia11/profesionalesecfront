@@ -3,7 +3,7 @@
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import ProfessionalHeroCarousel from "@/components/shared/professional-hero-carousel"
-import FeaturedProfessional from "@/components/shared/featured-professional"
+import ProfessionalsCategoryList from "@/components/shared/professionals-category-list"
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
 import { Code, Cpu, Zap, Leaf, Bot, Building2 } from "lucide-react"
@@ -141,7 +141,11 @@ export default function IngenieriaYTecnologiaPage() {
         basePath="/ingenieria-y-tecnologia"
       />
 
-      <FeaturedProfessional professional={featuredProfessional} categorySlug="ingenieria-y-tecnologia" />
+      <ProfessionalsCategoryList
+        professionIds={[2]}
+        title="Ingenieros y Tecnólogos Expertos"
+        description="Soluciones técnicas y tecnológicas con profesionales certificados"
+      />
 
       <BlogSection posts={blogPosts} />
 

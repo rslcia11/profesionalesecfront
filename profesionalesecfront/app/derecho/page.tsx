@@ -3,7 +3,7 @@
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import ProfessionalHeroCarousel from "@/components/shared/professional-hero-carousel"
-import FeaturedProfessional from "@/components/shared/featured-professional"
+import ProfessionalsCategoryList from "@/components/shared/professionals-category-list"
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
 import { Scale, Gavel, Users, Building2, FileText, Briefcase, Shield, Globe, BookOpen, Landmark } from "lucide-react"
@@ -174,8 +174,12 @@ export default function DerechoPage() {
         basePath="/derecho"
       />
 
-      {/* Featured Professional */}
-      <FeaturedProfessional professional={featuredProfessional} categorySlug="derecho" />
+      {/* Real Professionals List */}
+      <ProfessionalsCategoryList
+        professionIds={[3]}
+        title="Abogados Destacados"
+        description="Encuentra el experto legal profesional y verificado para tu caso"
+      />
 
       {/* Blog Section */}
       <BlogSection posts={blogPosts} />

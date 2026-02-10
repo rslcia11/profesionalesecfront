@@ -2,7 +2,7 @@
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import ProfessionalHeroCarousel from "@/components/shared/professional-hero-carousel"
-import FeaturedProfessional from "@/components/shared/featured-professional"
+import ProfessionalsCategoryList from "@/components/shared/professionals-category-list"
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
 import { Sparkles, Camera, Dumbbell, ChefHat, Wrench, Cookie, Car, Zap, Hammer, Trophy, Briefcase } from "lucide-react"
@@ -166,14 +166,18 @@ export default function OficiosPage() {
     <>
       <Header />
       <main className="min-h-screen bg-background">
-        <ProfessionalHeroCarousel slides={carouselSlides} category="Oficios y más" />
+        <ProfessionalHeroCarousel slides={carouselSlides} />
         <ProfessionalServicesGrid
           title="Oficios Especializados"
           subtitle="Encuentra profesionales certificados en diversos oficios y servicios"
           categories={serviceCategories}
           basePath="/oficios"
         />
-        <FeaturedProfessional professional={featuredProfessional} categorySlug="oficios" />
+        <ProfessionalsCategoryList
+          professionIds={[]}
+          title="Profesionales en Oficios"
+          description="Expertos calificados para cada necesidad de tu hogar o negocio"
+        />
         <BlogSection posts={blogPosts} />
       </main>
       <Footer />

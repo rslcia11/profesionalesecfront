@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import RescheduleModal from "@/components/reschedule-modal"
 import {
   Calendar,
   Clock,
@@ -19,7 +20,7 @@ import {
   Loader2,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { citasApi } from "@/lib/api"
+import { citasApi, usuarioApi } from "@/lib/api"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
@@ -30,58 +31,69 @@ export default function ProfesionalDashboard() {
   // State
   const [loading, setLoading] = useState(true)
   const [citas, setCitas] = useState<any[]>([])
+  const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false)
+  const [selectedCita, setSelectedCita] = useState<any>(null)
+  const [user, setUser] = useState<any>(null)
 
   // Load Data
-  useEffect(() => {
-    const loadData = async () => {
-      const token = localStorage.getItem("auth_token")
-      if (!token) {
-        window.location.href = "/login"
-        return
-      }
-
-      try {
-        setLoading(true)
-        const citasData = await citasApi.listar(token)
-        // Map backend data to frontend structure because backend returns raw IDs and missing relations
-        const mappedCitas = (Array.isArray(citasData) ? citasData : []).map((c: any) => ({
-          ...c,
-          // Construct proper date object from separate fields with safety checks
-          fecha_hora: (function () {
-            if (!c.fecha_cita || !c.hora_cita) return null;
-            // Ensure string format YYYY-MM-DD
-            const fechaStr = typeof c.fecha_cita === 'string' ? c.fecha_cita : new Date(c.fecha_cita).toISOString().split('T')[0];
-            const horaStr = c.hora_cita.toString(); // Ensure string
-            return `${fechaStr}T${horaStr}`;
-          })(),
-          // Map estado_id to string for UI logic
-          estado: c.estado_id === 1 ? "pendiente" : c.estado_id === 2 ? "confirmada" : c.estado_id === 3 ? "completada" : "cancelada",
-          // Map available name fields to what UI expects
-          usuario: c.usuario || { nombre: c.alias || c.nombres_completos || "Cliente sin nombre" },
-          // Map contact details and description
-          descripcion: c.comentario || c.descripcion || "Sin motivo especificado",
-          telefono: c.telefono || c.usuario?.telefono || "No disp.",
-          correo: c.correo || c.usuario?.correo || "No disp."
-        }))
-        // Filter out invalid ones if strictly necessary, or keep and show "Fecha inválida"
-        setCitas(mappedCitas.sort((a: any, b: any) => {
-          const timeA = a.fecha_hora ? new Date(a.fecha_hora).getTime() : 0;
-          const timeB = b.fecha_hora ? new Date(b.fecha_hora).getTime() : 0;
-          return timeB - timeA;
-        }))
-      } catch (error) {
-        console.error("Error loading professional dashboard:", error)
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar las citas.",
-          variant: "destructive",
-        })
-      } finally {
-        setLoading(false)
-      }
+  const loadData = useCallback(async () => {
+    const token = localStorage.getItem("auth_token")
+    if (!token) {
+      window.location.href = "/login"
+      return
     }
-    loadData()
+
+    try {
+      setLoading(true)
+      // Run promises in parallel for better performance
+      const [citasData, userData] = await Promise.all([
+        citasApi.listar(token),
+        usuarioApi.obtenerMiPerfil(token).catch(() => null)
+      ])
+
+      setUser(userData)
+
+      // Map backend data to frontend structure because backend returns raw IDs and missing relations
+      const mappedCitas = (Array.isArray(citasData) ? citasData : []).map((c: any) => ({
+        ...c,
+        // Construct proper date object from separate fields with safety checks
+        fecha_hora: (function () {
+          if (!c.fecha_cita || !c.hora_cita) return null;
+          // Ensure string format YYYY-MM-DD
+          const fechaStr = typeof c.fecha_cita === 'string' ? c.fecha_cita : new Date(c.fecha_cita).toISOString().split('T')[0];
+          const horaStr = c.hora_cita.toString(); // Ensure string
+          return `${fechaStr}T${horaStr}`;
+        })(),
+        // Map estado_id to string for UI logic
+        estado: c.estado_id === 1 ? "pendiente" : c.estado_id === 2 ? "confirmada" : c.estado_id === 3 ? "completada" : "cancelada",
+        // Map available name fields to what UI expects
+        usuario: c.usuario || { nombre: c.alias || c.nombres_completos || "Cliente sin nombre" },
+        // Map contact details and description
+        descripcion: c.comentario || c.descripcion || "Sin motivo especificado",
+        telefono: c.telefono || c.usuario?.telefono || "No disp.",
+        correo: c.correo || c.usuario?.correo || "No disp."
+      }))
+      // Filter out invalid ones if strictly necessary, or keep and show "Fecha inválida"
+      setCitas(mappedCitas.sort((a: any, b: any) => {
+        const timeA = a.fecha_hora ? new Date(a.fecha_hora).getTime() : 0;
+        const timeB = b.fecha_hora ? new Date(b.fecha_hora).getTime() : 0;
+        return timeB - timeA;
+      }))
+    } catch (error) {
+      console.error("Error loading professional dashboard:", error)
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los datos.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
   }, [toast])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   // Actions
   const handleEstadoCita = async (id: number, nuevoEstado: number) => {
@@ -91,16 +103,18 @@ export default function ProfesionalDashboard() {
     try {
       await citasApi.cambiarEstado(id, nuevoEstado, token)
 
-      // Update local state
-      const estadoMap: Record<number, string> = { 1: "pendiente", 2: "confirmada", 3: "completada", 4: "cancelada" }
-      const estadoStr = estadoMap[nuevoEstado] || "desconocido"
-
-      setCitas(citas.map(c => c.id === id ? { ...c, estado: estadoStr, estado_id: nuevoEstado } : c))
+      // Reload data to ensure consistency or update local state
+      loadData()
 
       toast({ title: "Estado actualizado", description: "La cita ha sido actualizada." })
     } catch (error) {
       toast({ title: "Error", description: "No se pudo actualizar la cita.", variant: "destructive" })
     }
+  }
+
+  const handleReschedule = (cita: any) => {
+    setSelectedCita(cita)
+    setIsRescheduleModalOpen(true)
   }
 
   // Calculated Stats
@@ -132,7 +146,9 @@ export default function ProfesionalDashboard() {
           <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
             Dashboard Profesional
           </h1>
-          <p className="text-gray-600">Gestiona tu actividad profesional y citas</p>
+          <p className="text-gray-600 text-lg">
+            Hola, <span className="font-semibold text-gray-800">{user?.nombre || "Profesional"}</span>
+          </p>
         </div>
 
         {/* Estadísticas Generales */}
@@ -326,12 +342,24 @@ export default function ProfesionalDashboard() {
                           </td>
                           <td className="p-3">
                             <div className="flex items-center justify-end gap-2">
+                              {(cita.estado === "pendiente" || cita.estado === "confirmada") && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleReschedule(cita)}
+                                  className="bg-purple-600/10 border-purple-600/50 text-purple-600 hover:bg-purple-600/20"
+                                  title="Reagendar"
+                                >
+                                  <Calendar className="h-4 w-4" />
+                                </Button>
+                              )}
                               {cita.estado === "pendiente" && (
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   onClick={() => handleEstadoCita(cita.id, 2)}
                                   className="bg-green-600/10 border-green-600/50 text-green-400 hover:bg-green-600/20"
+                                  title="Confirmar"
                                 >
                                   <CheckCircle2 className="h-4 w-4" />
                                 </Button>
@@ -342,6 +370,7 @@ export default function ProfesionalDashboard() {
                                   variant="outline"
                                   onClick={() => handleEstadoCita(cita.id, 3)}
                                   className="bg-blue-600/10 border-blue-600/50 text-blue-400 hover:bg-blue-600/20"
+                                  title="Completar"
                                 >
                                   <CheckCircle2 className="h-4 w-4" />
                                 </Button>
@@ -352,6 +381,7 @@ export default function ProfesionalDashboard() {
                                   variant="outline"
                                   onClick={() => handleEstadoCita(cita.id, 4)}
                                   className="bg-red-600/10 border-red-600/50 text-red-400 hover:bg-red-600/20"
+                                  title="Cancelar"
                                 >
                                   <XCircle className="h-4 w-4" />
                                 </Button>
@@ -409,9 +439,16 @@ export default function ProfesionalDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
-      </main>
+      </main >
 
       <Footer />
-    </div>
+
+      <RescheduleModal
+        isOpen={isRescheduleModalOpen}
+        onClose={() => setIsRescheduleModalOpen(false)}
+        cita={selectedCita}
+        onSuccess={loadData}
+      />
+    </div >
   )
 }

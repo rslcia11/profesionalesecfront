@@ -3,7 +3,7 @@
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import ProfessionalHeroCarousel from "@/components/shared/professional-hero-carousel"
-import FeaturedProfessional from "@/components/shared/featured-professional"
+import ProfessionalsCategoryList from "@/components/shared/professionals-category-list"
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
 import { Calculator, TrendingUp, Users, Briefcase, Building2, Globe } from "lucide-react"
@@ -142,7 +142,11 @@ export default function AdministracionPage() {
         basePath="/administracion"
       />
 
-      <FeaturedProfessional professional={featuredProfessional} categorySlug="administracion" />
+      <ProfessionalsCategoryList
+        professionIds={[5]}
+        title="Expertos en Administración y Economía"
+        description="Profesionales verificados para optimizar tu negocio"
+      />
 
       <BlogSection posts={blogPosts} />
 

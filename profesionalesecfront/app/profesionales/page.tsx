@@ -6,6 +6,7 @@ import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { ProfessionalsFilters, type FilterState } from "@/components/professionals-filters"
 import { profesionalApi } from "@/lib/api"
+import Link from "next/link"
 import { useEffect } from "react"
 import BookingModal from "@/components/booking-modal"
 
@@ -36,40 +37,62 @@ export default function ProfessionalsPage() {
       try {
         // Prepare filters for API
         // Mapping frontend filter names to backend expected parameters if needed
-        const apiFilters: any = {
-          verificado: true // Always show verified only by default for this page?
+        // Call API - Use /verificados to bypass VPS database error on /buscar
+        console.log("Fetching public profiles via /verificados endpoint");
+        const allData = await profesionalApi.obtenerVerificados();
+        // console.log("Raw Verified Data:", allData?.length);
+
+        // Client-side filtering implementation
+        let data = allData;
+        if (Array.isArray(data)) {
+          if (filters.keyword) {
+            const lowerKeyword = filters.keyword.toLowerCase();
+            data = data.filter((p: any) =>
+              (p.usuario?.nombre || "").toLowerCase().includes(lowerKeyword) ||
+              (p.profesion?.nombre || "").toLowerCase().includes(lowerKeyword) ||
+              (p.especialidad?.nombre || "").toLowerCase().includes(lowerKeyword)
+            );
+          }
+          if (filters.profession) {
+            data = data.filter((p: any) => p.profesion_id?.toString() === filters.profession);
+          }
+          if (filters.specialty) {
+            data = data.filter((p: any) => p.especialidad_id?.toString() === filters.specialty);
+          }
+          if (filters.city) {
+            data = data.filter((p: any) => p.ciudad_id?.toString() === filters.city);
+          }
+          if (filters.province) {
+            data = data.filter((p: any) => p.ciudad?.provincia_id?.toString() === filters.province);
+          }
+        } else {
+          console.error("API did not return an array", data);
+          data = [];
         }
 
-        if (filters.keyword) apiFilters.nombre = filters.keyword
-        if (filters.profession) apiFilters.profesion_id = filters.profession
-        if (filters.specialty) apiFilters.especialidad_id = filters.specialty
-        if (filters.province) apiFilters.provincia_id = filters.province
-        if (filters.city) apiFilters.ciudad_id = filters.city
-
-        // Call API
-        console.log("Fetching public profiles with filters:", apiFilters); // DEBUG
-        const data = await profesionalApi.buscar(apiFilters)
-        console.log("Public API response data:", data); // DEBUG
-
-        // Maps backend response to frontend UI format
-        const mapped = data.map((p: any) => ({
-          id: p.usuario_id,
-          name: p.usuario?.nombre || "Usuario",
-          specialty: p.especialidad?.nombre || p.profesion?.nombre || "Profesional",
-          location: p.ciudad ? `${p.ciudad.nombre}, ${p.ciudad.provincia?.nombre}` : "Ecuador",
-          image: p.usuario?.foto_url || "/placeholder.svg",
-          price: `$${p.tarifa_hora || 0}`,
-          unit: "hora", // This might need to be dynamic if backend supports it
-          experience: "Experiencia verificada", // Placeholder as backend might not return years yet
-          category: "general", // Placeholder
-          featured: false,
-          verified: p.verificado,
-          profession: p.profesion_id?.toString(),
-          specialty_id: p.especialidad_id?.toString(),
-          province: p.ciudad?.provincia_id?.toString(),
-          city: p.ciudad_id?.toString(),
-          description: p.descripcion
-        }))
+        const mapped = data
+          // Already filtered by endpoint, but safety check doesn't hurt
+          .filter((p: any) => !!p.verificado || p.estado_id === 3 || p.estado === 'aprobado')
+          .map((p: any) => ({
+            id: p.usuario_id,
+            name: p.usuario?.nombre || "Usuario",
+            specialty: p.especialidad?.nombre || p.profesion?.nombre || "Profesional",
+            location: p.ciudad ? `${p.ciudad.nombre}, ${p.ciudad.provincia?.nombre}` : "Ecuador",
+            image: p.usuario?.foto_url || "/placeholder.svg",
+            price: `$${p.tarifa || 0}`,
+            unit: "hora",
+            experience: "Experiencia verificada",
+            category: "general",
+            featured: false,
+            verified: p.verificado,
+            profession: p.profesion_id?.toString(),
+            status: p.estado,
+            status_id: p.estado_id,
+            specialty_id: p.especialidad_id?.toString(),
+            province: p.ciudad?.provincia_id?.toString(),
+            city: p.ciudad_id?.toString(),
+            description: p.descripcion
+          }))
 
         setProfessionals(mapped)
       } catch (error) {
@@ -180,21 +203,19 @@ export default function ProfessionalsPage() {
                   </div>
 
                   {/* Price and CTA */}
-                  <div className="flex items-center justify-between pt-4 border-t border-border/50">
-                    <div>
-                      <div className="text-2xl font-bold text-primary">{professional.price}</div>
-                      <div className="text-xs text-muted-foreground">por {professional.unit}</div>
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-auto">
+                    <div className="flex flex-col">
+                      <span className="text-2xl font-bold text-blue-900">{professional.price}</span>
+                      {professional.price !== '$0' && ( // Only show unit if price is not 0 placeholder
+                        <span className="text-xs text-gray-500 font-medium">/ {professional.unit}</span>
+                      )}
                     </div>
-                    <button
-                      onClick={() => {
-                        setSelectedProfessional(professional)
-                        setIsModalOpen(true)
-                      }}
-                      className="group/btn px-6 py-2.5 bg-primary text-primary-foreground rounded-full font-medium hover:bg-primary/90 transition-all hover:shadow-lg hover:shadow-primary/20 flex items-center gap-2"
+                    <Link
+                      href={`/perfil/${professional.id}`}
+                      className="bg-blue-900 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-800 transition-colors shadow-lg shadow-blue-900/20 flex items-center gap-2 group"
                     >
-                      Contactar
-                      <ArrowRight size={16} className="group-hover/btn:translate-x-1 transition-transform" />
-                    </button>
+                      Ver Perfil <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                    </Link>
                   </div>
                 </div>
               </div>

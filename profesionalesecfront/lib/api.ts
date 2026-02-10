@@ -291,9 +291,13 @@ export const profesionalApi = {
   async buscar(filtros: any) {
     const params = new URLSearchParams()
     Object.keys(filtros).forEach(key => {
-      if (filtros[key]) params.append(key, filtros[key]);
+      if (filtros[key] !== undefined && filtros[key] !== null) params.append(key, filtros[key].toString());
     });
     return fetchApi(`/profesionales/buscar?${params.toString()}`);
+  },
+
+  async obtenerVerificados() {
+    return fetchApi("/profesionales/verificados");
   },
 
   async buscarCercanos(lat: number, lng: number, radio: number = 10) {
@@ -493,6 +497,9 @@ export const ponenciasApi = {
   async listar(token?: string) {
     const headers = token ? authHeader(token) : {};
     return fetchApi("/ponencias", { headers });
+  },
+  async obtener(id: number) {
+    return fetchApi(`/ponencias/${id}`);
   }
 }
 
@@ -678,3 +685,5 @@ export const removeToken = () => {
     localStorage.removeItem("auth_token")
   }
 }
+
+

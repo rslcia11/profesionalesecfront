@@ -162,9 +162,8 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
         </div>
         <button
           onClick={handlePrev}
-          className={`absolute left-2 md:left-0 top-1/2 -translate-y-1/2 z-20 p-3 bg-primary hover:bg-primary/80 text-white rounded-full shadow-lg transition-all duration-500 ease-out ${
-            isHoveringCarousel ? "opacity-100 md:-translate-x-6 scale-110" : "opacity-80 scale-100"
-          } active:scale-95 hover:shadow-2xl`}
+          className={`absolute left-2 md:left-2 top-1/2 -translate-y-1/2 z-20 p-3 bg-primary hover:bg-primary/80 text-white rounded-full shadow-lg transition-all duration-500 ease-out ${isHoveringCarousel ? "opacity-100 scale-110" : "opacity-0 scale-90"
+            } active:scale-95 hover:shadow-2xl`}
           aria-label="Previous slide"
           disabled={isTransitioning}
         >
@@ -172,9 +171,8 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
         </button>
         <button
           onClick={handleNext}
-          className={`absolute right-2 md:right-0 top-1/2 -translate-y-1/2 z-20 p-3 bg-primary hover:bg-primary/80 text-white rounded-full shadow-lg transition-all duration-500 ease-out ${
-            isHoveringCarousel ? "opacity-100 md:translate-x-6 scale-110" : "opacity-80 scale-100"
-          } active:scale-95 hover:shadow-2xl`}
+          className={`absolute right-2 md:right-2 top-1/2 -translate-y-1/2 z-20 p-3 bg-primary hover:bg-primary/80 text-white rounded-full shadow-lg transition-all duration-500 ease-out ${isHoveringCarousel ? "opacity-100 scale-110" : "opacity-0 scale-90"
+            } active:scale-95 hover:shadow-2xl`}
           aria-label="Next slide"
           disabled={isTransitioning}
         >
@@ -197,11 +195,10 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
                 }, 800)
               }
             }}
-            className={`transition-all duration-500 ease-in-out rounded-full ${
-              idx === currentIndex
+            className={`transition-all duration-500 ease-in-out rounded-full ${idx === currentIndex
                 ? "bg-primary w-3 h-3 scale-110"
                 : "bg-primary/30 hover:bg-primary/50 w-2 h-2 hover:scale-125"
-            }`}
+              }`}
             aria-label={`Go to slide ${idx + 1}`}
           />
         ))}

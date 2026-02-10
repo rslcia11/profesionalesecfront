@@ -3,7 +3,7 @@
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import ProfessionalHeroCarousel from "@/components/shared/professional-hero-carousel"
-import FeaturedProfessional from "@/components/shared/featured-professional"
+import ProfessionalsCategoryList from "@/components/shared/professionals-category-list"
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
 import {
@@ -295,8 +295,12 @@ export default function SaludPage() {
         basePath="/salud"
       />
 
-      {/* Featured Professional */}
-      <FeaturedProfessional professional={featuredProfessional} categorySlug="salud" />
+      {/* Real Professionals List */}
+      <ProfessionalsCategoryList
+        professionIds={[1, 6, 7, 9, 10]}
+        title="Especialistas en Salud"
+        description="Médicos y profesionales de la salud verificados"
+      />
 
       {/* Blog Section */}
       <BlogSection posts={blogPosts} />
