@@ -42,13 +42,21 @@ export interface UbicacionData {
 
 export interface Articulo {
   id: number
+  usuario_id: number
   titulo: string
   contenido: string
   resumen?: string
   imagen_url?: string
-  estado?: string
-  autor_id: number
+  estado: "borrador" | "publicado" | "archivado"
+  fecha_publicacion: string
   created_at: string
+  updated_at: string
+  autor?: {
+    id: number
+    nombre: string
+    correo: string
+    foto_url?: string
+  }
 }
 
 export interface Auditoria {
@@ -355,26 +363,6 @@ export const citasApi = {
   }
 }
 
-// Articulos API
-export const articulosApi = {
-  async listarPublicos() { return fetchApi("/articulos"); },
-  async listarMios(token: string) { return fetchApi("/articulos/mios", { headers: authHeader(token) }); },
-  async crear(data: Partial<Articulo>, token: string) {
-    return fetchApi("/articulos", { method: "POST", headers: authHeader(token), body: JSON.stringify(data) });
-  },
-  async actualizar(id: number, data: Partial<Articulo>, token: string) {
-    return fetchApi(`/articulos/${id}`, { method: "PUT", headers: authHeader(token), body: JSON.stringify(data) });
-  },
-  async eliminar(id: number, token: string) {
-    return fetchApi(`/articulos/${id}`, { method: "DELETE", headers: authHeader(token) });
-  },
-  async moderar(id: number, token: string) {
-    return fetchApi(`/articulos/${id}/moderar`, { method: "PUT", headers: authHeader(token) });
-  },
-  async archivar(id: number, token: string) {
-    return fetchApi(`/articulos/${id}/archivar`, { method: "PUT", headers: authHeader(token) });
-  }
-}
 
 // Auditoria API (Admin)
 export const auditoriaApi = {
@@ -664,6 +652,48 @@ export const usuarioApi = {
   async actualizarPerfil(data: any, token: string) {
     return fetchApi("/usuarios/perfil", { method: "PUT", headers: authHeader(token), body: JSON.stringify(data) });
   }
+}
+
+// Articulos API
+export const articulosApi = {
+  async listarPublicados() {
+    return fetchApi("/articulos");
+  },
+  async listarMios(token: string) {
+    return fetchApi("/articulos/mios", { headers: authHeader(token) });
+  },
+  async crear(data: { titulo: string; contenido: string; resumen?: string; imagen_url?: string }, token: string) {
+    return fetchApi("/articulos", {
+      method: "POST",
+      headers: authHeader(token),
+      body: JSON.stringify(data),
+    });
+  },
+  async actualizar(id: number, data: Partial<Articulo>, token: string) {
+    return fetchApi(`/articulos/${id}`, {
+      method: "PUT",
+      headers: authHeader(token),
+      body: JSON.stringify(data),
+    });
+  },
+  async eliminar(id: number, token: string) {
+    return fetchApi(`/articulos/${id}`, {
+      method: "DELETE",
+      headers: authHeader(token),
+    });
+  },
+  async moderar(id: number, token: string) {
+    return fetchApi(`/articulos/${id}/moderar`, {
+      method: "PUT",
+      headers: authHeader(token),
+    });
+  },
+  async archivar(id: number, token: string) {
+    return fetchApi(`/articulos/${id}/archivar`, {
+      method: "PUT",
+      headers: authHeader(token),
+    });
+  },
 }
 
 // Token helpers

@@ -37,12 +37,16 @@ import {
   TrendingUp,
   Clock,
   MapPin,
+  BookOpen,
+  CheckCircle2,
+  XCircle,
+  UserPlus,
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
-import { profesionalApi, adminApi } from "@/lib/api"
+import { profesionalApi, adminApi, articulosApi, catalogosApi, ponentesApi, type Articulo } from "@/lib/api"
 
 type Ponencia = {
   id: number
@@ -52,6 +56,7 @@ type Ponencia = {
   fecha_fin: Date
   precio: number
   cupo: number
+  profesion_id?: number
   estado: "borrador" | "publicada" | "finalizada"
 }
 
@@ -98,10 +103,29 @@ export default function AdminDashboard() {
     },
   ])
 
+  // Articles state for moderation
+  const [adminArticulos, setAdminArticulos] = useState<Articulo[]>([])
+
+  // Professions catalog for conversatorio form
+  const [profesiones, setProfesiones] = useState<any[]>([])
+
+  // Ponentes management
+  const [selectedPonenciaId, setSelectedPonenciaId] = useState<number | null>(null)
+  const [ponentesList, setPonentesList] = useState<any[]>([])
+  const [loadingPonentes, setLoadingPonentes] = useState(false)
+
   useEffect(() => {
     const loadData = async () => {
       const token = localStorage.getItem("auth_token")
       if (!token) return
+
+      // Load professions catalog
+      try {
+        const profs = await catalogosApi.obtenerProfesiones()
+        setProfesiones(Array.isArray(profs) ? profs : [])
+      } catch (e) {
+        console.warn("Could not load professions catalog:", e)
+      }
 
       try {
         const stats = await adminApi.getStats(token)
@@ -111,10 +135,8 @@ export default function AdminDashboard() {
         // Map backend data to frontend structure
         const mappedProfiles = stats.profesionales.map((p: any) => {
           // Backend states: 1=borrador, 2=pendiente, 3=aprobado, 4=rechazado
-          const getEstado = (estado_id: number) => {
-            switch (estado_id) {
-              case 1: return "borrador";
-              case 2: return "pendiente";
+          const getEstado = (estadoId: number): "aprobado" | "rechazado" | "pendiente" => {
+            switch (estadoId) {
               case 3: return "aprobado";
               case 4: return "rechazado";
               default: return "pendiente";
@@ -155,6 +177,14 @@ export default function AdminDashboard() {
           variant: "destructive",
         })
       }
+
+      // Load articles (public endpoint, no auth needed)
+      try {
+        const articlesData = await articulosApi.listarPublicados()
+        setAdminArticulos(Array.isArray(articlesData) ? articlesData : [])
+      } catch (error) {
+        console.error("Error loading articles:", error)
+      }
     }
     loadData()
   }, [])
@@ -174,6 +204,7 @@ export default function AdminDashboard() {
     fecha_fin: new Date(),
     precio: 0,
     cupo: 0,
+    profesion_id: 0,
     estado: "borrador" as const,
   })
 
@@ -246,7 +277,7 @@ export default function AdminDashboard() {
         )
         toast({ title: "Conversatorio Actualizado", description: "Actualización exitosa" })
       } else {
-        const res = await adminApi.createPonencia({ ...conversatorioForm, profesion_id: 1 }, token) // Default ID or selector
+        const res = await adminApi.createPonencia({ ...conversatorioForm, profesion_id: conversatorioForm.profesion_id || 1 }, token)
         setPonencias([...ponencias, res.ponencia])
         toast({ title: "Conversatorio Creado", description: "Creación exitosa" })
       }
@@ -297,8 +328,53 @@ export default function AdminDashboard() {
       fecha_fin: new Date(),
       precio: 0,
       cupo: 0,
+      profesion_id: 0,
       estado: "borrador",
     })
+  }
+
+  // ---- Ponentes Management ----
+  const loadPonentes = async (ponenciaId: number) => {
+    setLoadingPonentes(true)
+    try {
+      const token = localStorage.getItem("auth_token")
+      if (!token) return
+      // The ponentes list comes from /ponencias endpoint — we filter locally
+      // or we use ponentesApi.listar which returns all ponencias with their ponentes
+      const data = await ponentesApi.listar(token)
+      const ponenciaData = Array.isArray(data?.ponencias ? data.ponencias : data) ? (data.ponencias || data) : []
+      const found = ponenciaData.find((p: any) => p.id === ponenciaId)
+      setPonentesList(found?.ponentes || [])
+    } catch (e) {
+      console.error("Error loading ponentes:", e)
+      setPonentesList([])
+    } finally {
+      setLoadingPonentes(false)
+    }
+  }
+
+  const handleAsignarPonente = async (ponenciaId: number, usuarioId: number) => {
+    const token = localStorage.getItem("auth_token")
+    if (!token) return
+    try {
+      await ponentesApi.asignar({ ponencia_id: ponenciaId, usuario_id: usuarioId }, token)
+      toast({ title: "Ponente Asignado", description: "El profesional fue asignado como ponente." })
+      loadPonentes(ponenciaId)
+    } catch (e) {
+      toast({ title: "Error", description: "No se pudo asignar el ponente.", variant: "destructive" })
+    }
+  }
+
+  const handleEliminarPonente = async (ponenteId: number) => {
+    const token = localStorage.getItem("auth_token")
+    if (!token) return
+    try {
+      await ponentesApi.eliminar(ponenteId, token)
+      toast({ title: "Ponente Removido", description: "El ponente fue removido del conversatorio." })
+      if (selectedPonenciaId) loadPonentes(selectedPonenciaId)
+    } catch (e) {
+      toast({ title: "Error", description: "No se pudo remover el ponente.", variant: "destructive" })
+    }
   }
 
   const resetPlanForm = () => {
@@ -314,13 +390,13 @@ export default function AdminDashboard() {
 
   const handleEditConversatorio = (ponencia: Ponencia) => {
     setEditingItem(ponencia)
-    setConversatorioForm(ponencia)
+    setConversatorioForm(ponencia as any)
     setIsConversatorioDialogOpen(true)
   }
 
   const handleEditPlan = (plan: Plan) => {
     setEditingItem(plan)
-    setPlanForm(plan)
+    setPlanForm(plan as any)
     setIsPlanDialogOpen(true)
   }
 
@@ -368,6 +444,34 @@ export default function AdminDashboard() {
   const openProfileDetails = (profile: any) => {
     setSelectedProfile(profile)
     setIsProfileDetailsOpen(true)
+  }
+
+  // Articles moderation handlers
+  const handleModerarArticulo = async (id: number) => {
+    const token = localStorage.getItem("auth_token")
+    if (!token) return
+    try {
+      await articulosApi.moderar(id, token)
+      toast({ title: "Artículo moderado", description: "El artículo ha sido aprobado y publicado." })
+      const data = await articulosApi.listarPublicados()
+      setAdminArticulos(Array.isArray(data) ? data : [])
+    } catch (error) {
+      toast({ title: "Error", description: "No se pudo moderar el artículo.", variant: "destructive" })
+    }
+  }
+
+  const handleArchivarArticulo = async (id: number) => {
+    const token = localStorage.getItem("auth_token")
+    if (!token) return
+    if (!confirm("¿Estás seguro de archivar este artículo?")) return
+    try {
+      await articulosApi.archivar(id, token)
+      toast({ title: "Artículo archivado", description: "El artículo ha sido archivado." })
+      const data = await articulosApi.listarPublicados()
+      setAdminArticulos(Array.isArray(data) ? data : [])
+    } catch (error) {
+      toast({ title: "Error", description: "No se pudo archivar el artículo.", variant: "destructive" })
+    }
   }
 
   return (
@@ -451,7 +555,7 @@ export default function AdminDashboard() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 bg-white border border-gray-200 shadow-sm">
+            <TabsList className="grid w-full grid-cols-4 bg-white border border-gray-200 shadow-sm">
               <TabsTrigger
                 value="conversatorios"
                 className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
@@ -463,6 +567,9 @@ export default function AdminDashboard() {
               </TabsTrigger>
               <TabsTrigger value="planes" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                 Planes de Pago
+              </TabsTrigger>
+              <TabsTrigger value="articulos" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                Artículos
               </TabsTrigger>
             </TabsList>
 
@@ -648,6 +755,28 @@ export default function AdminDashboard() {
                             </SelectContent>
                           </Select>
                         </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="profesion" className="text-sm font-medium">
+                            Profesión Relacionada
+                          </Label>
+                          <Select
+                            value={conversatorioForm.profesion_id ? conversatorioForm.profesion_id.toString() : ""}
+                            onValueChange={(value: string) =>
+                              setConversatorioForm({ ...conversatorioForm, profesion_id: Number(value) })
+                            }
+                          >
+                            <SelectTrigger className="focus:border-blue-500/50 transition-colors">
+                              <SelectValue placeholder="Seleccionar profesión" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white border-gray-200">
+                              {profesiones.map((prof: any) => (
+                                <SelectItem key={prof.id} value={prof.id.toString()}>
+                                  {prof.nombre}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                       <DialogFooter>
                         <Button
@@ -699,6 +828,18 @@ export default function AdminDashboard() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
+                                    onClick={() => {
+                                      setSelectedPonenciaId(ponencia.id)
+                                      loadPonentes(ponencia.id)
+                                    }}
+                                    className="hover:bg-emerald-500/20 hover:text-emerald-600 transition-colors"
+                                    title="Gestionar Ponentes"
+                                  >
+                                    <UserPlus className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
                                     onClick={() => handleEditConversatorio(ponencia)}
                                     className="hover:bg-blue-500/20 hover:text-blue-600 transition-colors"
                                   >
@@ -721,6 +862,84 @@ export default function AdminDashboard() {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Ponentes Management Panel */}
+                {selectedPonenciaId && (
+                  <Card className="bg-white border-gray-200 mt-4 animate-in fade-in duration-300">
+                    <CardHeader>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <UserPlus className="h-5 w-5 text-emerald-600" />
+                            Ponentes — {ponencias.find(p => p.id === selectedPonenciaId)?.titulo || ""}
+                          </CardTitle>
+                          <CardDescription>Asigna o remueve ponentes de este conversatorio</CardDescription>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => { setSelectedPonenciaId(null); setPonentesList([]); }}
+                          className="hover:bg-gray-100"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* Assign new ponente */}
+                      <div className="flex items-center gap-3">
+                        <Select
+                          onValueChange={(value: string) => {
+                            handleAsignarPonente(selectedPonenciaId, Number(value))
+                          }}
+                        >
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="Seleccionar profesional para asignar..." />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white border-gray-200">
+                            {perfilesPendientes
+                              .filter((p) => p.estado === "aprobado")
+                              .map((prof) => (
+                                <SelectItem key={prof.id} value={prof.id.toString()}>
+                                  {prof.nombre} — {prof.profesion}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Current ponentes list */}
+                      {loadingPonentes ? (
+                        <p className="text-sm text-gray-500 py-4 text-center">Cargando ponentes...</p>
+                      ) : ponentesList.length === 0 ? (
+                        <p className="text-sm text-gray-400 py-4 text-center">No hay ponentes asignados a este conversatorio.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {ponentesList.map((ponente: any) => (
+                            <div
+                              key={ponente.id}
+                              className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3 border border-gray-100"
+                            >
+                              <div>
+                                <p className="font-medium text-gray-900">{ponente.usuario?.nombre || `Usuario #${ponente.usuario_id}`}</p>
+                                <p className="text-xs text-gray-500">{ponente.usuario?.correo || ""}</p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEliminarPonente(ponente.id)}
+                                className="hover:bg-red-500/20 hover:text-red-600 transition-colors"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
               </div>
             </TabsContent>
 
@@ -1021,6 +1240,95 @@ export default function AdminDashboard() {
                     </Card>
                   ))}
                 </div>
+              </div>
+            </TabsContent>
+
+            {/* ARTICULOS TAB */}
+            <TabsContent value="articulos" className="space-y-4">
+              <div className="animate-in fade-in duration-300">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <BookOpen className="h-6 w-6 text-blue-600" />
+                    Moderación de Artículos
+                  </h2>
+                  <Badge variant="outline" className="text-sm">
+                    {adminArticulos.length} artículo{adminArticulos.length !== 1 ? "s" : ""}
+                  </Badge>
+                </div>
+
+                {adminArticulos.length === 0 ? (
+                  <Card className="bg-white border-gray-200">
+                    <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                      <BookOpen className="h-12 w-12 text-gray-300 mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-600 mb-2">No hay artículos publicados</h3>
+                      <p className="text-gray-400">Los artículos creados por profesionales aparecerán aquí.</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="space-y-4">
+                    {adminArticulos.map((articulo) => (
+                      <Card key={articulo.id} className="bg-white border-gray-200 hover:border-blue-200 transition-all duration-300 hover:shadow-lg">
+                        <CardContent className="p-6">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0 mr-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="text-lg font-bold text-gray-900 truncate">{articulo.titulo}</h3>
+                                <Badge
+                                  className={cn(
+                                    "text-xs",
+                                    articulo.estado === "publicado"
+                                      ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                                      : articulo.estado === "archivado"
+                                        ? "bg-red-100 text-red-700 border-red-200"
+                                        : "bg-yellow-100 text-yellow-700 border-yellow-200"
+                                  )}
+                                >
+                                  {articulo.estado}
+                                </Badge>
+                              </div>
+                              {articulo.resumen && (
+                                <p className="text-sm text-gray-500 line-clamp-2 mb-2">{articulo.resumen}</p>
+                              )}
+                              <div className="flex items-center gap-4 text-xs text-gray-400">
+                                <span className="flex items-center gap-1">
+                                  <Users className="h-3 w-3" />
+                                  {articulo.autor?.nombre || "Autor desconocido"}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {articulo.fecha_publicacion ? new Date(articulo.fecha_publicacion).toLocaleDateString("es-EC") : ""}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {articulo.estado !== "publicado" && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleModerarArticulo(articulo.id)}
+                                  className="bg-emerald-600 hover:bg-emerald-700 gap-1"
+                                >
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  Publicar
+                                </Button>
+                              )}
+                              {articulo.estado === "publicado" && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleArchivarArticulo(articulo.id)}
+                                  className="gap-1 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                                >
+                                  <XCircle className="h-3 w-3" />
+                                  Archivar
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </div>
             </TabsContent>
           </Tabs>

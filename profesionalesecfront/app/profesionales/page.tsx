@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useMemo } from "react"
 import { MapPin, ArrowRight } from "lucide-react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
@@ -18,83 +18,31 @@ export default function ProfessionalsPage() {
     province: "",
     city: "",
     verifiedOnly: false,
-
     sortBy: "featured",
   })
 
-  // State for professionals and loading
-  const [professionals, setProfessionals] = useState<any[]>([])
+  // Raw data from API (fetched once)
+  const [rawProfessionals, setRawProfessionals] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   // State for booking modal
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedProfessional, setSelectedProfessional] = useState<any>(null)
 
-  // Fetch professionals when filters change
+  // Fetch professionals ONCE on mount
   useEffect(() => {
     const fetchProfessionals = async () => {
       setLoading(true)
       try {
-        // Prepare filters for API
-        // Mapping frontend filter names to backend expected parameters if needed
-        // Call API - Use /verificados to bypass VPS database error on /buscar
         console.log("Fetching public profiles via /verificados endpoint");
         const allData = await profesionalApi.obtenerVerificados();
-        // console.log("Raw Verified Data:", allData?.length);
 
-        // Client-side filtering implementation
-        let data = allData;
-        if (Array.isArray(data)) {
-          if (filters.keyword) {
-            const lowerKeyword = filters.keyword.toLowerCase();
-            data = data.filter((p: any) =>
-              (p.usuario?.nombre || "").toLowerCase().includes(lowerKeyword) ||
-              (p.profesion?.nombre || "").toLowerCase().includes(lowerKeyword) ||
-              (p.especialidad?.nombre || "").toLowerCase().includes(lowerKeyword)
-            );
-          }
-          if (filters.profession) {
-            data = data.filter((p: any) => p.profesion_id?.toString() === filters.profession);
-          }
-          if (filters.specialty) {
-            data = data.filter((p: any) => p.especialidad_id?.toString() === filters.specialty);
-          }
-          if (filters.city) {
-            data = data.filter((p: any) => p.ciudad_id?.toString() === filters.city);
-          }
-          if (filters.province) {
-            data = data.filter((p: any) => p.ciudad?.provincia_id?.toString() === filters.province);
-          }
+        if (Array.isArray(allData)) {
+          setRawProfessionals(allData)
         } else {
-          console.error("API did not return an array", data);
-          data = [];
+          console.error("API did not return an array", allData);
+          setRawProfessionals([])
         }
-
-        const mapped = data
-          // Already filtered by endpoint, but safety check doesn't hurt
-          .filter((p: any) => !!p.verificado || p.estado_id === 3 || p.estado === 'aprobado')
-          .map((p: any) => ({
-            id: p.usuario_id,
-            name: p.usuario?.nombre || "Usuario",
-            specialty: p.especialidad?.nombre || p.profesion?.nombre || "Profesional",
-            location: p.ciudad ? `${p.ciudad.nombre}, ${p.ciudad.provincia?.nombre}` : "Ecuador",
-            image: p.usuario?.foto_url || "/placeholder.svg",
-            price: `$${p.tarifa || 0}`,
-            unit: "hora",
-            experience: "Experiencia verificada",
-            category: "general",
-            featured: false,
-            verified: p.verificado,
-            profession: p.profesion_id?.toString(),
-            status: p.estado,
-            status_id: p.estado_id,
-            specialty_id: p.especialidad_id?.toString(),
-            province: p.ciudad?.provincia_id?.toString(),
-            city: p.ciudad_id?.toString(),
-            description: p.descripcion
-          }))
-
-        setProfessionals(mapped)
       } catch (error) {
         console.error("Error fetching professionals:", error)
       } finally {
@@ -103,7 +51,67 @@ export default function ProfessionalsPage() {
     }
 
     fetchProfessionals()
-  }, [filters])
+  }, []) // Empty deps = fetch once
+
+  // Apply filters client-side using useMemo (derived state)
+  const professionals = useMemo(() => {
+    let data = [...rawProfessionals]
+
+    // Keyword filter
+    if (filters.keyword) {
+      const lowerKeyword = filters.keyword.toLowerCase();
+      data = data.filter((p: any) =>
+        (p.usuario?.nombre || "").toLowerCase().includes(lowerKeyword) ||
+        (p.profesion?.nombre || "").toLowerCase().includes(lowerKeyword) ||
+        (p.especialidad?.nombre || "").toLowerCase().includes(lowerKeyword) ||
+        (p.descripcion || "").toLowerCase().includes(lowerKeyword)
+      );
+    }
+
+    // Profession filter
+    if (filters.profession) {
+      data = data.filter((p: any) => p.profesion_id?.toString() === filters.profession);
+    }
+
+    // Specialty filter
+    if (filters.specialty) {
+      data = data.filter((p: any) => p.especialidad_id?.toString() === filters.specialty);
+    }
+
+    // Province filter
+    if (filters.province) {
+      data = data.filter((p: any) => p.ciudad?.provincia_id?.toString() === filters.province);
+    }
+
+    // City filter
+    if (filters.city) {
+      data = data.filter((p: any) => p.ciudad_id?.toString() === filters.city);
+    }
+
+    // Map to display format
+    return data
+      .filter((p: any) => !!p.verificado || p.estado_id === 3 || p.estado === 'aprobado')
+      .map((p: any) => ({
+        id: p.usuario_id,
+        name: p.usuario?.nombre || "Usuario",
+        specialty: p.especialidad?.nombre || p.profesion?.nombre || "Profesional",
+        location: p.ciudad ? `${p.ciudad.nombre}, ${p.ciudad.provincia?.nombre || ""}` : "Ecuador",
+        image: p.usuario?.foto_url || "/placeholder.svg",
+        price: `$${p.tarifa_hora || p.tarifa || 0}`,
+        unit: "hora",
+        experience: "Experiencia verificada",
+        category: "general",
+        featured: false,
+        verified: p.verificado,
+        profession: p.profesion_id?.toString(),
+        status: p.estado,
+        status_id: p.estado_id,
+        specialty_id: p.especialidad_id?.toString(),
+        province: p.ciudad?.provincia_id?.toString(),
+        city: p.ciudad_id?.toString(),
+        description: p.descripcion
+      }))
+  }, [rawProfessionals, filters])
 
   // Sorting logic (can still be done client-side for these results)
   const sortedProfessionals = [...professionals].sort((a, b) => {

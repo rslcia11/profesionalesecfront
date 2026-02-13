@@ -19,8 +19,8 @@ export default function ConversatoriosPage() {
         const data = await ponenciasApi.listar()
         if (data && data.ponencias) {
           const now = new Date()
-          const prox = []
-          const real = []
+          const prox: any[] = []
+          const real: any[] = []
 
           data.ponencias.forEach((p: any) => {
             const fechaInicio = new Date(p.fecha_inicio)
