@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api"
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api"
 
 // --- Interfaces ---
 
@@ -9,6 +9,7 @@ export interface Usuario {
   rol_id: number
   foto_url?: string
   telefono?: string
+  cedula?: string // Added based on DB schema
   estado?: string
 }
 
@@ -31,7 +32,16 @@ export interface PerfilProfesionalData {
   especialidad_id?: number
   ciudad_id?: number
   descripcion: string
-  tarifa_hora?: number
+  telefono?: string
+  cedula?: string // Added
+  foto_url?: string
+  latitud?: number
+  longitud?: number
+  calle_principal?: string
+  referencia?: string
+  permitir_reagendar?: boolean
+  tarifa?: number
+  tarifa_hora?: number // Added for compatibility with admin view
 }
 
 export interface UbicacionData {

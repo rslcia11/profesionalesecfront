@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { CheckCircle2, ChevronLeft, ChevronRight, Home, Upload, Eye, EyeOff } from "lucide-react"
 import { Check } from "lucide-react" // Declared the Check variable
-import { authApi, profesionalApi, catalogosApi, saveToken } from "@/lib/api"
+import { authApi, profesionalApi, catalogosApi, saveToken, usuarioApi } from "@/lib/api"
 
 const workModes = ["Presencial", "Virtual", "Ambas modalidades"]
 
@@ -294,76 +294,87 @@ export default function ProfessionalForm() {
           nombre: formData.fullName,
           correo: formData.email,
           contrasena: formData.password,
-          rol_id: 2, // Always 2 for professionals (handled by backend)
-          telefono: formData.phone,
           cedula: formData.cedula,
+          telefono: formData.phone,
+          rol_id: 2, // Always 2 for professionals
         }
 
         console.log("[v0] Registering user:", registerData)
         const authResponse = await authApi.register(registerData)
-        console.log("[v0] User registered successfully:", authResponse)
+        const token = authResponse.token
 
-        // Step 2: Token available for next steps but NOT saved to storage (prevent auto-login)
-        if (authResponse.token) {
-          console.log("[v0] Token received for profile creation")
+        if (!token) throw new Error("No se recibió el token de autenticación")
+        console.log("[v0] User registered successfully")
+
+        // Step 2: Upload profile image FIRST to get URL (if exists)
+        let finalFotoUrl = ""
+        if (formData.profileImage) {
+          try {
+            console.log("[v0] Uploading profile image...")
+            const photoRes = await profesionalApi.subirDocumento("foto_perfil", formData.profileImage, token)
+            // The backend returns the saved document info: { mensaje: "...", doc: { id: ..., url: "..." } }
+            finalFotoUrl = photoRes.doc?.url || photoRes.archivo?.url || photoRes.url || photoRes.path || ""
+            console.log("[v0] Profile image uploaded:", finalFotoUrl)
+          } catch (uploadError) {
+            console.warn("Could not upload profile image, continuing without it:", uploadError)
+          }
         }
 
-        // Step 3: Create professional profile
-        const perfilData = {
+        // Step 2.5: SURGICAL FIX - Explicitly update user record in 'usuarios' table
+        // This ensures cedula and foto_url are saved where the admin panel looks for them
+        try {
+          console.log("[v0] Updating user profile record in 'usuarios' table...")
+          const userUpdateData = {
+            nombre: formData.fullName,
+            telefono: formData.phone,
+            cedula: formData.cedula,
+            foto_url: finalFotoUrl
+          }
+          await usuarioApi.actualizarPerfil(userUpdateData, token)
+          console.log("[v0] User profile record updated successfully")
+        } catch (updateError) {
+          console.warn("[v0] Could not update user profile record:", updateError)
+        }
+
+        // Step 3: Create professional profile with ALL data (persists to 'profesionales' table)
+        const perfilData: any = {
           profesion_id: Number(formData.profession),
           especialidad_id: Number(formData.specialty),
           ciudad_id: Number(formData.city),
           descripcion: formData.description,
+          telefono: formData.phone,
+          cedula: formData.cedula,
+          foto_url: finalFotoUrl,
+          calle_principal: formData.address,
+          referencia: formData.reference,
+          tarifa: formData.rate || 0,
           tarifa_hora: formData.rate || 0,
         }
 
-        console.log("[v0] Creating professional profile:", perfilData)
-        const perfilResponse = await profesionalApi.crearPerfil(perfilData, authResponse.token!) // Use token from reponse for safety
-        console.log("[v0] Professional profile created:", perfilResponse)
+        console.log("[v0] Creating professional profile with full data:", perfilData)
+        await profesionalApi.crearPerfil(perfilData, token)
+        console.log("[v0] Professional profile created")
 
+        // Step 4: Upload other verification documents (async)
+        const otherDocs = [
+          { file: formData.identity, type: "cedula" },
+          { file: formData.title, type: "titulo" },
+          { file: formData.license, type: "licencia" },
+        ]
 
-        // Step 4: Upload documents if provided (optional)
-        if (authResponse.token) {
-          try {
-            const uploadPromises = []
+        await Promise.all(
+          otherDocs
+            .filter(d => d.file)
+            .map(d => profesionalApi.subirDocumento(d.type, d.file as File, token).catch(err => {
+              console.error(`Error uploading ${d.type}:`, err)
+            }))
+        )
 
-            // Helper para subir solo si existe
-            const uploadIfHasFile = async (file: File | null, tipo: string) => {
-              if (file) return profesionalApi.subirDocumento(tipo, file, authResponse.token!)
-            }
-
-            if (formData.identity) uploadPromises.push(uploadIfHasFile(formData.identity, "cedula"))
-            if (formData.title) uploadPromises.push(uploadIfHasFile(formData.title, "titulo"))
-            if (formData.license) uploadPromises.push(uploadIfHasFile(formData.license, "licencia")) // opcional
-            if (formData.profileImage) uploadPromises.push(uploadIfHasFile(formData.profileImage, "foto_perfil"))
-
-            await Promise.all(uploadPromises)
-            console.log("[v0] Documents uploaded successfully")
-          } catch (uploadError: any) {
-            console.error("Error subiendo documentos:", uploadError)
-            // Assuming 'toast' is available in this scope
-            // toast({
-            //   title: "Registro exitoso con advertencia",
-            //   description: "Tu perfil se creó, pero hubo un error al subir algunos documentos: " + uploadError.message,
-            //   variant: "warning",
-            // })
-            // No hacemos throw aquí, permitimos que continúe al éxito
-          }
-        }
-
+        console.log("[v0] Verification documents processed")
         setShowSuccessModal(true)
       } catch (error: any) {
         console.error("[v0] Registration error:", error)
-        // Check if error is "User already exists" (status 409 or similar message) to guide user?
-        // Assuming 'setErrors' and 'toast' are available in this scope
-        // setErrors((prev) => ({ ...prev, form: error.message || "Error al registrar profesional" }))
-
-        // toast({
-        //     title: "Error de registro",
-        //     description: error.message,
-        //     variant: "destructive"
-        // })
-        alert(`Error al registrar: ${error instanceof Error ? error.message : "Error desconocido"}`)
+        alert(`Error al registrar: ${error.message || "Error desconocido"}`)
       }
     }
   }

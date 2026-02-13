@@ -46,7 +46,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
-import { profesionalApi, adminApi, articulosApi, catalogosApi, ponentesApi, type Articulo } from "@/lib/api"
+import { adminApi, catalogosApi, ponenciasApi, profesionalApi, articulosApi, API_URL, ponentesApi, type Articulo } from "@/lib/api"
 
 type Ponencia = {
   id: number
@@ -115,6 +115,13 @@ export default function AdminDashboard() {
   const [loadingPonentes, setLoadingPonentes] = useState(false)
 
   useEffect(() => {
+    const formatUrl = (path: string | null | undefined) => {
+      if (!path) return null;
+      if (path.startsWith('http')) return path;
+      const baseUrl = API_URL.replace('/api', '');
+      return `${baseUrl}/${path.startsWith('/') ? path.slice(1) : path}`;
+    };
+
     const loadData = async () => {
       const token = localStorage.getItem("auth_token")
       if (!token) return
@@ -150,17 +157,17 @@ export default function AdminDashboard() {
             estado,
             nombre: p.usuario?.nombre || "Sin nombre",
             correo: p.usuario?.correo || "",
-            telefono: p.usuario?.telefono || "No disponible (API)",
-            cedula: p.usuario?.cedula || "No disponible (API)",
+            telefono: p.telefono || p.usuario?.telefono || "No disponible (API)",
+            cedula: p.cedula || p.usuario?.cedula || p.usuario?.identificacion || p.usuario?.dni || p.usuario?.nro_identificacion || p.usuario?.cedula_identidad || "No disponible (API)",
             profesion: p.profesion ? p.profesion.nombre : "Sin profesión",
             especialidad: p.especialidad ? p.especialidad.nombre : "Sin especialidad",
             ciudad: p.ciudad ? p.ciudad.nombre : "",
             provincia: p.ciudad?.provincia ? p.ciudad.provincia.nombre : "",
-            tarifa: p.tarifa_hora ? `$${p.tarifa_hora}` : "No definida",
+            tarifa: p.tarifa ? `$${p.tarifa}` : (p.tarifa_hora ? `$${p.tarifa_hora}` : "No definida"),
             fecha_registro: p.usuario?.creado_en || new Date().toISOString(),
             descripcion: p.descripcion || "Sin descripción",
             documentos: p.documentos || [],
-            foto_url: p.usuario?.foto_url || null,
+            foto_url: formatUrl(p.foto_url || p.usuario?.foto_url || p.usuario?.foto || p.usuario?.avatar || p.usuario?.imagen_url),
             direccion_texto: p.direccion ? `${p.direccion.calle_principal} ${p.direccion.referencia ? `(${p.direccion.referencia})` : ""}` : "No registrada",
             link_maps: p.direccion?.link_maps || null,
             perfil_estado: { estado },
