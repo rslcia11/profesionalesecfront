@@ -8,6 +8,10 @@ import { CheckCircle2, ChevronLeft, ChevronRight, Home, Upload, Eye, EyeOff } fr
 import { Check } from "lucide-react" // Declared the Check variable
 import { authApi, profesionalApi, catalogosApi, saveToken, usuarioApi } from "@/lib/api"
 
+
+import LocationMap from "@/components/shared/location-map"
+import { getAddressFromCoordinates, getCoordinatesFromAddress } from "@/lib/geocoding"
+
 const workModes = ["Presencial", "Virtual", "Ambas modalidades"]
 
 
@@ -29,12 +33,15 @@ interface FormData {
   city: string // Stores ID as string
   address: string
   reference: string
-  identity: File | null
+  identityFront: File | null
+  identityBack: File | null
   title: File | null
   license: File | null
   showPhone: boolean
   showEmail: boolean
   tags: string
+  lat?: number
+  lng?: number
 }
 
 interface CatalogItem {
@@ -71,12 +78,15 @@ export default function ProfessionalForm() {
     city: "",
     address: "",
     reference: "",
-    identity: null,
+    identityFront: null,
+    identityBack: null,
     title: null,
     license: null,
     showPhone: false,
     showEmail: false,
     tags: "",
+    lat: undefined,
+    lng: undefined,
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [showSuccessModal, setShowSuccessModal] = useState(false)
@@ -195,6 +205,21 @@ export default function ProfessionalForm() {
       }
     }
 
+    if (name === "city" && value) {
+      const selectedCity = cities.find((c: any) => c.id === Number(value))
+      const selectedProvince = provinces.find((p: any) => p.id === Number(formData.province))
+
+      if (selectedCity && selectedProvince) {
+        getCoordinatesFromAddress(`${selectedCity.nombre}, ${selectedProvince.nombre}, Ecuador`)
+          .then(coords => {
+            if (coords) {
+              handleLocationChange(coords.lat, coords.lng)
+            }
+          })
+          .catch(err => console.error("Error auto-centering map:", err))
+      }
+    }
+
     if (errors[name]) {
       setErrors({ ...errors, [name]: "" })
     }
@@ -206,6 +231,22 @@ export default function ProfessionalForm() {
       setErrors({ ...errors, [name]: "" })
     }
   }
+
+  const handleLocationChange = async (lat: number, lng: number) => {
+    setFormData(prev => ({ ...prev, lat, lng }))
+
+    // Reverse geocoding
+    const { address, reference } = await getAddressFromCoordinates(lat, lng)
+    if (address) {
+      setFormData(prev => ({
+        ...prev,
+        address: address,
+        reference: reference || prev.reference // Keep existing reference if none returned
+      }))
+    }
+  }
+
+
 
   const validateStep = (): boolean => {
     const newErrors: FormErrors = {}
@@ -347,6 +388,10 @@ export default function ProfessionalForm() {
           foto_url: finalFotoUrl,
           calle_principal: formData.address,
           referencia: formData.reference,
+          lat: formData.lat,
+          lng: formData.lng,
+          latitud: formData.lat, // Required for Direccion creation in backend
+          longitud: formData.lng, // Required for Direccion creation in backend
           tarifa: formData.rate || 0,
           tarifa_hora: formData.rate || 0,
         }
@@ -357,7 +402,8 @@ export default function ProfessionalForm() {
 
         // Step 4: Upload other verification documents (async)
         const otherDocs = [
-          { file: formData.identity, type: "cedula" },
+          { file: formData.identityFront, type: "cedula" }, // Sending as "cedula" due to backend ENUM restriction
+          { file: formData.identityBack, type: "cedula" },  // Sending as "cedula" due to backend ENUM restriction
           { file: formData.title, type: "titulo" },
           { file: formData.license, type: "licencia" },
         ]
@@ -589,7 +635,7 @@ export default function ProfessionalForm() {
       </div>
       <div>
         <label className="block text-sm font-medium text-muted-foreground mb-2">
-          Descripción Profesional * (máximo 80 caracteres)
+          Descripción, escribe tu presentación como profesional* (máximo 80 caracteres)
         </label>
         <textarea
           name="description"
@@ -644,27 +690,40 @@ export default function ProfessionalForm() {
           </select>
           {errors.city && <p className="text-red-400 text-sm mt-1">{errors.city}</p>}
         </div>
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-muted-foreground mb-2">Dirección Exacta *</label>
-          <input
-            type="text"
-            name="address"
-            value={formData.address}
-            onChange={handleInputChange}
-            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-          {errors.address && <p className="text-red-400 text-sm mt-1">{errors.address}</p>}
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-muted-foreground mb-2">Referencia (Opcional)</label>
-          <input
-            type="text"
-            name="reference"
-            value={formData.reference}
-            onChange={handleInputChange}
-            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+      </div>
+      <div className="md:col-span-2">
+        <label className="block text-sm font-medium text-muted-foreground mb-4">Ubicación en el Mapa</label>
+        <div className="border border-border rounded-lg overflow-hidden">
+          <LocationMap
+            lat={formData.lat}
+            lng={formData.lng}
+            onChange={handleLocationChange}
           />
         </div>
+        <p className="text-xs text-muted-foreground mt-2">
+          Mueve el pin para establecer tu ubicación exacta. La dirección se actualizará automáticamente.
+        </p>
+      </div>
+      <div className="md:col-span-2">
+        <label className="block text-sm font-medium text-muted-foreground mb-2">Dirección Exacta *</label>
+        <input
+          type="text"
+          name="address"
+          value={formData.address}
+          onChange={handleInputChange}
+          className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+        {errors.address && <p className="text-red-400 text-sm mt-1">{errors.address}</p>}
+      </div>
+      <div className="md:col-span-2">
+        <label className="block text-sm font-medium text-muted-foreground mb-2">Referencia (Opcional)</label>
+        <input
+          type="text"
+          name="reference"
+          value={formData.reference}
+          onChange={handleInputChange}
+          className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+        />
       </div>
     </div>
   )
@@ -677,26 +736,51 @@ export default function ProfessionalForm() {
       </p>
       <div className="space-y-6">
         <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-2">
+          <label className="block text-sm font-medium text-muted-foreground mb-4">
             Documento de Identidad (Cédula o DNI) - Opcional
           </label>
-          <input
-            type="file"
-            onChange={(e) => handleFileChange("identity", e.target.files?.[0] || null)}
-            className="hidden"
-            id="identity"
-          />
-          <label
-            htmlFor="identity"
-            className="flex items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group"
-          >
-            <div className="flex flex-col items-center justify-center">
-              <Upload className="size-8 text-primary mb-2 group-hover:scale-110 transition-transform" />
-              <p className="text-muted-foreground text-sm">
-                {formData.identity ? formData.identity.name : "Sube tu documento de identidad"}
-              </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-muted-foreground mb-2">Parte Frontal</p>
+              <input
+                type="file"
+                onChange={(e) => handleFileChange("identityFront", e.target.files?.[0] || null)}
+                className="hidden"
+                id="identityFront"
+              />
+              <label
+                htmlFor="identityFront"
+                className="flex items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group"
+              >
+                <div className="flex flex-col items-center justify-center px-2 text-center">
+                  <Upload className="size-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
+                  <p className="text-muted-foreground text-xs truncate w-full">
+                    {formData.identityFront ? formData.identityFront.name : "Subir Frontal"}
+                  </p>
+                </div>
+              </label>
             </div>
-          </label>
+            <div>
+              <p className="text-xs text-muted-foreground mb-2">Parte Posterior</p>
+              <input
+                type="file"
+                onChange={(e) => handleFileChange("identityBack", e.target.files?.[0] || null)}
+                className="hidden"
+                id="identityBack"
+              />
+              <label
+                htmlFor="identityBack"
+                className="flex items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group"
+              >
+                <div className="flex flex-col items-center justify-center px-2 text-center">
+                  <Upload className="size-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
+                  <p className="text-muted-foreground text-xs truncate w-full">
+                    {formData.identityBack ? formData.identityBack.name : "Subir Posterior"}
+                  </p>
+                </div>
+              </label>
+            </div>
+          </div>
         </div>
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-2">Título Profesional - Opcional</label>

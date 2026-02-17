@@ -8,6 +8,7 @@ import { useParams } from "next/navigation"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import BookingForm from "@/components/booking-form"
+import LocationMap from "@/components/shared/location-map"
 
 export default function ProfessionalProfile() {
     const params = useParams()
@@ -57,7 +58,7 @@ export default function ProfessionalProfile() {
     }
 
     // Data Mapping
-    const { usuario, profesion, especialidad, descripcion, tarifa, ciudad } = professional
+    const { usuario, profesion, especialidad, descripcion, tarifa, ciudad, direccion } = professional
     const name = usuario?.nombre || "Profesional"
     const title = profesion?.nombre || "Profesional"
     const subTitle = especialidad?.nombre ? `${title} Especializada en ${especialidad.nombre}` : title
@@ -146,27 +147,67 @@ export default function ProfessionalProfile() {
                             </p>
                         </div>
 
+                        {/* Servicios */}
+                        {professional.servicios && professional.servicios.length > 0 && (
+                            <div className="mt-12">
+                                <h3 className="text-xl font-bold uppercase text-gray-800 mb-6 border-b pb-4">SERVICIOS</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                                    {professional.servicios.map((servicio: any) => (
+                                        <div key={servicio.servicio_id} className="flex items-center gap-3 group">
+                                            <div className="text-xl font-serif font-black tracking-tighter leading-none shrink-0">P<span className="text-sm">.ec</span></div>
+                                            <p className="text-gray-500 text-sm md:text-base border-l border-gray-100 pl-3 group-hover:text-black group-hover:border-black transition-all">
+                                                {servicio.descripcion}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Contact Info (Moved here since Map is gone) */}
+                        {/* Ubicación y Mapa */}
                         <div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-8">Contacto</h3>
-                            <div className="space-y-6 text-gray-600 text-sm">
-                                <div className="flex flex-col">
-                                    <span className="text-xs text-gray-400 uppercase tracking-widest">Ubicación</span>
-                                    <span className="font-semibold text-gray-800 flex items-center gap-2">
-                                        <MapPin size={16} />
-                                        {locationName}
-                                    </span>
+                            <h3 className="text-xl font-bold uppercase text-gray-800 mb-6 border-b pb-4">UBICACIÓN & CONTACTO</h3>
+
+                            <div className="space-y-6">
+                                {/* Dirección Textual */}
+                                <div className="flex items-start gap-4">
+                                    <div className="bg-gray-100 p-3 rounded-full">
+                                        <MapPin className="text-black" size={24} />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-gray-900">{locationName}</h4>
+                                        {direccion?.calle_principal && (
+                                            <p className="text-gray-600 mt-1">{direccion.calle_principal}</p>
+                                        )}
+                                        {direccion?.referencia && (
+                                            <p className="text-gray-500 text-sm mt-1 italic">Ref: {direccion.referencia}</p>
+                                        )}
+                                    </div>
                                 </div>
 
-                                <div className="flex gap-4 pt-4">
+                                {/* Mapa */}
+                                {direccion?.latitud && direccion?.longitud && (
+                                    <div className="w-full h-64 rounded-xl overflow-hidden shadow-sm border border-gray-100">
+                                        <LocationMap
+                                            lat={Number(direccion.latitud)}
+                                            lng={Number(direccion.longitud)}
+                                            readonly={true}
+                                            address={direccion.calle_principal}
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Botones de Contacto */}
+                                <div className="flex flex-wrap gap-4 pt-6 mt-6 border-t border-gray-100">
                                     {phone && (
-                                        <a href={whatsappLink} target="_blank" className="bg-transparent text-gray-900 px-6 py-3 rounded text-sm font-medium border border-gray-300 hover:bg-gray-50 transition flex items-center gap-2">
-                                            <Phone size={16} /> WhatsApp
+                                        <a href={whatsappLink} target="_blank" className="flex-1 bg-green-500 text-white px-6 py-4 rounded-lg font-bold hover:bg-green-600 transition flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                                            <Phone size={20} /> Contactar por WhatsApp
                                         </a>
                                     )}
                                     {email && (
-                                        <a href={`mailto:${email}`} className="bg-transparent text-gray-900 px-6 py-3 rounded text-sm font-medium border border-gray-300 hover:bg-gray-50 transition flex items-center gap-2">
-                                            <Mail size={16} /> Email
+                                        <a href={`mailto:${email}`} className="flex-1 bg-gray-900 text-white px-6 py-4 rounded-lg font-bold hover:bg-black transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg">
+                                            <Mail size={20} /> Enviar Email
                                         </a>
                                     )}
                                 </div>

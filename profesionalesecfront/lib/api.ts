@@ -66,6 +66,10 @@ export interface Articulo {
     nombre: string
     correo: string
     foto_url?: string
+    perfil_profesional?: {
+      profesion_id: number
+      especialidad_id?: number
+    }
   }
 }
 
@@ -654,6 +658,36 @@ export const adminApi = {
       headers: authHeader(token)
     });
   }
+}
+
+// Servicios API
+export const serviciosApi = {
+  async crear(data: { descripcion: string }, token: string) {
+    return fetchApi("/servicios", {
+      method: "POST",
+      headers: authHeader(token),
+      body: JSON.stringify(data),
+    });
+  },
+  async listarMios(token: string) {
+    return fetchApi("/servicios/mis-servicios", { headers: authHeader(token) });
+  },
+  async listarPorProfesional(usuarioId: number) {
+    return fetchApi(`/servicios/profesional/${usuarioId}`);
+  },
+  async actualizar(id: number, data: { descripcion: string }, token: string) {
+    return fetchApi(`/servicios/${id}`, {
+      method: "PUT",
+      headers: authHeader(token),
+      body: JSON.stringify(data),
+    });
+  },
+  async eliminar(id: number, token: string) {
+    return fetchApi(`/servicios/${id}`, {
+      method: "DELETE",
+      headers: authHeader(token),
+    });
+  },
 }
 
 // Usuario API (General user profile)

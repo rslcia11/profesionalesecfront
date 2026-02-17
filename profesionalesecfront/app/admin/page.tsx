@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -47,6 +47,8 @@ import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 import { adminApi, catalogosApi, ponenciasApi, profesionalApi, articulosApi, API_URL, ponentesApi, type Articulo } from "@/lib/api"
+import ArticleFormModal from "@/components/article-form-modal"
+import { Eye } from "lucide-react"
 
 type Ponencia = {
   id: number
@@ -202,6 +204,40 @@ export default function AdminDashboard() {
   const [isProfileDetailsOpen, setIsProfileDetailsOpen] = useState(false) // Nuevo estado para detalles
   const [selectedProfile, setSelectedProfile] = useState<any>(null) // Nuevo estado para perfil seleccionado
   const [editingItem, setEditingItem] = useState<any>(null)
+
+  // Articles administration states
+  const [isArticleModalOpen, setIsArticleModalOpen] = useState(false)
+  const [isArticleDetailsOpen, setIsArticleDetailsOpen] = useState(false)
+  const [selectedArticle, setSelectedArticle] = useState<Articulo | null>(null)
+
+  // Filter state
+  const [filterStatus, setFilterStatus] = useState<"todos" | "pendiente" | "aprobado" | "rechazado">("todos")
+
+  // Computed: Filter and Sort Profiles
+  const filteredProfiles = useMemo(() => {
+    let result = [...perfilesPendientes]
+
+    // 1. Filter by status
+    if (filterStatus !== "todos") {
+      result = result.filter((p) => p.estado === filterStatus)
+    }
+
+    // 2. Sort by date (Newest first), fallback to ID
+    result.sort((a, b) => {
+      const dateA = new Date(a.fecha_registro).getTime()
+      const dateB = new Date(b.fecha_registro).getTime()
+
+      // If valid dates, compare them
+      if (!isNaN(dateA) && !isNaN(dateB) && dateA !== dateB) {
+        return dateB - dateA
+      }
+
+      // Fallback: Sort by ID (usually higher ID = newer)
+      return b.id - a.id
+    })
+
+    return result
+  }, [perfilesPendientes, filterStatus])
 
   // Form states
   const [conversatorioForm, setConversatorioForm] = useState({
@@ -478,6 +514,34 @@ export default function AdminDashboard() {
       setAdminArticulos(Array.isArray(data) ? data : [])
     } catch (error) {
       toast({ title: "Error", description: "No se pudo archivar el artículo.", variant: "destructive" })
+    }
+  }
+
+  const handleCreateArticuloAdmin = async (data: Partial<Articulo>) => {
+    const token = localStorage.getItem("auth_token")
+    if (!token) return
+    try {
+      await articulosApi.crear(data as any, token)
+      toast({ title: "Artículo Creado", description: "El artículo ha sido publicado exitosamente." })
+      const articlesData = await articulosApi.listarPublicados()
+      setAdminArticulos(Array.isArray(articlesData) ? articlesData : [])
+      setIsArticleModalOpen(false)
+    } catch (e) {
+      toast({ title: "Error", description: "No se pudo crear el artículo", variant: "destructive" })
+    }
+  }
+
+  const handleUpdateArticuloAdmin = async (data: Partial<Articulo>) => {
+    const token = localStorage.getItem("auth_token")
+    if (!token || !selectedArticle) return
+    try {
+      await articulosApi.actualizar(selectedArticle.id, data, token)
+      toast({ title: "Artículo Actualizado", description: "Cambios guardados exitosamente." })
+      const articlesData = await articulosApi.listarPublicados()
+      setAdminArticulos(Array.isArray(articlesData) ? articlesData : [])
+      setIsArticleModalOpen(false)
+    } catch (e) {
+      toast({ title: "Error", description: "No se pudo actualizar el artículo", variant: "destructive" })
     }
   }
 
@@ -960,17 +1024,37 @@ export default function AdminDashboard() {
                   </p>
                 </div>
 
+                <div className="flex space-x-2 p-1 bg-muted/50 rounded-lg w-fit mb-4">
+                  {(["todos", "pendiente", "aprobado", "rechazado"] as const).map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => setFilterStatus(status)}
+                      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${filterStatus === status
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                        }`}
+                    >
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                      <span className="ml-2 text-xs opacity-70">
+                        ({status === "todos"
+                          ? perfilesPendientes.length
+                          : perfilesPendientes.filter(p => p.estado === status).length})
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
                 <div className="grid gap-4">
-                  {perfilesPendientes.length === 0 ? (
+                  {filteredProfiles.length === 0 ? (
                     <Card className="bg-white border-gray-200">
                       <CardContent className="flex flex-col items-center justify-center py-12">
                         <AlertCircle className="h-12 w-12 text-gray-500 mb-4" />
-                        <h3 className="text-lg font-semibold mb-1">No hay profesionales registrados</h3>
-                        <p className="text-sm text-gray-500">Aún no hay perfiles profesionales en el sistema</p>
+                        <h3 className="text-lg font-semibold mb-1">No se encontraron profesionales</h3>
+                        <p className="text-sm text-gray-500">No hay perfiles con el estado "{filterStatus}"</p>
                       </CardContent>
                     </Card>
                   ) : (
-                    perfilesPendientes.map((perfil, index) => (
+                    filteredProfiles.map((perfil, index) => (
                       <Card
                         key={perfil.id}
                         className="bg-white border-gray-200 hover:border-emerald-300 transition-all duration-300 animate-in fade-in slide-in-from-bottom-4"
@@ -1254,81 +1338,129 @@ export default function AdminDashboard() {
             <TabsContent value="articulos" className="space-y-4">
               <div className="animate-in fade-in duration-300">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    <BookOpen className="h-6 w-6 text-blue-600" />
-                    Moderación de Artículos
-                  </h2>
-                  <Badge variant="outline" className="text-sm">
-                    {adminArticulos.length} artículo{adminArticulos.length !== 1 ? "s" : ""}
-                  </Badge>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-50 rounded-lg border border-blue-100">
+                      <BookOpen className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">Moderación de Artículos</h2>
+                      <p className="text-sm text-gray-500">Supervisa e impulsa el contenido de la comunidad</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="text-sm font-medium bg-white px-3 py-1">
+                      {adminArticulos.length} {adminArticulos.length === 1 ? 'artículo' : 'artículos'}
+                    </Badge>
+                    <Button
+                      onClick={() => {
+                        setSelectedArticle(null)
+                        setIsArticleModalOpen(true)
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 shadow-md transition-all active:scale-95 gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Nuevo Artículo
+                    </Button>
+                  </div>
                 </div>
 
                 {adminArticulos.length === 0 ? (
-                  <Card className="bg-white border-gray-200">
-                    <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                      <BookOpen className="h-12 w-12 text-gray-300 mb-4" />
-                      <h3 className="text-lg font-semibold text-gray-600 mb-2">No hay artículos publicados</h3>
-                      <p className="text-gray-400">Los artículos creados por profesionales aparecerán aquí.</p>
+                  <Card className="bg-white border-gray-200 border-dashed">
+                    <CardContent className="flex flex-col items-center justify-center py-20 text-center">
+                      <div className="bg-gray-50 p-6 rounded-full mb-4">
+                        <BookOpen className="h-12 w-12 text-gray-300" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-700 mb-2">No hay artículos publicados</h3>
+                      <p className="text-gray-400 max-w-sm">Los artículos creados por profesionales aparecerán aquí para tu supervisión.</p>
                     </CardContent>
                   </Card>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
                     {adminArticulos.map((articulo) => (
-                      <Card key={articulo.id} className="bg-white border-gray-200 hover:border-blue-200 transition-all duration-300 hover:shadow-lg">
-                        <CardContent className="p-6">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1 min-w-0 mr-4">
-                              <div className="flex items-center gap-2 mb-2">
-                                <h3 className="text-lg font-bold text-gray-900 truncate">{articulo.titulo}</h3>
+                      <Card key={articulo.id} className="bg-white border-gray-200 hover:border-blue-300 transition-all duration-300 hover:shadow-md group overflow-hidden">
+                        <CardContent className="p-0">
+                          <div className="flex h-full">
+                            {/* Icon/Image Placeholder */}
+                            <div className="w-24 bg-gray-50 border-r border-gray-100 flex flex-col items-center justify-center relative overflow-hidden group-hover:bg-blue-50 transition-colors">
+                              {articulo.imagen_url ? (
+                                <img src={articulo.imagen_url} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-40 transition-opacity" />
+                              ) : (
+                                <FileText className="h-8 w-8 text-gray-300 group-hover:text-blue-200" />
+                              )}
+                              <Badge className="z-10 text-[10px] absolute top-2 left-2 px-1">
+                                #{articulo.id}
+                              </Badge>
+                            </div>
+
+                            <div className="flex-1 p-5 min-w-0">
+                              <div className="flex justify-between items-start mb-2">
                                 <Badge
+                                  variant="outline"
                                   className={cn(
-                                    "text-xs",
+                                    "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5",
                                     articulo.estado === "publicado"
-                                      ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                                      ? "bg-emerald-50 text-emerald-700 border-emerald-100"
                                       : articulo.estado === "archivado"
-                                        ? "bg-red-100 text-red-700 border-red-200"
-                                        : "bg-yellow-100 text-yellow-700 border-yellow-200"
+                                        ? "bg-red-50 text-red-700 border-red-100"
+                                        : "bg-yellow-50 text-yellow-700 border-yellow-100"
                                   )}
                                 >
                                   {articulo.estado}
                                 </Badge>
-                              </div>
-                              {articulo.resumen && (
-                                <p className="text-sm text-gray-500 line-clamp-2 mb-2">{articulo.resumen}</p>
-                              )}
-                              <div className="flex items-center gap-4 text-xs text-gray-400">
-                                <span className="flex items-center gap-1">
-                                  <Users className="h-3 w-3" />
-                                  {articulo.autor?.nombre || "Autor desconocido"}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
+                                <span className="text-[10px] text-gray-400 font-medium">
                                   {articulo.fecha_publicacion ? new Date(articulo.fecha_publicacion).toLocaleDateString("es-EC") : ""}
                                 </span>
                               </div>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {articulo.estado !== "publicado" && (
+
+                              <h3 className="text-base font-bold text-gray-900 truncate mb-1 group-hover:text-blue-600 transition-colors">
+                                {articulo.titulo}
+                              </h3>
+
+                              <div className="flex items-center gap-2 mb-4">
+                                <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
+                                  <Users className="h-3 w-3 text-blue-600" />
+                                </div>
+                                <span className="text-xs text-gray-600 font-medium truncate">
+                                  {articulo.autor?.nombre || "Autor desconocido"}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-2 border-t pt-4">
                                 <Button
                                   size="sm"
-                                  onClick={() => handleModerarArticulo(articulo.id)}
-                                  className="bg-emerald-600 hover:bg-emerald-700 gap-1"
+                                  variant="secondary"
+                                  onClick={() => {
+                                    setSelectedArticle(articulo)
+                                    setIsArticleDetailsOpen(true)
+                                  }}
+                                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 gap-1.5"
                                 >
-                                  <CheckCircle2 className="h-3 w-3" />
-                                  Publicar
+                                  <Eye className="h-3.5 w-3.5" />
+                                  Detalles
                                 </Button>
-                              )}
-                              {articulo.estado === "publicado" && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleArchivarArticulo(articulo.id)}
-                                  className="gap-1 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                                >
-                                  <XCircle className="h-3 w-3" />
-                                  Archivar
-                                </Button>
-                              )}
+
+                                {articulo.estado === "publicado" ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleArchivarArticulo(articulo.id)}
+                                    className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 transition-colors px-3"
+                                    title="Archivar"
+                                  >
+                                    <XCircle className="h-4 w-4" />
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleModerarArticulo(articulo.id)}
+                                    className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 transition-colors px-3"
+                                    title="Publicar"
+                                  >
+                                    <CheckCircle2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </CardContent>
@@ -1488,6 +1620,110 @@ export default function AdminDashboard() {
               )}
             </DialogContent>
           </Dialog>
+
+          {/* Diálogo Detalle Artículo */}
+          <Dialog open={isArticleDetailsOpen} onOpenChange={setIsArticleDetailsOpen}>
+            <DialogContent className="bg-white border-gray-200 max-w-4xl max-h-[90vh] overflow-y-auto">
+              {selectedArticle && (
+                <div className="animate-in fade-in duration-300">
+                  <DialogHeader className="mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge className={cn(
+                        "text-[10px] font-bold uppercase",
+                        selectedArticle.estado === 'publicado' ? "bg-emerald-500" : "bg-gray-400"
+                      )}>
+                        {selectedArticle.estado}
+                      </Badge>
+                      <span className="text-xs text-gray-400">
+                        {selectedArticle.fecha_publicacion ? new Date(selectedArticle.fecha_publicacion).toLocaleDateString("es-EC") : ""}
+                      </span>
+                    </div>
+                    <DialogTitle className="text-3xl font-bold text-gray-900 leading-tight">
+                      {selectedArticle.titulo}
+                    </DialogTitle>
+                    <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-100">
+                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
+                        {selectedArticle.autor?.foto_url ? (
+                          <img src={selectedArticle.autor.foto_url} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <Users className="h-5 w-5 text-blue-600" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">{selectedArticle.autor?.nombre}</p>
+                        <p className="text-xs text-gray-500">Autor del artículo</p>
+                      </div>
+                    </div>
+                  </DialogHeader>
+
+                  <div className="space-y-6">
+                    {selectedArticle.imagen_url && (
+                      <div className="rounded-xl overflow-hidden border bg-gray-50 aspect-video relative group">
+                        <img
+                          src={selectedArticle.imagen_url}
+                          alt={selectedArticle.titulo}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+
+                    {selectedArticle.resumen && (
+                      <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-100 italic text-gray-600 text-lg leading-relaxed">
+                        "{selectedArticle.resumen}"
+                      </div>
+                    )}
+
+                    <div className="prose prose-blue max-w-none text-gray-800 leading-relaxed">
+                      <div dangerouslySetInnerHTML={{ __html: selectedArticle.contenido }} />
+                    </div>
+                  </div>
+
+                  <DialogFooter className="mt-8 pt-6 border-t border-gray-100 gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsArticleDetailsOpen(false)}
+                      className="px-6"
+                    >
+                      Cerrar
+                    </Button>
+
+                    {selectedArticle.estado === 'publicado' ? (
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          handleArchivarArticulo(selectedArticle.id)
+                          setIsArticleDetailsOpen(false)
+                        }}
+                        className="bg-red-600 hover:bg-red-700 gap-2 px-6"
+                      >
+                        <XCircle className="h-4 w-4" />
+                        Archivar Artículo
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => {
+                          handleModerarArticulo(selectedArticle.id)
+                          setIsArticleDetailsOpen(false)
+                        }}
+                        className="bg-emerald-600 hover:bg-emerald-700 gap-2 px-6"
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                        Publicar Artículo
+                      </Button>
+                    )}
+                  </DialogFooter>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+
+          {/* Modal de Creación/Edición (Reutilizado) */}
+          <ArticleFormModal
+            open={isArticleModalOpen}
+            onOpenChange={setIsArticleModalOpen}
+            article={selectedArticle}
+            onSubmit={selectedArticle ? handleUpdateArticuloAdmin : handleCreateArticuloAdmin}
+          />
 
         </div>
       </main>

@@ -23,6 +23,7 @@ interface BlogSectionProps {
   posts?: BlogPost[]
   dynamic?: boolean
   limit?: number
+  professionId?: number
 }
 
 function mapArticuloToPost(a: Articulo): BlogPost {
@@ -47,7 +48,7 @@ function mapArticuloToPost(a: Articulo): BlogPost {
   }
 }
 
-export default function BlogSection({ posts, dynamic = true, limit = 3 }: BlogSectionProps) {
+export default function BlogSection({ posts, dynamic = true, limit = 3, professionId }: BlogSectionProps) {
   const [displayPosts, setDisplayPosts] = useState<BlogPost[]>(posts || [])
   const [loaded, setLoaded] = useState(false)
 
@@ -61,18 +62,23 @@ export default function BlogSection({ posts, dynamic = true, limit = 3 }: BlogSe
       try {
         const data = await articulosApi.listarPublicados()
         if (Array.isArray(data) && data.length > 0) {
-          setDisplayPosts(data.slice(0, limit).map(mapArticuloToPost))
+          let filtered = data;
+
+          if (professionId) {
+            filtered = data.filter(a => a.autor?.perfil_profesional?.profesion_id === professionId);
+          }
+
+          setDisplayPosts(filtered.slice(0, limit).map(mapArticuloToPost))
         }
-        // If API returns empty, keep the hardcoded posts as fallback
-      } catch {
-        // Keep hardcoded posts on error
+      } catch (error) {
+        console.error("Error loading articles in section:", error)
       } finally {
         setLoaded(true)
       }
     }
 
     loadArticles()
-  }, [dynamic, limit])
+  }, [dynamic, limit, professionId])
 
   // Don't render section if no posts at all
   if (loaded && displayPosts.length === 0) return null

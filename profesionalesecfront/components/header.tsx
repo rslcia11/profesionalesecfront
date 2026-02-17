@@ -37,21 +37,7 @@ export default function Header() {
   return (
     <header className="fixed top-0 w-full z-50">
       {/* Top Bar - Kept as is, maybe slightly thinner if requested, but user said "reduce size of THAT bar" pointing to the main one usually. Let's keep top bar same size for now or slightly tighter padding. */}
-      <div className="bg-black text-white py-1 px-4 text-[10px] md:text-xs border-b border-white/10 hidden md:flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <a href="mailto:info@profesionales.ec" className="flex items-center gap-1 hover:text-emerald-400 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></svg>
-            info@profesionales.ec
-          </a>
-        </div>
-        <div className="font-bold tracking-widest text-center flex-1">
-          SE PARTE DE PROFESIONALES.EC
-        </div>
-        <div className="flex items-center gap-3">
-          <Link href="https://www.facebook.com/profile.php?id=61556825827660" target="_blank" className="hover:text-emerald-400 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg></Link>
-          <Link href="https://www.instagram.com/profesionalesec/" target="_blank" className="hover:text-emerald-400 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" x2="17.51" y1="6.5" y2="6.5" /></svg></Link>
-        </div>
-      </div>
+
 
       <div className="bg-black border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">

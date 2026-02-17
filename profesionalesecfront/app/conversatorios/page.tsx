@@ -210,76 +210,21 @@ export default function ConversatoriosPage() {
         </div>
       </section>
 
-      {/* Sé Parte de Profesionales.ec - Reduced spacing */}
-      <section className="py-12 px-6 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Sé Parte de Profesionales.ec</h2>
-            <p className="text-gray-600 text-lg">Elige tu rol y únete a nuestra comunidad</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Ponente */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-xl transition-all duration-300 hover:scale-105 flex flex-col">
-              <div className="bg-emerald-100 w-16 h-16 rounded-xl flex items-center justify-center mb-6">
-                <MessageSquare className="w-8 h-8 text-emerald-600" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Ponente</h3>
-              <p className="text-gray-600 mb-6 leading-relaxed flex-grow">
-                Únete al selecto grupo de expertos que lideran los conversatorios de Profesionales.ec. Comparte tu
-                experiencia, tus conocimientos y tus ideas con una audiencia ávida de aprender y crecer.
-              </p>
-              <Link
-                href="https://wa.link/i65ui8"
-                target="_blank"
-                className="inline-flex items-center gap-2 bg-emerald-500 text-white px-6 py-3 rounded-full font-medium hover:bg-emerald-600 transition-all duration-300 w-full justify-center mt-auto"
-              >
-                Más información
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-            </div>
-
-            {/* Asistente */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-xl transition-all duration-300 hover:scale-105 flex flex-col">
-              <div className="bg-blue-100 w-16 h-16 rounded-xl flex items-center justify-center mb-6">
-                <Users className="w-8 h-8 text-blue-600" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Asistente</h3>
-              <p className="text-gray-600 mb-6 leading-relaxed flex-grow">
-                Participa en los conversatorios de Profesionales.ec y adquiere conocimientos directamente de expertos en
-                diversas áreas. Aprovecha esta oportunidad para aprender, interactuar con ponentes destacados y resolver
-                tus dudas.
-              </p>
-              <Link
-                href="https://wa.link/soekak"
-                target="_blank"
-                className="inline-flex items-center gap-2 bg-blue-500 text-white px-6 py-3 rounded-full font-medium hover:bg-blue-600 transition-all duration-300 w-full justify-center mt-auto"
-              >
-                Más Información
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-            </div>
-
-            {/* Patrocinador */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-xl transition-all duration-300 hover:scale-105 flex flex-col">
-              <div className="bg-amber-100 w-16 h-16 rounded-xl flex items-center justify-center mb-6">
-                <DollarSign className="w-8 h-8 text-amber-600" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Patrocinador</h3>
-              <p className="text-gray-600 mb-6 leading-relaxed flex-grow">
-                Impulsa tu marca apoyando los conversatorios de Profesionales.ec. Sé parte de un espacio donde expertos
-                y profesionales se reúnen para compartir conocimientos y experiencias.
-              </p>
-              <Link
-                href="https://wa.link/55n3u5"
-                target="_blank"
-                className="inline-flex items-center gap-2 bg-amber-500 text-white px-6 py-3 rounded-full font-medium hover:bg-amber-600 transition-all duration-300 w-full justify-center mt-auto"
-              >
-                Más información
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-            </div>
-          </div>
+      {/* Articles CTA Section */}
+      <section className="py-16 px-6 bg-gradient-to-br from-emerald-50 to-blue-50">
+        <div className="max-w-4xl mx-auto text-center animate-in fade-in slide-in-from-bottom-6 duration-700">
+          <BookOpen className="w-16 h-16 text-emerald-600 mx-auto mb-6" />
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Explora el Conocimiento de Nuestra Comunidad</h2>
+          <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
+            Descubre artículos, tips y guías prácticas escritas por los mismos profesionales que participan en nuestros conversatorios.
+          </p>
+          <Link
+            href="/articulos"
+            className="inline-flex items-center gap-2 bg-emerald-600 text-white px-8 py-4 rounded-full font-bold hover:bg-emerald-700 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-200 hover:-translate-y-1 active:scale-95 group"
+          >
+            Ver todos los Artículos
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          </Link>
         </div>
       </section>
 

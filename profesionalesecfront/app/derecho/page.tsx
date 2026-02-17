@@ -117,46 +117,6 @@ export default function DerechoPage() {
       count: 48,
     },
   ]
-
-  const blogPosts = [
-    {
-      id: "1",
-      slug: "derechos-consumidor-ecuador",
-      title: "Conoce Tus Derechos Como Consumidor en Ecuador",
-      excerpt:
-        "Una guía completa sobre los derechos que te protegen como consumidor y cómo hacerlos valer ante cualquier inconveniente.",
-      image: "/consumer-rights-law.jpg",
-      date: "12 de enero de 2025",
-      readTime: "6 min",
-      author: "Dra. María Sánchez",
-      role: "Especialista en Derecho del Consumidor",
-    },
-    {
-      id: "2",
-      slug: "proceso-divorcio-ecuador",
-      title: "Guía Paso a Paso: Proceso de Divorcio en Ecuador",
-      excerpt:
-        "Todo lo que necesitas saber sobre el proceso de divorcio, requisitos, tiempos y consideraciones legales importantes.",
-      image: "/divorce-law-family.jpg",
-      date: "8 de enero de 2025",
-      readTime: "8 min",
-      author: "Dr. Carlos Méndez",
-      role: "Abogado de Derecho Familiar",
-    },
-    {
-      id: "3",
-      slug: "contratos-trabajo-ecuador",
-      title: "Aspectos Clave de los Contratos de Trabajo",
-      excerpt:
-        "Entiende los elementos esenciales de un contrato laboral y conoce tus derechos como trabajador en Ecuador.",
-      image: "/employment-contract-law.jpg",
-      date: "5 de enero de 2025",
-      readTime: "5 min",
-      author: "Dra. Ana Torres",
-      role: "Abogada Laboralista",
-    },
-  ]
-
   return (
     <main className="min-h-screen bg-background">
       <Header />
@@ -182,7 +142,7 @@ export default function DerechoPage() {
       />
 
       {/* Blog Section */}
-      <BlogSection posts={blogPosts} />
+      <BlogSection professionId={3} limit={3} />
 
       <Footer />
     </main>

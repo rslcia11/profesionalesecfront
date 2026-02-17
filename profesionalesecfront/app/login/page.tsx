@@ -65,7 +65,13 @@ export default function LoginPage() {
       }
     } catch (err: any) {
       console.error("Login error:", err)
-      setError(err.message || "Error al iniciar sesión")
+
+      // Handle specifically unapproved accounts
+      if (err.message?.includes("revision") || err.code === "ACCOUNT_NOT_APPROVED") {
+        setError("Tu perfil está en proceso de revisión. Te notificaremos cuando haya sido aprobado.")
+      } else {
+        setError(err.message || "Error al iniciar sesión")
+      }
     } finally {
       setLoading(false)
     }

@@ -64,7 +64,8 @@ export default function ProfessionalsPage() {
         (p.usuario?.nombre || "").toLowerCase().includes(lowerKeyword) ||
         (p.profesion?.nombre || "").toLowerCase().includes(lowerKeyword) ||
         (p.especialidad?.nombre || "").toLowerCase().includes(lowerKeyword) ||
-        (p.descripcion || "").toLowerCase().includes(lowerKeyword)
+        (p.descripcion || "").toLowerCase().includes(lowerKeyword) ||
+        (p.servicios && Array.isArray(p.servicios) && p.servicios.some((s: any) => (s.descripcion || "").toLowerCase().includes(lowerKeyword)))
       );
     }
 

@@ -239,45 +239,6 @@ export default function SaludPage() {
     },
   ]
 
-  const blogPosts = [
-    {
-      id: "1",
-      slug: "telemedicina-ecuador",
-      title: "Telemedicina en Ecuador: Cómo la Pandemia Cambió el Sistema de Salud",
-      excerpt:
-        "Descubre cómo la telemedicina se ha convertido en una herramienta fundamental para el acceso a servicios de salud en Ecuador.",
-      image: "/telemedicine-virtual-consultation.jpg",
-      date: "17 de junio de 2024",
-      readTime: "7 min",
-      author: "Dr. Francisco Mora",
-      role: "Especialista en Medicina Digital",
-    },
-    {
-      id: "2",
-      slug: "importancia-chequeos-medicos",
-      title: "La Importancia de los Chequeos Médicos Preventivos",
-      excerpt:
-        "Conoce por qué los controles médicos regulares son esenciales para detectar enfermedades a tiempo y mantener una vida saludable.",
-      image: "/preventive-health-checkup.jpg",
-      date: "10 de junio de 2024",
-      readTime: "5 min",
-      author: "Dra. Carmen Rodríguez",
-      role: "Médica General",
-    },
-    {
-      id: "3",
-      slug: "salud-mental-bienestar",
-      title: "Salud Mental: Un Pilar Fundamental del Bienestar",
-      excerpt:
-        "La salud mental es tan importante como la salud física. Aprende cómo cuidar tu bienestar emocional y cuándo buscar ayuda profesional.",
-      image: "/mental-health-wellness-care.jpg",
-      date: "5 de junio de 2024",
-      readTime: "6 min",
-      author: "Dra. Isabel Vega",
-      role: "Psiquiatra",
-    },
-  ]
-
   return (
     <main className="min-h-screen bg-background">
       <Header />
@@ -303,7 +264,7 @@ export default function SaludPage() {
       />
 
       {/* Blog Section */}
-      <BlogSection posts={blogPosts} />
+      <BlogSection professionId={1} limit={3} />
 
       <Footer />
     </main>

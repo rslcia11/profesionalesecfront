@@ -27,6 +27,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { citasApi, usuarioApi, articulosApi, type Articulo } from "@/lib/api"
 import ArticleFormModal from "@/components/article-form-modal"
+import ServicesManager from "@/components/services-manager"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
@@ -246,23 +247,34 @@ export default function ProfesionalDashboard() {
 
         {/* Tabs para diferentes secciones */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-white border border-gray-200 shadow-sm">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-              Resumen
-            </TabsTrigger>
-            <TabsTrigger value="citas" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-              Citas
-            </TabsTrigger>
-            <TabsTrigger value="articulos" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-              Artículos
-            </TabsTrigger>
-            <TabsTrigger value="servicios" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-              Servicios
-            </TabsTrigger>
-            <TabsTrigger value="ofertas" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-              Ofertas de Empleo
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex justify-center">
+            <TabsList className="inline-flex h-11 items-center justify-center rounded-xl bg-white p-1 text-gray-400 border border-gray-100 shadow-sm">
+              <TabsTrigger
+                value="overview"
+                className="rounded-lg px-6 py-2 text-sm font-medium transition-all data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md"
+              >
+                Resumen
+              </TabsTrigger>
+              <TabsTrigger
+                value="citas"
+                className="rounded-lg px-6 py-2 text-sm font-medium transition-all data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md"
+              >
+                Citas
+              </TabsTrigger>
+              <TabsTrigger
+                value="articulos"
+                className="rounded-lg px-6 py-2 text-sm font-medium transition-all data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md"
+              >
+                Artículos
+              </TabsTrigger>
+              <TabsTrigger
+                value="servicios"
+                className="rounded-lg px-6 py-2 text-sm font-medium transition-all data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md"
+              >
+                Servicios
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Tab: Resumen */}
           <TabsContent value="overview" className="space-y-6">
@@ -457,47 +469,12 @@ export default function ProfesionalDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Tab: Servicios (En Desarrollo) */}
+          {/* Tab: Servicios */}
           <TabsContent value="servicios" className="space-y-6">
-            <Card className="bg-white border-gray-200">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-gray-400">
-                  <Briefcase className="h-5 w-5" />
-                  Mis Servicios
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="bg-gray-100 p-4 rounded-full mb-4">
-                  <Construction className="h-10 w-10 text-gray-400" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">Sección en Desarrollo</h3>
-                <p className="text-gray-500 max-w-md">
-                  Próximamente podrás gestionar tu catálogo de servicios, precios y horarios directamente desde aquí.
-                </p>
-              </CardContent>
-            </Card>
+            <ServicesManager />
           </TabsContent>
 
-          {/* Tab: Ofertas de Empleo (En Desarrollo) */}
-          <TabsContent value="ofertas" className="space-y-6">
-            <Card className="bg-white border-gray-200">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-gray-400">
-                  <Briefcase className="h-5 w-5" />
-                  Ofertas de Empleo
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="bg-gray-100 p-4 rounded-full mb-4">
-                  <Construction className="h-10 w-10 text-gray-400" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">Sección en Desarrollo</h3>
-                <p className="text-gray-500 max-w-md">
-                  Próximamente podrás ver y postular a ofertas laborales exclusivas para profesionales verificados.
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
+
 
           {/* Tab: Artículos */}
           <TabsContent value="articulos" className="space-y-6">
