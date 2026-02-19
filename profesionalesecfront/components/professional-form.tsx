@@ -235,15 +235,15 @@ export default function ProfessionalForm() {
   const handleLocationChange = async (lat: number, lng: number) => {
     setFormData(prev => ({ ...prev, lat, lng }))
 
-    // Reverse geocoding
-    const { address, reference } = await getAddressFromCoordinates(lat, lng)
+    // Reverse geocoding disabled to allow manual address entry
+    /* const { address, reference } = await getAddressFromCoordinates(lat, lng)
     if (address) {
       setFormData(prev => ({
         ...prev,
         address: address,
         reference: reference || prev.reference // Keep existing reference if none returned
       }))
-    }
+    } */
   }
 
 
@@ -402,8 +402,8 @@ export default function ProfessionalForm() {
 
         // Step 4: Upload other verification documents (async)
         const otherDocs = [
-          { file: formData.identityFront, type: "cedula" }, // Sending as "cedula" due to backend ENUM restriction
-          { file: formData.identityBack, type: "cedula" },  // Sending as "cedula" due to backend ENUM restriction
+          { file: formData.identityFront, type: "cedula_frontal" },
+          { file: formData.identityBack, type: "cedula_posterior" },
           { file: formData.title, type: "titulo" },
           { file: formData.license, type: "licencia" },
         ]
@@ -1071,10 +1071,22 @@ export default function ProfessionalForm() {
                   </p>
                 </>
               ) : (
-                <p className="font-arimo text-muted-foreground mb-6">
-                  Tu información ha sido enviada correctamente. Te llegará un correo electrónico cuando tu perfil sea
-                  aprobado por nuestro equipo.
-                </p>
+                <div className="space-y-4 mb-6">
+                  <p className="font-arimo text-muted-foreground">
+                    Tu cuenta ha sido creada exitosamente.
+                  </p>
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <p className="text-blue-700 dark:text-blue-300 font-medium mb-1">
+                      ¡Un paso más!
+                    </p>
+                    <p className="text-sm text-blue-600 dark:text-blue-400">
+                      Hemos enviado un enlace a tu correo electrónico. Por favor, revísalo y haz clic en el enlace para <b>activar tu cuenta</b>.
+                    </p>
+                  </div>
+                  <p className="font-arimo text-xs text-muted-foreground">
+                    Tu perfil profesional será revisado por nuestro equipo una vez que verifiques tu correo.
+                  </p>
+                </div>
               )}
 
               <Link

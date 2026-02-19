@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogContent,
@@ -49,13 +50,16 @@ import { useToast } from "@/hooks/use-toast"
 import { adminApi, catalogosApi, ponenciasApi, profesionalApi, articulosApi, API_URL, ponentesApi, type Articulo } from "@/lib/api"
 import ArticleFormModal from "@/components/article-form-modal"
 import { Eye } from "lucide-react"
+import LocationMap from "@/components/shared/location-map"
 
 type Ponencia = {
   id: number
   titulo: string
   descripcion: string
   fecha_inicio: Date
+  hora_inicio?: string
   fecha_fin: Date
+  hora_fin?: string
   precio: number
   cupo: number
   profesion_id?: number
@@ -110,11 +114,17 @@ export default function AdminDashboard() {
 
   // Professions catalog for conversatorio form
   const [profesiones, setProfesiones] = useState<any[]>([])
+  const [provincias, setProvincias] = useState<any[]>([])
+  const [ciudades, setCiudades] = useState<any[]>([])
 
   // Ponentes management
   const [selectedPonenciaId, setSelectedPonenciaId] = useState<number | null>(null)
   const [ponentesList, setPonentesList] = useState<any[]>([])
   const [loadingPonentes, setLoadingPonentes] = useState(false)
+
+  // External Speaker State
+  const [isExternalSpeaker, setIsExternalSpeaker] = useState(false)
+  const [externalSpeakerName, setExternalSpeakerName] = useState("")
 
   useEffect(() => {
     const formatUrl = (path: string | null | undefined) => {
@@ -132,6 +142,8 @@ export default function AdminDashboard() {
       try {
         const profs = await catalogosApi.obtenerProfesiones()
         setProfesiones(Array.isArray(profs) ? profs : [])
+        const provs = await catalogosApi.obtenerProvincias()
+        setProvincias(Array.isArray(provs) ? provs : [])
       } catch (e) {
         console.warn("Could not load professions catalog:", e)
       }
@@ -244,11 +256,18 @@ export default function AdminDashboard() {
     titulo: "",
     descripcion: "",
     fecha_inicio: new Date(),
+    hora_inicio: "09:00",
     fecha_fin: new Date(),
+    hora_fin: "11:00",
     precio: 0,
     cupo: 0,
     profesion_id: 0,
     estado: "borrador" as const,
+    provincia_id: 0,
+    ciudad_id: 0,
+    direccion: "",
+    latitud: undefined as number | undefined,
+    longitud: undefined as number | undefined,
   })
 
   const [planForm, setPlanForm] = useState({
@@ -259,6 +278,27 @@ export default function AdminDashboard() {
     duracion_dias: 30,
     activo: true,
   })
+
+  // Location helpers for Conversatorio Form
+  const handleLocationChange = (lat: number, lng: number) => {
+    setConversatorioForm((prev) => ({ ...prev, latitud: lat, longitud: lng }))
+  }
+
+  const handleProvinciaChange = async (provinciaId: string) => {
+    const id = Number(provinciaId)
+    setConversatorioForm((prev) => ({ ...prev, provincia_id: id, ciudad_id: 0 }))
+    setCiudades([])
+    if (id) {
+      try {
+        const res = await catalogosApi.obtenerCiudades(id)
+        // Filter logic similar to ProfessionalForm
+        const filtered = Array.isArray(res) ? res.filter((c: any) => c.provincia_id === id || (c.provincia && c.provincia.id === id)) : []
+        setCiudades(filtered)
+      } catch (error) {
+        console.error("Error loading cities:", error)
+      }
+    }
+  }
 
   const aprobarPerfil = async (id: number) => {
     try {
@@ -368,11 +408,18 @@ export default function AdminDashboard() {
       titulo: "",
       descripcion: "",
       fecha_inicio: new Date(),
+      hora_inicio: "09:00",
       fecha_fin: new Date(),
+      hora_fin: "11:00",
       precio: 0,
       cupo: 0,
       profesion_id: 0,
       estado: "borrador",
+      provincia_id: 0,
+      ciudad_id: 0,
+      direccion: "",
+      latitud: undefined,
+      longitud: undefined,
     })
   }
 
@@ -396,12 +443,22 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleAsignarPonente = async (ponenciaId: number, usuarioId: number) => {
+  const handleAsignarPonente = async (ponenciaId: number, usuarioId?: number | null, nombrePonente?: string) => {
     const token = localStorage.getItem("auth_token")
     if (!token) return
     try {
-      await ponentesApi.asignar({ ponencia_id: ponenciaId, usuario_id: usuarioId }, token)
-      toast({ title: "Ponente Asignado", description: "El profesional fue asignado como ponente." })
+      const payload: any = { ponencia_id: ponenciaId }
+      if (usuarioId) payload.usuario_id = usuarioId
+      if (nombrePonente) payload.nombre_ponente = nombrePonente
+
+      if (!payload.usuario_id && !payload.nombre_ponente) {
+        toast({ title: "Error", description: "Debe seleccionar un profesional o ingresar un nombre.", variant: "destructive" })
+        return
+      }
+
+      await ponentesApi.asignar(payload, token)
+      toast({ title: "Ponente Asignado", description: "El ponente fue asignado correctamente." })
+      setExternalSpeakerName("")
       loadPonentes(ponenciaId)
     } catch (e) {
       toast({ title: "Error", description: "No se pudo asignar el ponente.", variant: "destructive" })
@@ -433,7 +490,26 @@ export default function AdminDashboard() {
 
   const handleEditConversatorio = (ponencia: Ponencia) => {
     setEditingItem(ponencia)
-    setConversatorioForm(ponencia as any)
+    setConversatorioForm({
+      ...ponencia,
+      // Ensure backend time strings (HH:mm:ss) are sliced to HH:mm for input[type="time"]
+      hora_inicio: ponencia.hora_inicio ? ponencia.hora_inicio.slice(0, 5) : "09:00",
+      hora_fin: ponencia.hora_fin ? ponencia.hora_fin.slice(0, 5) : "11:00",
+      profesion_id: ponencia.profesion_id || 0, // Ensure it has a value
+      provincia_id: (ponencia as any).provincia_id || 0,
+      ciudad_id: (ponencia as any).ciudad_id || 0,
+      direccion: (ponencia as any).direccion || "",
+      latitud: (ponencia as any).latitud,
+      longitud: (ponencia as any).longitud,
+    } as any)
+
+    // Load cities if province is selected
+    if ((ponencia as any).provincia_id) {
+      catalogosApi.obtenerCiudades((ponencia as any).provincia_id).then(res => {
+        setCiudades(Array.isArray(res) ? res : [])
+      })
+    }
+
     setIsConversatorioDialogOpen(true)
   }
 
@@ -517,7 +593,7 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleCreateArticuloAdmin = async (data: Partial<Articulo>) => {
+  const handleCreateArticuloAdmin = async (data: FormData | Partial<Articulo>) => {
     const token = localStorage.getItem("auth_token")
     if (!token) return
     try {
@@ -531,7 +607,7 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleUpdateArticuloAdmin = async (data: Partial<Articulo>) => {
+  const handleUpdateArticuloAdmin = async (data: FormData | Partial<Articulo>) => {
     const token = localStorage.getItem("auth_token")
     if (!token || !selectedArticle) return
     try {
@@ -701,68 +777,90 @@ export default function AdminDashboard() {
                             rows={4}
                           />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="grid gap-2">
-                            <Label className="text-sm font-medium">Fecha Inicio</Label>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  className={cn(
-                                    "justify-start text-left font-normal focus:border-blue-500/50 transition-colors",
-                                    !conversatorioForm.fecha_inicio && "text-muted-foreground",
-                                  )}
-                                >
-                                  <CalendarIcon className="mr-2 h-4 w-4" />
-                                  {conversatorioForm.fecha_inicio ? (
-                                    format(conversatorioForm.fecha_inicio, "PPP", { locale: es })
-                                  ) : (
-                                    <span>Seleccionar fecha</span>
-                                  )}
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0 bg-white border-gray-200">
-                                <Calendar
-                                  mode="single"
-                                  selected={conversatorioForm.fecha_inicio}
-                                  onSelect={(date) =>
-                                    date && setConversatorioForm({ ...conversatorioForm, fecha_inicio: date })
-                                  }
-                                  initialFocus
+                        <div className="space-y-4">
+                          <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                            <Label className="text-sm font-semibold text-emerald-700 mb-2 block">Inicio del Evento</Label>
+                            <div className="flex flex-col sm:flex-row gap-3">
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    className={cn(
+                                      "justify-start text-left font-normal focus:border-emerald-500/50 transition-colors flex-1 bg-white",
+                                      !conversatorioForm.fecha_inicio && "text-muted-foreground",
+                                    )}
+                                  >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {conversatorioForm.fecha_inicio ? (
+                                      format(conversatorioForm.fecha_inicio, "PPP", { locale: es })
+                                    ) : (
+                                      <span>Seleccionar fecha</span>
+                                    )}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0 bg-white border-gray-200">
+                                  <Calendar
+                                    mode="single"
+                                    selected={conversatorioForm.fecha_inicio}
+                                    onSelect={(date) =>
+                                      date && setConversatorioForm({ ...conversatorioForm, fecha_inicio: date })
+                                    }
+                                    initialFocus
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                              <div className="relative">
+                                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                                <Input
+                                  type="time"
+                                  value={conversatorioForm.hora_inicio}
+                                  onChange={(e) => setConversatorioForm({ ...conversatorioForm, hora_inicio: e.target.value })}
+                                  className="pl-9 w-full sm:w-36 bg-white focus:border-emerald-500/50"
                                 />
-                              </PopoverContent>
-                            </Popover>
+                              </div>
+                            </div>
                           </div>
-                          <div className="grid gap-2">
-                            <Label className="text-sm font-medium">Fecha Fin</Label>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  className={cn(
-                                    "justify-start text-left font-normal focus:border-blue-500/50 transition-colors",
-                                    !conversatorioForm.fecha_fin && "text-muted-foreground",
-                                  )}
-                                >
-                                  <CalendarIcon className="mr-2 h-4 w-4" />
-                                  {conversatorioForm.fecha_fin ? (
-                                    format(conversatorioForm.fecha_fin, "PPP", { locale: es })
-                                  ) : (
-                                    <span>Seleccionar fecha</span>
-                                  )}
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0 bg-white border-gray-200">
-                                <Calendar
-                                  mode="single"
-                                  selected={conversatorioForm.fecha_fin}
-                                  onSelect={(date) =>
-                                    date && setConversatorioForm({ ...conversatorioForm, fecha_fin: date })
-                                  }
-                                  initialFocus
+                          <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                            <Label className="text-sm font-semibold text-blue-700 mb-2 block">Finalización del Evento</Label>
+                            <div className="flex flex-col sm:flex-row gap-3">
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    className={cn(
+                                      "justify-start text-left font-normal focus:border-blue-500/50 transition-colors flex-1 bg-white",
+                                      !conversatorioForm.fecha_fin && "text-muted-foreground",
+                                    )}
+                                  >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {conversatorioForm.fecha_fin ? (
+                                      format(conversatorioForm.fecha_fin, "PPP", { locale: es })
+                                    ) : (
+                                      <span>Seleccionar fecha</span>
+                                    )}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0 bg-white border-gray-200">
+                                  <Calendar
+                                    mode="single"
+                                    selected={conversatorioForm.fecha_fin}
+                                    onSelect={(date) =>
+                                      date && setConversatorioForm({ ...conversatorioForm, fecha_fin: date })
+                                    }
+                                    initialFocus
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                              <div className="relative">
+                                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                                <Input
+                                  type="time"
+                                  value={conversatorioForm.hora_fin}
+                                  onChange={(e) => setConversatorioForm({ ...conversatorioForm, hora_fin: e.target.value })}
+                                  className="pl-9 w-full sm:w-36 bg-white focus:border-blue-500/50"
                                 />
-                              </PopoverContent>
-                            </Popover>
+                              </div>
+                            </div>
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
@@ -805,6 +903,68 @@ export default function AdminDashboard() {
                               className="focus:border-blue-500/50 transition-colors"
                             />
                           </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                              <Label htmlFor="provincia" className="text-sm font-medium">Provincia</Label>
+                              <Select
+                                value={conversatorioForm.provincia_id ? conversatorioForm.provincia_id.toString() : ""}
+                                onValueChange={(val) => handleProvinciaChange(val)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Seleccionar provincia" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {provincias.map((prov: any) => (
+                                    <SelectItem key={prov.id} value={prov.id.toString()}>{prov.nombre}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="ciudad" className="text-sm font-medium">Ciudad</Label>
+                              <Select
+                                value={conversatorioForm.ciudad_id ? conversatorioForm.ciudad_id.toString() : ""}
+                                onValueChange={(val) => setConversatorioForm(prev => ({ ...prev, ciudad_id: Number(val) }))}
+                                disabled={!conversatorioForm.provincia_id}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Seleccionar ciudad" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {ciudades.map((ciudad: any) => (
+                                    <SelectItem key={ciudad.id} value={ciudad.id.toString()}>{ciudad.nombre}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          <div className="space-y-4 border border-gray-100 rounded-lg p-4 bg-gray-50/50">
+                            <Label className="text-sm font-medium block mb-2">Ubicación del Evento (Manual)</Label>
+                            <div className="grid gap-4">
+                              <div className="h-[300px] w-full rounded-md overflow-hidden border">
+                                <LocationMap
+                                  lat={conversatorioForm.latitud}
+                                  lng={conversatorioForm.longitud}
+                                  onChange={handleLocationChange}
+                                />
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                Haz clic en el mapa para establecer las coordenadas exactas.
+                              </p>
+                              <div className="grid gap-2">
+                                <Label htmlFor="direccion" className="text-sm font-medium">Dirección Escrita</Label>
+                                <Textarea
+                                  id="direccion"
+                                  placeholder="Ej: Av. Amazonas y Naciones Unidas, Edificio X, Piso 2"
+                                  value={conversatorioForm.direccion || ""}
+                                  onChange={(e) => setConversatorioForm({ ...conversatorioForm, direccion: e.target.value })}
+                                  rows={2}
+                                />
+                              </div>
+                            </div>
+                          </div>
+
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="estado" className="text-sm font-medium">
@@ -958,25 +1118,57 @@ export default function AdminDashboard() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {/* Assign new ponente */}
-                      <div className="flex items-center gap-3">
-                        <Select
-                          onValueChange={(value: string) => {
-                            handleAsignarPonente(selectedPonenciaId, Number(value))
-                          }}
-                        >
-                          <SelectTrigger className="flex-1">
-                            <SelectValue placeholder="Seleccionar profesional para asignar..." />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white border-gray-200">
-                            {perfilesPendientes
-                              .filter((p) => p.estado === "aprobado")
-                              .map((prof) => (
-                                <SelectItem key={prof.id} value={prof.id.toString()}>
-                                  {prof.nombre} — {prof.profesion}
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
+                      <div className="flex flex-col gap-3 w-full bg-gray-50 p-4 rounded-lg border border-gray-100">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="external-speaker"
+                            checked={isExternalSpeaker}
+                            onCheckedChange={(checked) => setIsExternalSpeaker(checked as boolean)}
+                          />
+                          <Label htmlFor="external-speaker" className="cursor-pointer text-sm font-medium text-gray-700">
+                            ¿Es un ponente externo (no registrado)?
+                          </Label>
+                        </div>
+
+                        {isExternalSpeaker ? (
+                          <div className="flex gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
+                            <Input
+                              placeholder="Nombre del ponente externo (ej. Dr. Invitado Especial)"
+                              value={externalSpeakerName}
+                              onChange={(e) => setExternalSpeakerName(e.target.value)}
+                              className="bg-white"
+                            />
+                            <Button
+                              onClick={() => handleAsignarPonente(selectedPonenciaId, null, externalSpeakerName)}
+                              disabled={!externalSpeakerName.trim()}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+                            >
+                              <UserPlus className="h-4 w-4 sm:mr-2" />
+                              <span className="hidden sm:inline">Asignar Externo</span>
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
+                            <Select
+                              onValueChange={(value: string) => {
+                                handleAsignarPonente(selectedPonenciaId, Number(value))
+                              }}
+                            >
+                              <SelectTrigger className="flex-1 bg-white">
+                                <SelectValue placeholder="Seleccionar profesional registrado..." />
+                              </SelectTrigger>
+                              <SelectContent className="bg-white border-gray-200 h-64">
+                                {perfilesPendientes
+                                  .filter((p) => p.estado === "aprobado")
+                                  .map((prof) => (
+                                    <SelectItem key={prof.id} value={prof.id.toString()}>
+                                      {prof.nombre} — {prof.profesion}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
                       </div>
 
                       {/* Current ponentes list */}

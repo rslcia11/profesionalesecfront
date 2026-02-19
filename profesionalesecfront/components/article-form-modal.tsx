@@ -6,14 +6,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Loader2 } from "lucide-react"
+import { Loader2, Upload } from "lucide-react" // Added Upload
 import type { Articulo } from "@/lib/api"
 
 interface ArticleFormModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     article?: Articulo | null
-    onSubmit: (data: { titulo: string; contenido: string; resumen?: string; imagen_url?: string }) => Promise<void>
+    onSubmit: (data: FormData | { titulo: string; contenido: string; resumen?: string; imagen_url?: string }) => Promise<void>
 }
 
 export default function ArticleFormModal({
@@ -26,6 +26,8 @@ export default function ArticleFormModal({
     const [resumen, setResumen] = useState("")
     const [contenido, setContenido] = useState("")
     const [imagenUrl, setImagenUrl] = useState("")
+    const [imagenFile, setImagenFile] = useState<File | null>(null) // New state for image file
+    const [pdfFile, setPdfFile] = useState<File | null>(null) // New state for PDF file
     const [submitting, setSubmitting] = useState(false)
     const [errors, setErrors] = useState<{ titulo?: string; contenido?: string }>({})
 
@@ -37,11 +39,16 @@ export default function ArticleFormModal({
             setResumen(article.resumen || "")
             setContenido(article.contenido || "")
             setImagenUrl(article.imagen_url || "")
+            // Reset files when editing logic opens - files start empty (can't prepopulate file inputs)
+            setImagenFile(null)
+            setPdfFile(null)
         } else {
             setTitulo("")
             setResumen("")
             setContenido("")
             setImagenUrl("")
+            setImagenFile(null)
+            setPdfFile(null)
         }
         setErrors({})
     }, [article, open])
@@ -60,17 +67,45 @@ export default function ArticleFormModal({
 
         setSubmitting(true)
         try {
-            await onSubmit({
-                titulo: titulo.trim(),
-                contenido: contenido.trim(),
-                resumen: resumen.trim() || undefined,
-                imagen_url: imagenUrl.trim() || undefined,
-            })
+            const formData = new FormData()
+            formData.append("titulo", titulo.trim())
+            formData.append("contenido", contenido.trim())
+            if (resumen.trim()) formData.append("resumen", resumen.trim())
+
+            // Image handling preference: File > URL > Existing
+            if (imagenFile) {
+                formData.append("imagen", imagenFile)
+            } else if (imagenUrl.trim()) {
+                formData.append("imagen_url", imagenUrl.trim())
+            }
+
+            // PDF handling
+            if (pdfFile) {
+                formData.append("pdf", pdfFile)
+            }
+
+            // onSubmit handles FormData now (as per updated api/dashboard logic)
+            // @ts-ignore - We updated parent signature but TS might complain until full compilation
+            await onSubmit(formData)
             onOpenChange(false)
         } catch (error) {
             console.error("Error submitting article:", error)
         } finally {
             setSubmitting(false)
+        }
+    }
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'pdf') => {
+        const file = e.target.files?.[0] || null
+        if (type === 'image') {
+            setImagenFile(file)
+            // Optional: Create preview URL for immediate feedback
+            if (file) {
+                // Clear manual URL if file is selected to avoid confusion
+                setImagenUrl("")
+            }
+        } else {
+            setPdfFile(file)
         }
     }
 
@@ -124,39 +159,81 @@ export default function ArticleFormModal({
                             className={errors.contenido ? "border-destructive" : ""}
                         />
                         {errors.contenido && <p className="text-xs text-destructive">{errors.contenido}</p>}
-                        <p className="text-xs text-muted-foreground">
-                            Puedes usar HTML básico para dar formato (negrita, listas, enlaces).
-                        </p>
                     </div>
 
-                    {/* Imagen URL */}
-                    <div className="space-y-2">
-                        <Label htmlFor="imagen_url">URL de Imagen (opcional)</Label>
-                        <Input
-                            id="imagen_url"
-                            type="url"
-                            placeholder="https://ejemplo.com/imagen.jpg"
-                            value={imagenUrl}
-                            onChange={(e) => setImagenUrl(e.target.value)}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                            Imagen destacada del artículo. Pega una URL de imagen pública.
-                        </p>
-                    </div>
+                    {/* Imagen Selection */}
+                    <div className="space-y-3 p-4 border rounded-lg bg-slate-50 dark:bg-slate-900/50">
+                        <Label className="font-semibold">Imagen Destacada</Label>
 
-                    {/* Preview de imagen */}
-                    {imagenUrl && (
-                        <div className="rounded-lg overflow-hidden border border-border/50 h-32">
-                            <img
-                                src={imagenUrl}
-                                alt="Preview"
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = "none"
-                                }}
+                        {/* Option 1: File Upload */}
+                        <div className="space-y-2">
+                            <Label htmlFor="imagen_file" className="text-xs text-muted-foreground">Subir desde PC:</Label>
+                            <Input
+                                id="imagen_file"
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleFileChange(e, 'image')}
                             />
                         </div>
-                    )}
+
+                        <div className="text-xs text-center text-muted-foreground">- O -</div>
+
+                        {/* Option 2: URL */}
+                        <div className="space-y-2">
+                            <Label htmlFor="imagen_url" className="text-xs text-muted-foreground">Usar URL externa:</Label>
+                            <Input
+                                id="imagen_url"
+                                type="url"
+                                placeholder="https://ejemplo.com/imagen.jpg"
+                                value={imagenUrl}
+                                onChange={(e) => {
+                                    setImagenUrl(e.target.value)
+                                    setImagenFile(null) // Clear file if URL is typed
+                                }}
+                                disabled={!!imagenFile}
+                            />
+                        </div>
+
+                        {/* Preview */}
+                        {(imagenFile || imagenUrl) && (
+                            <div className="mt-2 rounded-lg overflow-hidden border border-border/50 h-32 w-full flex items-center justify-center bg-background">
+                                {imagenFile ? (
+                                    <span className="text-sm text-green-600 flex items-center gap-2">
+                                        <Upload size={16} /> Imagen seleccionada: {imagenFile.name}
+                                    </span>
+                                ) : (
+                                    <img
+                                        src={imagenUrl}
+                                        alt="Preview"
+                                        className="h-full object-contain"
+                                        onError={(e) => (e.target as HTMLImageElement).style.display = "none"}
+                                    />
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* PDF Upload */}
+                    <div className="space-y-3 p-4 border rounded-lg bg-slate-50 dark:bg-slate-900/50">
+                        <Label className="font-semibold">Documento PDF (Opcional)</Label>
+                        <div className="space-y-2">
+                            <Input
+                                id="pdf_file"
+                                type="file"
+                                accept="application/pdf"
+                                onChange={(e) => handleFileChange(e, 'pdf')}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Sube un archivo PDF complementario (ej: guías, estudios, brochures).
+                            </p>
+                            {pdfFile && (
+                                <p className="text-xs text-green-600 font-medium">
+                                    Archivo seleccionado: {pdfFile.name}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
 
                     {/* Actions */}
                     <div className="flex justify-end gap-3 pt-4">

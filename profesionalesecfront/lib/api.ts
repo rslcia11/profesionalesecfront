@@ -147,11 +147,18 @@ export interface Ponencia {
   titulo: string
   descripcion: string
   fecha_inicio: string
+  hora_inicio?: string
   fecha_fin: string
+  hora_fin?: string
   profesion_id: number
   precio: number
   cupo: number
   estado: string
+  provincia_id?: number
+  ciudad_id?: number
+  direccion?: string
+  latitud?: number
+  longitud?: number
 }
 
 export interface Publicidad {
@@ -507,7 +514,7 @@ export const ponenciasApi = {
 
 // Ponentes API
 export const ponentesApi = {
-  async asignar(data: { ponencia_id: number, usuario_id: number }, token: string) {
+  async asignar(data: { ponencia_id: number, usuario_id?: number, nombre_ponente?: string }, token: string) {
     return fetchApi("/ponentes/asignar", {
       method: "POST",
       headers: authHeader(token),
@@ -706,14 +713,28 @@ export const articulosApi = {
   async listarMios(token: string) {
     return fetchApi("/articulos/mios", { headers: authHeader(token) });
   },
-  async crear(data: { titulo: string; contenido: string; resumen?: string; imagen_url?: string }, token: string) {
+  async crear(data: FormData | { titulo: string; contenido: string; resumen?: string; imagen_url?: string }, token: string) {
+    if (data instanceof FormData) {
+      return fetchApi("/articulos", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }, // Browser sets multipart boundary
+        body: data,
+      });
+    }
     return fetchApi("/articulos", {
       method: "POST",
       headers: authHeader(token),
       body: JSON.stringify(data),
     });
   },
-  async actualizar(id: number, data: Partial<Articulo>, token: string) {
+  async actualizar(id: number, data: FormData | Partial<Articulo>, token: string) {
+    if (data instanceof FormData) {
+      return fetchApi(`/articulos/${id}`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: data,
+      });
+    }
     return fetchApi(`/articulos/${id}`, {
       method: "PUT",
       headers: authHeader(token),

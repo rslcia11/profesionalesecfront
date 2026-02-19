@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
-import { Calendar, MapPin, Users, Award, MessageSquare, DollarSign, ArrowRight, BookOpen } from "lucide-react"
+import { Calendar, MapPin, Users, Award, MessageSquare, DollarSign, ArrowRight, BookOpen, Clock } from "lucide-react"
 import Link from "next/link"
 import { ponenciasApi } from "@/lib/api"
 
@@ -128,9 +128,17 @@ export default function ConversatoriosPage() {
                       <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
                         {evento.titulo}
                       </h3>
-                      <p className="text-lg text-emerald-600 font-medium">
-                        {new Date(evento.fecha_inicio).toLocaleDateString()}
-                      </p>
+                      <div className="flex items-center gap-2 text-emerald-600 font-medium">
+                        <Calendar className="w-5 h-5" />
+                        <span>{new Date(evento.fecha_inicio).toLocaleDateString()}</span>
+                        {evento.hora_inicio && (
+                          <>
+                            <span className="mx-1">•</span>
+                            <Clock className="w-5 h-5" />
+                            <span>{evento.hora_inicio.slice(0, 5)}</span>
+                          </>
+                        )}
+                      </div>
                       <p className="text-gray-600 mt-2">
                         {evento.descripcion}
                       </p>

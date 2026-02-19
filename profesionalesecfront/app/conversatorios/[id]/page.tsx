@@ -110,6 +110,7 @@ export default function ConversatorioDetallePage() {
                                                     month: "long",
                                                     day: "numeric",
                                                 })}
+                                                {ponencia.hora_inicio && ` a las ${ponencia.hora_inicio.slice(0, 5)}`}
                                             </p>
                                         </div>
                                     </div>
@@ -127,6 +128,7 @@ export default function ConversatorioDetallePage() {
                                                     month: "long",
                                                     day: "numeric",
                                                 })}
+                                                {ponencia.hora_fin && ` a las ${ponencia.hora_fin.slice(0, 5)}`}
                                             </p>
                                         </div>
                                     </div>

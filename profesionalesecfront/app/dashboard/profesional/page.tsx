@@ -145,7 +145,7 @@ export default function ProfesionalDashboard() {
     loadArticulos()
   }, [loadArticulos])
 
-  const handleCreateArticulo = async (data: { titulo: string; contenido: string; resumen?: string; imagen_url?: string }) => {
+  const handleCreateArticulo = async (data: FormData | { titulo: string; contenido: string; resumen?: string; imagen_url?: string }) => {
     const token = localStorage.getItem("auth_token")
     if (!token) return
     await articulosApi.crear(data, token)
@@ -153,7 +153,7 @@ export default function ProfesionalDashboard() {
     loadArticulos()
   }
 
-  const handleUpdateArticulo = async (data: { titulo: string; contenido: string; resumen?: string; imagen_url?: string }) => {
+  const handleUpdateArticulo = async (data: FormData | { titulo: string; contenido: string; resumen?: string; imagen_url?: string }) => {
     const token = localStorage.getItem("auth_token")
     if (!token || !editingArticle) return
     await articulosApi.actualizar(editingArticle.id, data, token)
