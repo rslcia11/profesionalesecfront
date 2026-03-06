@@ -83,7 +83,7 @@ export default function FeaturedProfessionals() {
           {professionals.map((pro, index) => (
             <Link
               href={`/perfil/${pro.usuario_id}`}
-              key={pro.id}
+              key={`pro-${pro.usuario_id || index}`}
               className="group bg-card border border-border rounded-xl overflow-hidden hover:shadow-2xl hover:scale-105 transition-all duration-500 animate-fade-in-up"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
