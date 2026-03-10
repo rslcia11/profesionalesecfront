@@ -4,9 +4,11 @@ import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
-import { ponenciasApi } from "@/lib/api"
-import { Calendar, MapPin, Users, DollarSign, ArrowLeft, CheckCircle2, Clock } from "lucide-react"
+import { ponenciasApi, ponentesApi } from "@/lib/api"
+import { useReverseGeocode } from "@/hooks/use-reverse-geocode"
+import { Calendar, MapPin, Users, DollarSign, ArrowLeft, CheckCircle2, Clock, Globe, Info } from "lucide-react"
 import Link from "next/link"
+import LocationMap from "@/components/shared/location-map"
 
 export default function ConversatorioDetallePage() {
     const params = useParams()
@@ -21,12 +23,29 @@ export default function ConversatorioDetallePage() {
     const [inscLoading, setInscLoading] = useState(false)
     const [inscSuccess, setInscSuccess] = useState(false)
     const [inscError, setInscError] = useState("")
+    const [ponentes, setPonentes] = useState<any[]>([])
 
     useEffect(() => {
         const load = async () => {
             try {
-                const data = await ponenciasApi.obtener(id)
-                setPonencia(data.ponencia || data)
+                // Backend no tiene GET /ponencias/:id, obtenemos la lista y filtramos
+                const data = await ponenciasApi.listar()
+                const lista = Array.isArray(data) ? data : (data.ponencias || [])
+                const found = lista.find((p: any) => p.id === id)
+                if (found) {
+                    setPonencia(found)
+                    // Cargar ponentes (requiere token si el usuario está logueado)
+                    const token = localStorage.getItem("auth_token")
+                    if (token) {
+                        try {
+                            const ponentesData = await ponentesApi.listar(token)
+                            const allPonentes = Array.isArray(ponentesData) ? ponentesData : []
+                            setPonentes(allPonentes.filter((p: any) => p.ponencia_id === id))
+                        } catch { /* silencioso para usuarios no-admin */ }
+                    }
+                } else {
+                    setError("No se encontró el conversatorio.")
+                }
             } catch (e) {
                 setError("No se pudo cargar el conversatorio.")
             } finally {
@@ -60,6 +79,12 @@ export default function ConversatorioDetallePage() {
             setInscLoading(false)
         }
     }
+
+    // Geocodificación inversa: si no hay dirección de texto pero sí coordenadas
+    const { address: geocodedAddress } = useReverseGeocode(
+        ponencia?.direccion ? null : ponencia?.latitud,
+        ponencia?.direccion ? null : ponencia?.longitud
+    )
 
     const isFuturo = ponencia ? new Date(ponencia.fecha_inicio) >= new Date() : false
 
@@ -157,6 +182,81 @@ export default function ConversatorioDetallePage() {
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+
+                            {/* Location Section */}
+                            <div className="mb-12 bg-gray-50 rounded-3xl p-6 md:p-8 border border-gray-100">
+                                <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                                    <MapPin className="w-7 h-7 text-emerald-600" />
+                                    Ubicación del Evento
+                                </h2>
+
+                                <div className="grid lg:grid-cols-2 gap-8 items-start">
+                                    <div className="space-y-4">
+                                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Dirección</p>
+                                            <p className="text-lg text-gray-800 font-medium">
+                                                {ponencia.direccion || geocodedAddress || "Dirección por confirmarse"}
+                                            </p>
+                                            <p className="text-gray-500 mt-2">
+                                                {ponencia.ciudad?.nombre ? `${ponencia.ciudad.nombre}, ${ponencia.provincia?.nombre}` : "Ciudad por confirmar"}
+                                            </p>
+                                        </div>
+
+                                        {ponencia.direccion && (
+                                            <div className="flex gap-3 p-4 bg-emerald-50 text-emerald-800 rounded-xl text-sm border border-emerald-100">
+                                                <Info className="h-5 w-5 shrink-0" />
+                                                <p>Te recomendamos llegar 15 minutos antes para completar tu registro de asistencia.</p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {(ponencia.latitud && ponencia.longitud) ? (
+                                        <div className="h-[300px] rounded-2xl overflow-hidden border-2 border-white shadow-lg ring-1 ring-gray-200">
+                                            <LocationMap
+                                                lat={Number(ponencia.latitud)}
+                                                lng={Number(ponencia.longitud)}
+                                                readonly={true}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="h-[300px] bg-gray-100 rounded-2xl flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200">
+                                            <Globe className="h-10 w-10 mb-2 opacity-20" />
+                                            <p className="text-sm">Mapa no disponible para este evento</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Speakers Section */}
+                            <div className="mb-12">
+                                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                                    <Users className="w-8 h-8 text-emerald-600" />
+                                    Quiénes Exponen
+                                </h2>
+
+                                {ponentes.length > 0 ? (
+                                    <div className="grid sm:grid-cols-2 gap-4">
+                                        {ponentes.map((p: any) => {
+                                            const nombre = p.nombre || p.nombre_ponente || "Ponente Invitado";
+                                            return (
+                                                <div key={p.id} className="flex items-center gap-4 p-4 rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition-shadow">
+                                                    <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xl border border-emerald-200">
+                                                        {nombre.charAt(0)}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-gray-900">{nombre}</p>
+                                                        <p className="text-sm text-gray-500">{p.tipo === 'registrado' ? 'Profesional EC' : 'Experto Invitado'}</p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="p-8 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                                        <p className="text-gray-500 italic">Los ponentes para este evento serán anunciados próximamente.</p>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Inscription Form — only for future events */}

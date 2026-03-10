@@ -1,0 +1,69 @@
+# Ticket Backend: Permitir a los Administradores Crear Artículos
+
+## Severidad
+Alta (Los administradores no pueden registrar artículos desde el Panel de Admin).
+
+## Descripción del Problema
+Actualmente, un Administrador o Moderador no puede crear un artículo desde el Panel de Administración. Esto se debe a que la ruta `POST /articulos` en [articulos.routes.js](file:///c:/Users/Usuario/Documents/GitHub/profesionales_back/routes/articulos.routes.js) utiliza el middleware [isProfesional](file:///c:/Users/Usuario/Documents/GitHub/profesionales_back/middlewares/auth.js#40-49), el cual rechaza estrictamente cualquier petición donde `req.user.rol !== "profesional"` (devolviendo un error 403 Forbidden).
+
+Como requerimiento de negocio, los administradores también deben poder crear (y publicar) artículos sin problemas.
+
+## Requerimientos
+
+### 1. Nuevo Middleware ([middlewares/auth.js](file:///c:/Users/Usuario/Documents/GitHub/profesionales_back/middlewares/auth.js))
+Crear un middleware que permita el acceso tanto a Profesionales como a Administradores (superadmin, moderador, editor).
+
+```javascript
+// Verifica si el usuario es profesional O administrador/moderador/editor
+export const isProfesionalOrAdmin = (req, res, next) => {
+  if (!req.user) return res.status(401).json({ message: "No autenticado." });
+
+  const rolesPermitidos = ["profesional", "superadmin", "moderador", "editor"];
+
+  if (!rolesPermitidos.includes(req.user.rol)) {
+    return res
+      .status(403)
+      .json({ message: "Acceso denegado. Se requiere cuenta de profesional o administrador." });
+  }
+
+  next();
+};
+```
+
+### 2. Actualizar Rutas ([articulos.routes.js](file:///c:/Users/Usuario/Documents/GitHub/profesionales_back/routes/articulos.routes.js))
+Reemplazar [isProfesional](file:///c:/Users/Usuario/Documents/GitHub/profesionales_back/middlewares/auth.js#40-49) por `isProfesionalOrAdmin` en la ruta de **creación** y **actualización** de artículos en [routes/articulos.routes.js](file:///c:/Users/Usuario/Documents/GitHub/profesionales_back/routes/articulos.routes.js).
+
+```javascript
+import { ..., isProfesionalOrAdmin } from "../middlewares/auth.js";
+
+// Crear
+router.post("/", verifyToken, isProfesionalOrAdmin, uploadFields, ArticuloController.crear);
+
+// Actualizar
+// Nota: Si un admin va a editar un artículo de otro usuario, 
+// ArticuloService.actualizarArticulo también debe ignorar la validación 
+// "articulo.usuario_id !== usuario_id" si el usuario es Admin.
+router.put("/:id", verifyToken, isProfesionalOrAdmin, uploadFields, ArticuloController.actualizar);
+```
+
+### 3. Modificar [ArticuloService.js](file:///c:/Users/Usuario/Documents/GitHub/profesionales_back/services/ArticuloService.js) (Para la Edición)
+Si el administrador necesita editar un artículo creado por otra persona, se debe modificar la validación en [actualizarArticulo](file:///c:/Users/Usuario/Documents/GitHub/profesionales_back/services/ArticuloService.js#71-132):
+
+```javascript
+  static async actualizarArticulo(articulo_id, usuario_id, data, files = {}, user_rol) {
+    const articulo = await Articulo.findByPk(articulo_id);
+    if (!articulo) throw new Error("Artículo no encontrado.");
+
+    const rolesAdmin = ["superadmin", "moderador", "editor"];
+    // Si no es el autor Y TAMPOCO es administrador -> Denegar
+    if (articulo.usuario_id !== usuario_id && !rolesAdmin.includes(user_rol)) {
+      throw new Error("Acceso denegado: No puedes editar un artículo que no es tuyo.");
+    }
+    // ... resto del código ...
+  }
+```
+*(Asegúrate de pasar `req.user.rol` desde el controlador al servicio [actualizarArticulo](file:///c:/Users/Usuario/Documents/GitHub/profesionales_back/services/ArticuloService.js#71-132)).*
+
+## Verificación
+1. Iniciar sesión como `superadmin`.
+2. Crear un artículo desde el Panel de Admin. Debería retornar `201 Created` en lugar de `403`.

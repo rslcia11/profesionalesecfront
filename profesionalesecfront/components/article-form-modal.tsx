@@ -74,14 +74,14 @@ export default function ArticleFormModal({
 
             // Image handling preference: File > URL > Existing
             if (imagenFile) {
-                formData.append("imagen", imagenFile)
+                formData.append("imagen_portada", imagenFile)
             } else if (imagenUrl.trim()) {
                 formData.append("imagen_url", imagenUrl.trim())
             }
 
             // PDF handling
             if (pdfFile) {
-                formData.append("pdf", pdfFile)
+                formData.append("archivo_pdf", pdfFile)
             }
 
             // onSubmit handles FormData now (as per updated api/dashboard logic)

@@ -1,11 +1,14 @@
 "use client"
 
+import { useState, useEffect, useMemo } from "react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import ProfessionalHeroCarousel from "@/components/shared/professional-hero-carousel"
 import ProfessionalsCategoryList from "@/components/shared/professionals-category-list"
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
+import { useSpecialtyCounts } from "@/hooks/use-specialty-counts"
+import { catalogosApi } from "@/lib/api"
 import { Calculator, TrendingUp, Users, Briefcase, Building2, Globe } from "lucide-react"
 
 export default function AdministracionPage() {
@@ -45,50 +48,41 @@ export default function AdministracionPage() {
     satisfaction: 98,
   }
 
-  const serviceCategories = [
-    {
-      id: "contabilidad",
-      name: "Contabilidad",
-      description: "Gestión contable, estados financieros y auditorías",
-      icon: Calculator,
-      count: 45,
-    },
-    {
-      id: "finanzas",
-      name: "Finanzas",
-      description: "Asesoría financiera, inversiones y planificación",
-      icon: TrendingUp,
-      count: 38,
-    },
-    {
-      id: "recursos-humanos",
-      name: "Recursos Humanos",
-      description: "Gestión de talento, nómina y desarrollo organizacional",
-      icon: Users,
-      count: 32,
-    },
-    {
-      id: "marketing-y-ventas",
-      name: "Marketing y Ventas",
-      description: "Estrategias comerciales y gestión de marketing",
-      icon: Briefcase,
-      count: 41,
-    },
-    {
-      id: "administracion-empresas",
-      name: "Administración de Empresas",
-      description: "Gestión empresarial y consultoría estratégica",
-      icon: Building2,
-      count: 52,
-    },
-    {
-      id: "negocios-internacionales",
-      name: "Negocios Internacionales",
-      description: "Comercio exterior, importaciones y exportaciones",
-      icon: Globe,
-      count: 28,
-    },
-  ]
+  const PROFESSION_ID = 5 // Administración
+  const { countsBySpecialty } = useSpecialtyCounts([PROFESSION_ID])
+  const [apiSpecialties, setApiSpecialties] = useState<any[]>([])
+
+  useEffect(() => {
+    catalogosApi.obtenerEspecialidades(PROFESSION_ID).then(data => {
+      setApiSpecialties(Array.isArray(data) ? data : [])
+    }).catch(() => setApiSpecialties([]))
+  }, [])
+
+  const editorialMeta: Record<string, { description: string; icon: any }> = {
+    "Contabilidad": { description: "Gestión contable, estados financieros y auditorías", icon: Calculator },
+    "Finanzas": { description: "Asesoría financiera, inversiones y planificación", icon: TrendingUp },
+    "Recursos Humanos": { description: "Gestión de talento, nómina y desarrollo organizacional", icon: Users },
+    "Marketing y Ventas": { description: "Estrategias comerciales y gestión de marketing", icon: Briefcase },
+    "Administración de Empresas": { description: "Gestión empresarial y consultoría estratégica", icon: Building2 },
+    "Negocios Internacionales": { description: "Comercio exterior, importaciones y exportaciones", icon: Globe },
+  }
+
+  const serviceCategories = useMemo(() => {
+    if (apiSpecialties.length === 0) {
+      return Object.entries(editorialMeta).map(([name, meta]) => ({
+        id: name.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
+        name, description: meta.description, icon: meta.icon,
+      }))
+    }
+    return apiSpecialties.map(spec => {
+      const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: Building2 }
+      return {
+        id: spec.nombre.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
+        name: spec.nombre, description: meta.description, icon: meta.icon,
+        count: countsBySpecialty.get(spec.id) || 0,
+      }
+    })
+  }, [apiSpecialties, countsBySpecialty])
 
   const blogPosts = [
     {

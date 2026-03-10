@@ -6,7 +6,7 @@ interface ServiceCategory {
   name: string
   description: string
   icon: LucideIcon
-  count: number
+  count?: number
 }
 
 interface ProfessionalServicesGridProps {
@@ -48,7 +48,11 @@ export default function ProfessionalServicesGrid({
                 </h3>
                 <p className="text-muted-foreground mb-4 leading-relaxed">{category.description}</p>
                 <div className="flex items-center justify-between pt-4 border-t border-border/50">
-                  <span className="text-sm text-muted-foreground">{category.count} profesionales</span>
+                  {category.count !== undefined && category.count > 0 ? (
+                    <span className="text-sm text-muted-foreground">{category.count} profesionales</span>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">Ver especialistas</span>
+                  )}
                   <span className="text-primary font-semibold text-sm group-hover:translate-x-1 transition-transform">
                     Ver más →
                   </span>

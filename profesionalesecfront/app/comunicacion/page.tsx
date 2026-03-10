@@ -5,6 +5,9 @@ import ProfessionalHeroCarousel from "@/components/shared/professional-hero-caro
 import ProfessionalsCategoryList from "@/components/shared/professionals-category-list"
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
+import { useState, useEffect, useMemo } from "react"
+import { useSpecialtyCounts } from "@/hooks/use-specialty-counts"
+import { catalogosApi } from "@/lib/api"
 import {
   Camera,
   Radio,
@@ -39,92 +42,47 @@ export default function ComunicacionPage() {
     },
   ]
 
-  const serviceCategories = [
-    {
-      id: "periodismo",
-      name: "Periodismo",
-      description: "Reporteros, columnistas y editores profesionales",
-      icon: Newspaper,
-      count: 42,
-    },
-    {
-      id: "fotografia-periodistica",
-      name: "Fotografía Periodística",
-      description: "Captura de noticias y eventos importantes",
-      icon: Camera,
-      count: 28,
-    },
-    {
-      id: "comunicacion-audiovisual",
-      name: "Comunicación Audiovisual",
-      description: "Producción de contenido para TV y streaming",
-      icon: Tv,
-      count: 35,
-    },
-    {
-      id: "locucion-radio",
-      name: "Locución y Radio",
-      description: "Voces profesionales para medios y eventos",
-      icon: Radio,
-      count: 24,
-    },
-    {
-      id: "relaciones-publicas",
-      name: "Relaciones Públicas",
-      description: "Gestión de imagen y comunicación corporativa",
-      icon: Megaphone,
-      count: 31,
-    },
-    {
-      id: "produccion-audiovisual",
-      name: "Producción Audiovisual",
-      description: "Creación de contenido multimedia",
-      icon: Film,
-      count: 38,
-    },
-    {
-      id: "comunicacion-corporativa",
-      name: "Comunicación Corporativa",
-      description: "Estrategias de comunicación interna y externa",
-      icon: Mic,
-      count: 26,
-    },
-    {
-      id: "social-media",
-      name: "Social Media",
-      description: "Gestión de redes sociales y contenido digital",
-      icon: Globe,
-      count: 45,
-    },
-    {
-      id: "comunicacion-organizacional",
-      name: "Comunicación Organizacional",
-      description: "Consultoría en comunicación empresarial",
-      icon: Users,
-      count: 22,
-    },
-    {
-      id: "redaccion-contenidos",
-      name: "Redacción y Contenidos",
-      description: "Copywriting y creación de contenidos",
-      icon: FileText,
-      count: 40,
-    },
-    {
-      id: "multimedia",
-      name: "Multimedia",
-      description: "Diseño y producción de contenido interactivo",
-      icon: Video,
-      count: 33,
-    },
-    {
-      id: "diseno-editorial",
-      name: "Diseño Editorial",
-      description: "Maquetación y diseño de publicaciones",
-      icon: PenTool,
-      count: 29,
-    },
-  ]
+  const PROFESSION_ID = 992 // Comunicación (placeholder)
+  const { countsBySpecialty } = useSpecialtyCounts([PROFESSION_ID])
+  const [apiSpecialties, setApiSpecialties] = useState<any[]>([])
+
+  useEffect(() => {
+    catalogosApi.obtenerEspecialidades(PROFESSION_ID).then(data => {
+      setApiSpecialties(Array.isArray(data) ? data : [])
+    }).catch(() => setApiSpecialties([]))
+  }, [])
+
+  const editorialMeta: Record<string, { description: string; icon: any }> = {
+    "Periodismo": { description: "Reporteros, columnistas y editores profesionales", icon: Newspaper },
+    "Fotografía Periodística": { description: "Captura de noticias y eventos importantes", icon: Camera },
+    "Comunicación Audiovisual": { description: "Producción de contenido para TV y streaming", icon: Tv },
+    "Locución y Radio": { description: "Voces profesionales para medios y eventos", icon: Radio },
+    "Relaciones Públicas": { description: "Gestión de imagen y comunicación corporativa", icon: Megaphone },
+    "Producción Audiovisual": { description: "Creación de contenido multimedia", icon: Film },
+    "Comunicación Corporativa": { description: "Estrategias de comunicación interna y externa", icon: Mic },
+    "Social Media": { description: "Gestión de redes sociales y contenido digital", icon: Globe },
+    "Comunicación Organizacional": { description: "Consultoría en comunicación empresarial", icon: Users },
+    "Redacción y Contenidos": { description: "Copywriting y creación de contenidos", icon: FileText },
+    "Multimedia": { description: "Diseño y producción de contenido interactivo", icon: Video },
+    "Diseño Editorial": { description: "Maquetación y diseño de publicaciones", icon: PenTool },
+  }
+
+  const serviceCategories = useMemo(() => {
+    if (apiSpecialties.length === 0) {
+      return Object.entries(editorialMeta).map(([name, meta]) => ({
+        id: name.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
+        name, description: meta.description, icon: meta.icon,
+      }))
+    }
+    return apiSpecialties.map(spec => {
+      const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: Mic }
+      return {
+        id: spec.nombre.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
+        name: spec.nombre, description: meta.description, icon: meta.icon,
+        count: countsBySpecialty.get(spec.id) || 0,
+      }
+    })
+  }, [apiSpecialties, countsBySpecialty])
 
   const featuredProfessional = {
     name: "María José Vásconez",
@@ -196,7 +154,7 @@ export default function ComunicacionPage() {
 
       {/* Featured Professional */}
       <ProfessionalsCategoryList
-        professionIds={[]}
+        professionIds={[PROFESSION_ID]}
         title="Comunicadores Profesionales"
         description="Periodistas, locutores y expertos en medios verificados"
       />

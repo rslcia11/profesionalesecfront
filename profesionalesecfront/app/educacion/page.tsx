@@ -1,11 +1,14 @@
 "use client"
 
+import { useState, useEffect, useMemo } from "react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import ProfessionalHeroCarousel from "@/components/shared/professional-hero-carousel"
 import ProfessionalsCategoryList from "@/components/shared/professionals-category-list"
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
+import { useSpecialtyCounts } from "@/hooks/use-specialty-counts"
+import { catalogosApi } from "@/lib/api"
 import { BookOpen, GraduationCap, Users, Globe, School, Microscope } from "lucide-react"
 
 export default function EducacionPage() {
@@ -45,50 +48,41 @@ export default function EducacionPage() {
     satisfaction: 96,
   }
 
-  const serviceCategories = [
-    {
-      id: "inicial",
-      name: "Educación Inicial",
-      description: "Pedagogía infantil y desarrollo temprano",
-      icon: Users,
-      count: 35,
-    },
-    {
-      id: "basica",
-      name: "Educación Básica",
-      description: "Docencia para niveles de primaria",
-      icon: BookOpen,
-      count: 48,
-    },
-    {
-      id: "secundaria",
-      name: "Educación Secundaria",
-      description: "Profesores especializados para bachillerato",
-      icon: School,
-      count: 42,
-    },
-    {
-      id: "bilingue",
-      name: "Educación Bilingüe",
-      description: "Docentes certificados en idiomas",
-      icon: Globe,
-      count: 28,
-    },
-    {
-      id: "universitaria",
-      name: "Docencia Universitaria",
-      description: "Catedráticos y profesores universitarios",
-      icon: GraduationCap,
-      count: 31,
-    },
-    {
-      id: "investigacion",
-      name: "Investigación Académica",
-      description: "Asesores de tesis y proyectos de investigación",
-      icon: Microscope,
-      count: 22,
-    },
-  ]
+  const PROFESSION_ID = 993 // Educación (placeholder)
+  const { countsBySpecialty } = useSpecialtyCounts([PROFESSION_ID])
+  const [apiSpecialties, setApiSpecialties] = useState<any[]>([])
+
+  useEffect(() => {
+    catalogosApi.obtenerEspecialidades(PROFESSION_ID).then(data => {
+      setApiSpecialties(Array.isArray(data) ? data : [])
+    }).catch(() => setApiSpecialties([]))
+  }, [])
+
+  const editorialMeta: Record<string, { description: string; icon: any }> = {
+    "Educación Inicial": { description: "Pedagogía infantil y desarrollo temprano", icon: Users },
+    "Educación Básica": { description: "Docencia para niveles de primaria", icon: BookOpen },
+    "Educación Secundaria": { description: "Profesores especializados para bachillerato", icon: School },
+    "Educación Bilingüe": { description: "Docentes certificados en idiomas", icon: Globe },
+    "Docencia Universitaria": { description: "Catedráticos y profesores universitarios", icon: GraduationCap },
+    "Investigación Académica": { description: "Asesores de tesis y proyectos de investigación", icon: Microscope },
+  }
+
+  const serviceCategories = useMemo(() => {
+    if (apiSpecialties.length === 0) {
+      return Object.entries(editorialMeta).map(([name, meta]) => ({
+        id: name.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
+        name, description: meta.description, icon: meta.icon,
+      }))
+    }
+    return apiSpecialties.map(spec => {
+      const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: BookOpen }
+      return {
+        id: spec.nombre.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
+        name: spec.nombre, description: meta.description, icon: meta.icon,
+        count: countsBySpecialty.get(spec.id) || 0,
+      }
+    })
+  }, [apiSpecialties, countsBySpecialty])
 
   const blogPosts = [
     {
@@ -142,7 +136,7 @@ export default function EducacionPage() {
       />
 
       <ProfessionalsCategoryList
-        professionIds={[]}
+        professionIds={[PROFESSION_ID]}
         title="Docentes y Educadores Verificados"
         description="Encuentra los mejores profesionales para tu formación académica"
       />

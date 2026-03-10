@@ -6,6 +6,9 @@ import ProfessionalHeroCarousel from "@/components/shared/professional-hero-caro
 import ProfessionalsCategoryList from "@/components/shared/professionals-category-list"
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
+import { useState, useEffect, useMemo } from "react"
+import { useSpecialtyCounts } from "@/hooks/use-specialty-counts"
+import { catalogosApi } from "@/lib/api"
 import {
   Stethoscope,
   Heart,
@@ -68,176 +71,63 @@ export default function SaludPage() {
     satisfaction: 98,
   }
 
-  const serviceCategories = [
-    {
-      id: "medicina-general",
-      name: "Medicina General",
-      description: "Atención médica integral y diagnóstico de enfermedades comunes",
-      icon: Stethoscope,
-      count: 68,
-    },
-    {
-      id: "odontologia",
-      name: "Odontología",
-      description: "Salud bucal, tratamientos dentales y rehabilitación oral",
-      icon: UserRound,
-      count: 54,
-    },
-    {
-      id: "nutricion",
-      name: "Nutrición",
-      description: "Planes nutricionales personalizados y control de peso",
-      icon: Utensils,
-      count: 42,
-    },
-    {
-      id: "cardiologia",
-      name: "Cardiología",
-      description: "Diagnóstico y tratamiento de enfermedades cardiovasculares",
-      icon: Heart,
-      count: 38,
-    },
-    {
-      id: "pediatria",
-      name: "Pediatría",
-      description: "Atención médica especializada para niños y adolescentes",
-      icon: Baby,
-      count: 52,
-    },
-    {
-      id: "ginecologia",
-      name: "Ginecología",
-      description: "Salud reproductiva y atención integral de la mujer",
-      icon: HeartHandshake,
-      count: 45,
-    },
-    {
-      id: "dermatologia",
-      name: "Dermatología",
-      description: "Diagnóstico y tratamiento de enfermedades de la piel",
-      icon: Shield,
-      count: 36,
-    },
-    {
-      id: "traumatologia",
-      name: "Traumatología",
-      description: "Lesiones óseas, fracturas y rehabilitación física",
-      icon: Bone,
-      count: 41,
-    },
-    {
-      id: "oftalmologia",
-      name: "Oftalmología",
-      description: "Salud visual y tratamiento de enfermedades oculares",
-      icon: Eye,
-      count: 33,
-    },
-    {
-      id: "otorrinolaringologia",
-      name: "Otorrinolaringología",
-      description: "Enfermedades de oído, nariz y garganta",
-      icon: Ear,
-      count: 28,
-    },
-    {
-      id: "gastroenterologia",
-      name: "Gastroenterología",
-      description: "Diagnóstico y tratamiento del aparato digestivo",
-      icon: Activity,
-      count: 30,
-    },
-    {
-      id: "neurologia",
-      name: "Neurología",
-      description: "Enfermedades del sistema nervioso y cerebral",
-      icon: Brain,
-      count: 25,
-    },
-    {
-      id: "endocrinologia",
-      name: "Endocrinología",
-      description: "Trastornos hormonales, diabetes y metabolismo",
-      icon: Pill,
-      count: 27,
-    },
-    {
-      id: "urologia",
-      name: "Urología",
-      description: "Salud del sistema urinario y reproductivo masculino",
-      icon: Droplet,
-      count: 31,
-    },
-    {
-      id: "oncologia",
-      name: "Oncología",
-      description: "Diagnóstico y tratamiento de cáncer",
-      icon: Microscope,
-      count: 22,
-    },
-    {
-      id: "neumologia",
-      name: "Neumología",
-      description: "Enfermedades respiratorias y pulmonares",
-      icon: Wind,
-      count: 24,
-    },
-    {
-      id: "reumatologia",
-      name: "Reumatología",
-      description: "Enfermedades de articulaciones y tejido conectivo",
-      icon: HeartPulse,
-      count: 20,
-    },
-    {
-      id: "radiologia",
-      name: "Radiología",
-      description: "Diagnóstico por imágenes médicas",
-      icon: Radiation,
-      count: 26,
-    },
-    {
-      id: "infectologia",
-      name: "Infectología",
-      description: "Tratamiento de enfermedades infecciosas",
-      icon: Syringe,
-      count: 19,
-    },
-    {
-      id: "inmunologia",
-      name: "Inmunología",
-      description: "Enfermedades del sistema inmunológico y alergias",
-      icon: Shield,
-      count: 18,
-    },
-    {
-      id: "geriatria",
-      name: "Geriatría",
-      description: "Atención médica especializada para adultos mayores",
-      icon: Users,
-      count: 23,
-    },
-    {
-      id: "enfermeria",
-      name: "Enfermería",
-      description: "Cuidados de enfermería profesional y atención domiciliaria",
-      icon: Hospital,
-      count: 65,
-    },
-    {
-      id: "toxicologia",
-      name: "Toxicología",
-      description: "Intoxicaciones y envenenamientos",
-      icon: Thermometer,
-      count: 15,
-    },
-    {
-      id: "proctologia",
-      name: "Proctología",
-      description: "Enfermedades del colon, recto y ano",
-      icon: Activity,
-      count: 17,
-    },
-  ]
+  const PROFESSION_IDS = [1, 6, 7, 9, 10]
+  const { countsBySpecialty } = useSpecialtyCounts(PROFESSION_IDS)
+  const [apiSpecialties, setApiSpecialties] = useState<any[]>([])
+
+  useEffect(() => {
+    Promise.all(PROFESSION_IDS.map(id => catalogosApi.obtenerEspecialidades(id)))
+      .then(results => {
+        const combined = results.flatMap(data => Array.isArray(data) ? data : [])
+        const unique = Array.from(new Map(combined.map(item => [item.id, item])).values())
+        setApiSpecialties(unique)
+      })
+      .catch(() => setApiSpecialties([]))
+  }, [])
+
+  const editorialMeta: Record<string, { description: string; icon: any }> = {
+    "Medicina General": { description: "Atención médica integral y diagnóstico de enfermedades comunes", icon: Stethoscope },
+    "Odontología": { description: "Salud bucal, tratamientos dentales y rehabilitación oral", icon: UserRound },
+    "Nutrición": { description: "Planes nutricionales personalizados y control de peso", icon: Utensils },
+    "Cardiología": { description: "Diagnóstico y tratamiento de enfermedades cardiovasculares", icon: Heart },
+    "Pediatría": { description: "Atención médica especializada para niños y adolescentes", icon: Baby },
+    "Ginecología": { description: "Salud reproductiva y atención integral de la mujer", icon: HeartHandshake },
+    "Dermatología": { description: "Diagnóstico y tratamiento de enfermedades de la piel", icon: Shield },
+    "Traumatología": { description: "Lesiones óseas, fracturas y rehabilitación física", icon: Bone },
+    "Oftalmología": { description: "Salud visual y tratamiento de enfermedades oculares", icon: Eye },
+    "Otorrinolaringología": { description: "Enfermedades de oído, nariz y garganta", icon: Ear },
+    "Gastroenterología": { description: "Diagnóstico y tratamiento del aparato digestivo", icon: Activity },
+    "Neurología": { description: "Enfermedades del sistema nervioso y cerebral", icon: Brain },
+    "Endocrinología": { description: "Trastornos hormonales, diabetes y metabolismo", icon: Pill },
+    "Urología": { description: "Salud del sistema urinario y reproductivo masculino", icon: Droplet },
+    "Oncología": { description: "Diagnóstico y tratamiento de cáncer", icon: Microscope },
+    "Neumología": { description: "Enfermedades respiratorias y pulmonares", icon: Wind },
+    "Reumatología": { description: "Enfermedades de articulaciones y tejido conectivo", icon: HeartPulse },
+    "Radiología": { description: "Diagnóstico por imágenes médicas", icon: Radiation },
+    "Infectología": { description: "Tratamiento de enfermedades infecciosas", icon: Syringe },
+    "Inmunología": { description: "Enfermedades del sistema inmunológico y alergias", icon: Shield },
+    "Geriatría": { description: "Atención médica especializada para adultos mayores", icon: Users },
+    "Enfermería": { description: "Cuidados de enfermería profesional y atención domiciliaria", icon: Hospital },
+    "Toxicología": { description: "Intoxicaciones y envenenamientos", icon: Thermometer },
+    "Proctología": { description: "Enfermedades del colon, recto y ano", icon: Activity },
+  }
+
+  const serviceCategories = useMemo(() => {
+    if (apiSpecialties.length === 0) {
+      return Object.entries(editorialMeta).map(([name, meta]) => ({
+        id: name.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
+        name, description: meta.description, icon: meta.icon,
+      }))
+    }
+    return apiSpecialties.map(spec => {
+      const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: Stethoscope }
+      return {
+        id: spec.nombre.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
+        name: spec.nombre, description: meta.description, icon: meta.icon,
+        count: countsBySpecialty.get(spec.id) || 0,
+      }
+    })
+  }, [apiSpecialties, countsBySpecialty])
 
   return (
     <main className="min-h-screen bg-background">

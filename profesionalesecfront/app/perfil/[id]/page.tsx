@@ -58,7 +58,7 @@ export default function ProfessionalProfile() {
     }
 
     // Data Mapping
-    const { usuario, profesion, especialidad, descripcion, tarifa, ciudad, direccion } = professional
+    const { usuario, profesion, especialidad, descripcion, tarifa, ciudad, direccion, lat, lng, calle_principal, referencia } = professional
     const name = usuario?.nombre || "Profesional"
     const title = profesion?.nombre || "Profesional"
     const subTitle = especialidad?.nombre ? `${title} Especializada en ${especialidad.nombre}` : title
@@ -177,23 +177,23 @@ export default function ProfessionalProfile() {
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-gray-900">{locationName}</h4>
-                                        {direccion?.calle_principal && (
-                                            <p className="text-gray-600 mt-1">{direccion.calle_principal}</p>
+                                        {(calle_principal || direccion?.calle_principal) && (
+                                            <p className="text-gray-600 mt-1">{calle_principal || direccion.calle_principal}</p>
                                         )}
-                                        {direccion?.referencia && (
-                                            <p className="text-gray-500 text-sm mt-1 italic">Ref: {direccion.referencia}</p>
+                                        {(referencia || direccion?.referencia) && (
+                                            <p className="text-gray-500 text-sm mt-1 italic">Ref: {referencia || direccion.referencia}</p>
                                         )}
                                     </div>
                                 </div>
 
                                 {/* Mapa */}
-                                {direccion?.latitud && direccion?.longitud && (
+                                {(lat || direccion?.latitud) && (lng || direccion?.longitud) && (
                                     <div className="w-full h-64 rounded-xl overflow-hidden shadow-sm border border-gray-100">
                                         <LocationMap
-                                            lat={Number(direccion.latitud)}
-                                            lng={Number(direccion.longitud)}
+                                            lat={Number(lat || direccion.latitud)}
+                                            lng={Number(lng || direccion.longitud)}
                                             readonly={true}
-                                            address={direccion.calle_principal}
+                                            address={calle_principal || direccion?.calle_principal}
                                         />
                                     </div>
                                 )}

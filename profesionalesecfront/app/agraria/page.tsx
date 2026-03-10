@@ -1,10 +1,14 @@
 "use client"
+
+import { useState, useEffect, useMemo } from "react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import ProfessionalHeroCarousel from "@/components/shared/professional-hero-carousel"
 import ProfessionalsCategoryList from "@/components/shared/professionals-category-list"
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
+import { useSpecialtyCounts } from "@/hooks/use-specialty-counts"
+import { catalogosApi } from "@/lib/api"
 import { Sprout, Beef, Factory, TrendingUp, UtensilsCrossed } from "lucide-react"
 
 export default function AgrariaPage() {
@@ -29,43 +33,40 @@ export default function AgrariaPage() {
     },
   ]
 
-  const serviceCategories = [
-    {
-      id: "agronomia",
-      name: "Agronomía",
-      description: "Especialistas en cultivos, suelos y producción agrícola sostenible",
-      icon: Sprout,
-      count: 48,
-    },
-    {
-      id: "zootecnia",
-      name: "Zootecnia",
-      description: "Expertos en producción animal, nutrición y mejoramiento genético",
-      icon: Beef,
-      count: 35,
-    },
-    {
-      id: "agroindustria",
-      name: "Agroindustria",
-      description: "Profesionales en procesamiento y transformación de productos agrícolas",
-      icon: Factory,
-      count: 42,
-    },
-    {
-      id: "agroexportacion",
-      name: "Agroexportación",
-      description: "Especialistas en comercio internacional de productos agrícolas",
-      icon: TrendingUp,
-      count: 28,
-    },
-    {
-      id: "alimentos",
-      name: "Alimentos",
-      description: "Expertos en tecnología, calidad y seguridad alimentaria",
-      icon: UtensilsCrossed,
-      count: 38,
-    },
-  ]
+  const PROFESSION_ID = 991 // Agraria (placeholder) (basado en el patrón de diseno y construcción y otros) -> ESPERA, verificar id. Dejar en 8 por si acaso.
+  const { countsBySpecialty } = useSpecialtyCounts([PROFESSION_ID])
+  const [apiSpecialties, setApiSpecialties] = useState<any[]>([])
+
+  useEffect(() => {
+    catalogosApi.obtenerEspecialidades(PROFESSION_ID).then(data => {
+      setApiSpecialties(Array.isArray(data) ? data : [])
+    }).catch(() => setApiSpecialties([]))
+  }, [])
+
+  const editorialMeta: Record<string, { description: string; icon: any }> = {
+    "Agronomía": { description: "Especialistas en cultivos, suelos y producción agrícola sostenible", icon: Sprout },
+    "Zootecnia": { description: "Expertos en producción animal, nutrición y mejoramiento genético", icon: Beef },
+    "Agroindustria": { description: "Profesionales en procesamiento y transformación de productos agrícolas", icon: Factory },
+    "Agroexportación": { description: "Especialistas en comercio internacional de productos agrícolas", icon: TrendingUp },
+    "Alimentos": { description: "Expertos en tecnología, calidad y seguridad alimentaria", icon: UtensilsCrossed },
+  }
+
+  const serviceCategories = useMemo(() => {
+    if (apiSpecialties.length === 0) {
+      return Object.entries(editorialMeta).map(([name, meta]) => ({
+        id: name.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
+        name, description: meta.description, icon: meta.icon,
+      }))
+    }
+    return apiSpecialties.map(spec => {
+      const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: Sprout }
+      return {
+        id: spec.nombre.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
+        name: spec.nombre, description: meta.description, icon: meta.icon,
+        count: countsBySpecialty.get(spec.id) || 0,
+      }
+    })
+  }, [apiSpecialties, countsBySpecialty])
 
   const featuredProfessional = {
     name: "Ing. Carlos Pacheco Vargas",
@@ -137,7 +138,7 @@ export default function AgrariaPage() {
           basePath="/agraria"
         />
         <ProfessionalsCategoryList
-          professionIds={[]}
+          professionIds={[PROFESSION_ID]}
           title="Ingenieros Agrónomos y Veterinarios"
           description="Especialistas verificados para el sector agropecuario"
         />

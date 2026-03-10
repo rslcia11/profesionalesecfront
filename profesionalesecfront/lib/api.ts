@@ -187,10 +187,17 @@ export interface ApiResponse {
 // --- Helper Functions ---
 
 async function fetchApi(endpoint: string, options: RequestInit = {}): Promise<any> {
+  const isFormData = options.body instanceof FormData;
+  const defaultHeaders: Record<string, string> = {};
+
+  if (!isFormData) {
+    defaultHeaders["Content-Type"] = "application/json";
+  }
+
   const res = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      ...defaultHeaders,
       ...options.headers,
     },
   });
@@ -257,6 +264,26 @@ export const authApi = {
       headers: authHeader(token),
       body: JSON.stringify(data)
     });
+  },
+
+  async verificarEmail(token: string): Promise<ApiResponse> {
+    return fetchApi(`/auth/verificar-email/${token}`, {
+      method: "GET",
+    });
+  },
+
+  async solicitarRecuperacion(correo: string): Promise<ApiResponse> {
+    return fetchApi("/auth/recuperar-contrasena", {
+      method: "POST",
+      body: JSON.stringify({ correo }),
+    });
+  },
+
+  async restablecerContrasena(token: string, nueva_contrasena: string): Promise<ApiResponse> {
+    return fetchApi("/auth/restablecer-contrasena", {
+      method: "POST",
+      body: JSON.stringify({ token, nueva_contrasena }),
+    });
   }
 }
 
@@ -264,8 +291,13 @@ export const authApi = {
 export const catalogosApi = {
   async obtenerProfesiones() { return fetchApi("/catalogos/profesiones"); },
   async obtenerEspecialidades(profesion_id?: number) {
-    const query = profesion_id ? `?profesion_id=${profesion_id}` : "";
-    return fetchApi(`/catalogos/especialidades${query}`);
+    // The backend does not properly filter by profesion_id via query parameter
+    // So we fetch all and filter locally
+    const data = await fetchApi(`/catalogos/especialidades`);
+    if (profesion_id && Array.isArray(data)) {
+      return data.filter((item: any) => item.profesion_id === profesion_id || item.profesiones_id === profesion_id);
+    }
+    return data;
   },
   async obtenerProvincias() { return fetchApi("/catalogos/provincias"); },
   async obtenerCiudades(provincia_id?: number) {
@@ -507,6 +539,9 @@ export const ponenciasApi = {
     const headers = token ? authHeader(token) : {};
     return fetchApi("/ponencias", { headers });
   },
+  async listarTodas(token: string) {
+    return fetchApi("/ponencias/todas", { headers: authHeader(token) });
+  },
   async obtener(id: number) {
     return fetchApi(`/ponencias/${id}`);
   }
@@ -526,9 +561,9 @@ export const ponentesApi = {
   },
   async listar(token: string) {
     try {
-      return await fetchApi("/ponencias", { headers: authHeader(token) });
+      return await fetchApi("/ponentes", { headers: authHeader(token) });
     } catch (e) {
-      console.warn("Ponencias list endpoint not found, returning empty list.");
+      console.warn("Ponentes list endpoint not found, returning empty list.");
       return [];
     }
   }, // Admin
@@ -559,7 +594,7 @@ export const adminApi = {
   // Stats Facade (for Dashboard compatibility)
   async getStats(token: string) {
     const [ponenciasRes, profesionalesRes, planesRes] = await Promise.allSettled([
-      ponenciasApi.listar(token),
+      ponenciasApi.listarTodas(token).catch(() => ponenciasApi.listar(token)),
       this.getAllProfiles(token),
       planesApi.listar(token)
     ]);
@@ -756,6 +791,11 @@ export const articulosApi = {
   async archivar(id: number, token: string) {
     return fetchApi(`/articulos/${id}/archivar`, {
       method: "PUT",
+      headers: authHeader(token),
+    });
+  },
+  async listarTodos(token: string) {
+    return fetchApi("/articulos/admin/todos", {
       headers: authHeader(token),
     });
   },

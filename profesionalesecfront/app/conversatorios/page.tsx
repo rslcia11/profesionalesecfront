@@ -128,18 +128,27 @@ export default function ConversatoriosPage() {
                       <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
                         {evento.titulo}
                       </h3>
-                      <div className="flex items-center gap-2 text-emerald-600 font-medium">
-                        <Calendar className="w-5 h-5" />
-                        <span>{new Date(evento.fecha_inicio).toLocaleDateString()}</span>
+                      <div className="flex flex-wrap items-center gap-4 text-emerald-600 font-medium mb-4">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-5 h-5" />
+                          <span>{new Date(evento.fecha_inicio).toLocaleDateString()}</span>
+                        </div>
                         {evento.hora_inicio && (
-                          <>
-                            <span className="mx-1">•</span>
+                          <div className="flex items-center gap-2">
                             <Clock className="w-5 h-5" />
                             <span>{evento.hora_inicio.slice(0, 5)}</span>
-                          </>
+                          </div>
                         )}
+                        <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1 rounded-full text-sm border border-emerald-100">
+                          <DollarSign className="w-4 h-4" />
+                          <span>{Number(evento.precio) === 0 ? "Gratis" : `$${Number(evento.precio).toFixed(2)}`}</span>
+                        </div>
+                        <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full text-sm border border-blue-100 text-blue-600">
+                          <Users className="w-4 h-4" />
+                          <span>{evento.cupo} Cupos</span>
+                        </div>
                       </div>
-                      <p className="text-gray-600 mt-2">
+                      <p className="text-gray-600 leading-relaxed">
                         {evento.descripcion}
                       </p>
                     </div>
@@ -147,7 +156,9 @@ export default function ConversatoriosPage() {
 
                   <div className="flex items-center gap-2 text-gray-600 mb-6">
                     <MapPin className="w-5 h-5" />
-                    <span>Lugar: Por Confirmarse</span>
+                    <span>
+                      {evento.ciudad?.nombre ? `Lugar: ${evento.ciudad.nombre}, ${evento.provincia?.nombre}` : "Lugar: Por Confirmarse"}
+                    </span>
                   </div>
 
                   <Link
@@ -195,7 +206,9 @@ export default function ConversatoriosPage() {
                       </p>
                       <div className="flex items-center gap-2 text-gray-600">
                         <MapPin className="w-5 h-5" />
-                        <span>Lugar: Por Confirmarse</span>
+                        <span>
+                          {evento.ciudad?.nombre ? `Lugar: ${evento.ciudad.nombre}, ${evento.provincia?.nombre}` : "Lugar: Por Confirmarse"}
+                        </span>
                       </div>
                     </div>
                   </div>

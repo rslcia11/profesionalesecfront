@@ -300,6 +300,7 @@ export default function ProfessionalForm() {
         if (!formData.province) newErrors.province = "Provincia requerida"
         if (!formData.city) newErrors.city = "Ciudad requerida"
         if (!formData.address.trim()) newErrors.address = "Dirección requerida"
+        if (formData.lat === undefined || formData.lng === undefined) newErrors.map = "Por favor, haz clic o mueve el pin en el mapa para establecer tu ubicación"
         break
       case 3:
         break
@@ -693,7 +694,7 @@ export default function ProfessionalForm() {
       </div>
       <div className="md:col-span-2">
         <label className="block text-sm font-medium text-muted-foreground mb-4">Ubicación en el Mapa</label>
-        <div className="border border-border rounded-lg overflow-hidden">
+        <div className={`border ${errors.map ? 'border-red-400' : 'border-border'} rounded-lg overflow-hidden`}>
           <LocationMap
             lat={formData.lat}
             lng={formData.lng}
@@ -701,8 +702,9 @@ export default function ProfessionalForm() {
           />
         </div>
         <p className="text-xs text-muted-foreground mt-2">
-          Mueve el pin para establecer tu ubicación exacta. La dirección se actualizará automáticamente.
+          Mueve el pin o haz clic en el mapa para establecer tu ubicación exacta.
         </p>
+        {errors.map && <p className="text-red-400 text-sm mt-1">{errors.map}</p>}
       </div>
       <div className="md:col-span-2">
         <label className="block text-sm font-medium text-muted-foreground mb-2">Dirección Exacta *</label>

@@ -1,10 +1,13 @@
 "use client"
+import { useState, useEffect, useMemo } from "react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import ProfessionalHeroCarousel from "@/components/shared/professional-hero-carousel"
 import ProfessionalsCategoryList from "@/components/shared/professionals-category-list"
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
+import { useSpecialtyCounts } from "@/hooks/use-specialty-counts"
+import { catalogosApi } from "@/lib/api"
 import { Sparkles, Camera, Dumbbell, ChefHat, Wrench, Cookie, Car, Zap, Hammer, Trophy, Briefcase } from "lucide-react"
 
 export default function OficiosPage() {
@@ -26,85 +29,46 @@ export default function OficiosPage() {
     },
   ]
 
-  const serviceCategories = [
-    {
-      id: "belleza",
-      name: "Belleza",
-      description: "Estilistas, peluqueros, maquilladores y especialistas en estética",
-      icon: Sparkles,
-      count: 45,
-    },
-    {
-      id: "fotografia",
-      name: "Fotografía",
-      description: "Fotógrafos profesionales, filmmakers y creadores de contenido audiovisual",
-      icon: Camera,
-      count: 38,
-    },
-    {
-      id: "preparador-fisico",
-      name: "Preparador Físico",
-      description: "Entrenadores personales y especialistas en acondicionamiento físico",
-      icon: Dumbbell,
-      count: 32,
-    },
-    {
-      id: "chefs",
-      name: "Chefs",
-      description: "Chefs profesionales, cocineros y especialistas en gastronomía",
-      icon: ChefHat,
-      count: 28,
-    },
-    {
-      id: "plomeria",
-      name: "Plomería",
-      description: "Plomeros certificados para instalación y reparación de sistemas hidráulicos",
-      icon: Wrench,
-      count: 35,
-    },
-    {
-      id: "panaderia",
-      name: "Panadería y Pastelería",
-      description: "Panaderos, pasteleros y reposteros especializados",
-      icon: Cookie,
-      count: 24,
-    },
-    {
-      id: "mecanica",
-      name: "Mecánica Automotriz",
-      description: "Mecánicos automotrices y técnicos en reparación de vehículos",
-      icon: Car,
-      count: 40,
-    },
-    {
-      id: "electricista",
-      name: "Electricista",
-      description: "Electricistas certificados para instalaciones eléctricas residenciales y comerciales",
-      icon: Zap,
-      count: 42,
-    },
-    {
-      id: "carpinteria",
-      name: "Carpintería",
-      description: "Carpinteros profesionales para muebles a medida y trabajos en madera",
-      icon: Hammer,
-      count: 30,
-    },
-    {
-      id: "deporte",
-      name: "Deporte",
-      description: "Entrenadores deportivos y especialistas en diferentes disciplinas",
-      icon: Trophy,
-      count: 36,
-    },
-    {
-      id: "servicios-varios",
-      name: "Servicios Varios",
-      description: "Diversos oficios y servicios especializados",
-      icon: Briefcase,
-      count: 50,
-    },
-  ]
+  const PROFESSION_ID = 99 // Oficios (placeholder)
+  const { countsBySpecialty } = useSpecialtyCounts([PROFESSION_ID])
+  const [apiSpecialties, setApiSpecialties] = useState<any[]>([])
+
+  useEffect(() => {
+    catalogosApi.obtenerEspecialidades(PROFESSION_ID).then(data => {
+      setApiSpecialties(Array.isArray(data) ? data : [])
+    }).catch(() => setApiSpecialties([]))
+  }, [])
+
+  const editorialMeta: Record<string, { description: string; icon: any }> = {
+    "Belleza": { description: "Estilistas, peluqueros, maquilladores y especialistas en estética", icon: Sparkles },
+    "Fotografía": { description: "Fotógrafos profesionales, filmmakers y creadores de contenido audiovisual", icon: Camera },
+    "Preparador Físico": { description: "Entrenadores personales y especialistas en acondicionamiento físico", icon: Dumbbell },
+    "Chefs": { description: "Chefs profesionales, cocineros y especialistas en gastronomía", icon: ChefHat },
+    "Plomería": { description: "Plomeros certificados para instalación y reparación de sistemas hidráulicos", icon: Wrench },
+    "Panadería y Pastelería": { description: "Panaderos, pasteleros y reposteros especializados", icon: Cookie },
+    "Mecánica Automotriz": { description: "Mecánicos automotrices y técnicos en reparación de vehículos", icon: Car },
+    "Electricista": { description: "Electricistas certificados para instalaciones eléctricas residenciales y comerciales", icon: Zap },
+    "Carpintería": { description: "Carpinteros profesionales para muebles a medida y trabajos en madera", icon: Hammer },
+    "Deporte": { description: "Entrenadores deportivos y especialistas en diferentes disciplinas", icon: Trophy },
+    "Servicios Varios": { description: "Diversos oficios y servicios especializados", icon: Briefcase },
+  }
+
+  const serviceCategories = useMemo(() => {
+    if (apiSpecialties.length === 0) {
+      return Object.entries(editorialMeta).map(([name, meta]) => ({
+        id: name.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
+        name, description: meta.description, icon: meta.icon,
+      }))
+    }
+    return apiSpecialties.map(spec => {
+      const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: Wrench }
+      return {
+        id: spec.nombre.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
+        name: spec.nombre, description: meta.description, icon: meta.icon,
+        count: countsBySpecialty.get(spec.id) || 0,
+      }
+    })
+  }, [apiSpecialties, countsBySpecialty])
 
   const featuredProfessional = {
     name: "Paul Pineda",
@@ -174,7 +138,7 @@ export default function OficiosPage() {
           basePath="/oficios"
         />
         <ProfessionalsCategoryList
-          professionIds={[]}
+          professionIds={[PROFESSION_ID]}
           title="Profesionales en Oficios"
           description="Expertos calificados para cada necesidad de tu hogar o negocio"
         />

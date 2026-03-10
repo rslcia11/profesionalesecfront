@@ -1,11 +1,14 @@
 "use client"
 
+import { useState, useEffect, useMemo } from "react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import ProfessionalHeroCarousel from "@/components/shared/professional-hero-carousel"
 import ProfessionalsCategoryList from "@/components/shared/professionals-category-list"
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
+import { useSpecialtyCounts } from "@/hooks/use-specialty-counts"
+import { catalogosApi } from "@/lib/api"
 import { Code, Cpu, Zap, Leaf, Bot, Building2 } from "lucide-react"
 
 export default function IngenieriaYTecnologiaPage() {
@@ -45,50 +48,41 @@ export default function IngenieriaYTecnologiaPage() {
     satisfaction: 96,
   }
 
-  const serviceCategories = [
-    {
-      id: "ingenieria-civil",
-      name: "Ingeniería Civil",
-      description: "Construcción, estructuras y proyectos de infraestructura",
-      icon: Building2,
-      count: 48,
-    },
-    {
-      id: "ingenieria-industrial",
-      name: "Ingeniería Industrial",
-      description: "Optimización de procesos y gestión industrial",
-      icon: Cpu,
-      count: 38,
-    },
-    {
-      id: "ingenieria-electronica",
-      name: "Ingeniería Electrónica",
-      description: "Sistemas electrónicos, automatización y control",
-      icon: Zap,
-      count: 32,
-    },
-    {
-      id: "ingenieria-sistemas",
-      name: "Ingeniería en Sistemas",
-      description: "Desarrollo de software, redes y TI",
-      icon: Code,
-      count: 65,
-    },
-    {
-      id: "ingenieria-ambiental",
-      name: "Ingeniería Ambiental",
-      description: "Sostenibilidad y gestión ambiental",
-      icon: Leaf,
-      count: 25,
-    },
-    {
-      id: "ingenieria-robotica",
-      name: "Ingeniería Robótica",
-      description: "Robótica, automatización e IA",
-      icon: Bot,
-      count: 18,
-    },
-  ]
+  const PROFESSION_ID = 2 // Ingeniería y Tecnología
+  const { countsBySpecialty } = useSpecialtyCounts([PROFESSION_ID])
+  const [apiSpecialties, setApiSpecialties] = useState<any[]>([])
+
+  useEffect(() => {
+    catalogosApi.obtenerEspecialidades(PROFESSION_ID).then(data => {
+      setApiSpecialties(Array.isArray(data) ? data : [])
+    }).catch(() => setApiSpecialties([]))
+  }, [])
+
+  const editorialMeta: Record<string, { description: string; icon: any }> = {
+    "Ingeniería Civil": { description: "Construcción, estructuras y proyectos de infraestructura", icon: Building2 },
+    "Ingeniería Industrial": { description: "Optimización de procesos y gestión industrial", icon: Cpu },
+    "Ingeniería Electrónica": { description: "Sistemas electrónicos, automatización y control", icon: Zap },
+    "Ingeniería en Sistemas": { description: "Desarrollo de software, redes y TI", icon: Code },
+    "Ingeniería Ambiental": { description: "Sostenibilidad y gestión ambiental", icon: Leaf },
+    "Ingeniería Robótica": { description: "Robótica, automatización e IA", icon: Bot },
+  }
+
+  const serviceCategories = useMemo(() => {
+    if (apiSpecialties.length === 0) {
+      return Object.entries(editorialMeta).map(([name, meta]) => ({
+        id: name.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
+        name, description: meta.description, icon: meta.icon,
+      }))
+    }
+    return apiSpecialties.map(spec => {
+      const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: Cpu }
+      return {
+        id: spec.nombre.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
+        name: spec.nombre, description: meta.description, icon: meta.icon,
+        count: countsBySpecialty.get(spec.id) || 0,
+      }
+    })
+  }, [apiSpecialties, countsBySpecialty])
 
   const blogPosts = [
     {

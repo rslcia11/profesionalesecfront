@@ -42,6 +42,9 @@ import {
   CheckCircle2,
   XCircle,
   UserPlus,
+  Info,
+  Globe,
+  Eye,
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -49,8 +52,8 @@ import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 import { adminApi, catalogosApi, ponenciasApi, profesionalApi, articulosApi, API_URL, ponentesApi, type Articulo } from "@/lib/api"
 import ArticleFormModal from "@/components/article-form-modal"
-import { Eye } from "lucide-react"
-import LocationMap from "@/components/shared/location-map"
+import dynamic from "next/dynamic"
+const LocationMap = dynamic(() => import("@/components/shared/location-map"), { ssr: false })
 
 type Ponencia = {
   id: number
@@ -182,8 +185,12 @@ export default function AdminDashboard() {
             descripcion: p.descripcion || "Sin descripción",
             documentos: p.documentos || [],
             foto_url: formatUrl(p.foto_url || p.usuario?.foto_url || p.usuario?.foto || p.usuario?.avatar || p.usuario?.imagen_url),
-            direccion_texto: p.direccion ? `${p.direccion.calle_principal} ${p.direccion.referencia ? `(${p.direccion.referencia})` : ""}` : "No registrada",
-            link_maps: p.direccion?.link_maps || null,
+            direccion_texto: (p.calle_principal || p.direccion?.calle_principal)
+              ? `${p.calle_principal || p.direccion?.calle_principal} ${(p.referencia || p.direccion?.referencia) ? `(${p.referencia || p.direccion?.referencia})` : ""}`
+              : "No registrada",
+            link_maps: (p.lat && p.lng) || (p.latitud && p.longitud)
+              ? `https://www.google.com/maps?q=${p.lat || p.latitud},${p.lng || p.longitud}`
+              : p.direccion?.link_maps || null,
             perfil_estado: { estado },
           };
         })
@@ -199,12 +206,21 @@ export default function AdminDashboard() {
         })
       }
 
-      // Load articles (public endpoint, no auth needed)
+      // Load articles (use admin endpoint to see all states)
       try {
-        const articlesData = await articulosApi.listarPublicados()
+        const articlesData = await articulosApi.listarTodos(token)
         setAdminArticulos(Array.isArray(articlesData) ? articlesData : [])
-      } catch (error) {
-        console.error("Error loading articles:", error)
+      } catch (error: any) {
+        // Handle 404 specifically or generic error
+        if (error.message?.includes("404")) {
+          console.warn("Admin articles route not found, falling back to public list");
+        } else {
+          console.error("Error loading articles:", error);
+        }
+
+        // Fallback to public list if admin route not yet implemented/available
+        const publicArticles = await articulosApi.listarPublicados().catch(() => [])
+        setAdminArticulos(Array.isArray(publicArticles) ? publicArticles : [])
       }
     }
     loadData()
@@ -216,6 +232,8 @@ export default function AdminDashboard() {
   const [isProfileDetailsOpen, setIsProfileDetailsOpen] = useState(false) // Nuevo estado para detalles
   const [selectedProfile, setSelectedProfile] = useState<any>(null) // Nuevo estado para perfil seleccionado
   const [editingItem, setEditingItem] = useState<any>(null)
+  const [isConversatorioDetailsOpen, setIsConversatorioDetailsOpen] = useState(false)
+  const [selectedConversatorio, setSelectedConversatorio] = useState<any>(null)
 
   // Articles administration states
   const [isArticleModalOpen, setIsArticleModalOpen] = useState(false)
@@ -251,7 +269,6 @@ export default function AdminDashboard() {
     return result
   }, [perfilesPendientes, filterStatus])
 
-  // Form states
   const [conversatorioForm, setConversatorioForm] = useState({
     titulo: "",
     descripcion: "",
@@ -262,7 +279,7 @@ export default function AdminDashboard() {
     precio: 0,
     cupo: 0,
     profesion_id: 0,
-    estado: "borrador" as const,
+    estado: "borrador" as "borrador" | "publicada" | "finalizada",
     provincia_id: 0,
     ciudad_id: 0,
     direccion: "",
@@ -367,12 +384,9 @@ export default function AdminDashboard() {
       setIsConversatorioDialogOpen(false)
       setEditingItem(null)
       resetConversatorioForm()
-      setIsConversatorioDialogOpen(false)
-      setEditingItem(null)
-      resetConversatorioForm()
     } catch (e: any) {
       toast({
-        title: "Error al actualizar",
+        title: editingItem ? "Error al actualizar" : "Error al crear",
         description: e.message || "Error desconocido",
         variant: "destructive"
       })
@@ -429,12 +443,10 @@ export default function AdminDashboard() {
     try {
       const token = localStorage.getItem("auth_token")
       if (!token) return
-      // The ponentes list comes from /ponencias endpoint — we filter locally
-      // or we use ponentesApi.listar which returns all ponencias with their ponentes
       const data = await ponentesApi.listar(token)
-      const ponenciaData = Array.isArray(data?.ponencias ? data.ponencias : data) ? (data.ponencias || data) : []
-      const found = ponenciaData.find((p: any) => p.id === ponenciaId)
-      setPonentesList(found?.ponentes || [])
+      // Backend returns flat array: [{ id, ponencia_id, nombre, tipo, correo, ... }]
+      const allPonentes = Array.isArray(data) ? data : []
+      setPonentesList(allPonentes.filter((p: any) => p.ponencia_id === ponenciaId))
     } catch (e) {
       console.error("Error loading ponentes:", e)
       setPonentesList([])
@@ -444,12 +456,19 @@ export default function AdminDashboard() {
   }
 
   const handleAsignarPonente = async (ponenciaId: number, usuarioId?: number | null, nombrePonente?: string) => {
+    console.log("handleAsignarPonente called", { ponenciaId, usuarioId, nombrePonente })
     const token = localStorage.getItem("auth_token")
-    if (!token) return
+    if (!token) {
+      console.error("No token found")
+      return
+    }
+
     try {
       const payload: any = { ponencia_id: ponenciaId }
       if (usuarioId) payload.usuario_id = usuarioId
       if (nombrePonente) payload.nombre_ponente = nombrePonente
+
+      console.log("Sending payload:", payload)
 
       if (!payload.usuario_id && !payload.nombre_ponente) {
         toast({ title: "Error", description: "Debe seleccionar un profesional o ingresar un nombre.", variant: "destructive" })
@@ -457,11 +476,13 @@ export default function AdminDashboard() {
       }
 
       await ponentesApi.asignar(payload, token)
+      console.log("Assignment successful")
       toast({ title: "Ponente Asignado", description: "El ponente fue asignado correctamente." })
       setExternalSpeakerName("")
       loadPonentes(ponenciaId)
-    } catch (e) {
-      toast({ title: "Error", description: "No se pudo asignar el ponente.", variant: "destructive" })
+    } catch (e: any) {
+      console.error("Error assigning ponente:", e)
+      toast({ title: "Error", description: "No se pudo asignar el ponente: " + (e.message || "Error desconocido"), variant: "destructive" })
     }
   }
 
@@ -565,6 +586,13 @@ export default function AdminDashboard() {
     setIsProfileDetailsOpen(true)
   }
 
+  const openConversatorioDetails = (ponencia: Ponencia) => {
+    setSelectedConversatorio(ponencia)
+    setIsConversatorioDetailsOpen(true)
+    // Load speakers for this specific ponencia
+    loadPonentes(ponencia.id)
+  }
+
   // Articles moderation handlers
   const handleModerarArticulo = async (id: number) => {
     const token = localStorage.getItem("auth_token")
@@ -572,7 +600,7 @@ export default function AdminDashboard() {
     try {
       await articulosApi.moderar(id, token)
       toast({ title: "Artículo moderado", description: "El artículo ha sido aprobado y publicado." })
-      const data = await articulosApi.listarPublicados()
+      const data = await articulosApi.listarTodos(token).catch(() => articulosApi.listarPublicados())
       setAdminArticulos(Array.isArray(data) ? data : [])
     } catch (error) {
       toast({ title: "Error", description: "No se pudo moderar el artículo.", variant: "destructive" })
@@ -586,7 +614,7 @@ export default function AdminDashboard() {
     try {
       await articulosApi.archivar(id, token)
       toast({ title: "Artículo archivado", description: "El artículo ha sido archivado." })
-      const data = await articulosApi.listarPublicados()
+      const data = await articulosApi.listarTodos(token).catch(() => articulosApi.listarPublicados())
       setAdminArticulos(Array.isArray(data) ? data : [])
     } catch (error) {
       toast({ title: "Error", description: "No se pudo archivar el artículo.", variant: "destructive" })
@@ -599,7 +627,7 @@ export default function AdminDashboard() {
     try {
       await articulosApi.crear(data as any, token)
       toast({ title: "Artículo Creado", description: "El artículo ha sido publicado exitosamente." })
-      const articlesData = await articulosApi.listarPublicados()
+      const articlesData = await articulosApi.listarTodos(token).catch(() => articulosApi.listarPublicados())
       setAdminArticulos(Array.isArray(articlesData) ? articlesData : [])
       setIsArticleModalOpen(false)
     } catch (e) {
@@ -613,7 +641,7 @@ export default function AdminDashboard() {
     try {
       await articulosApi.actualizar(selectedArticle.id, data, token)
       toast({ title: "Artículo Actualizado", description: "Cambios guardados exitosamente." })
-      const articlesData = await articulosApi.listarPublicados()
+      const articlesData = await articulosApi.listarTodos(token).catch(() => articulosApi.listarPublicados())
       setAdminArticulos(Array.isArray(articlesData) ? articlesData : [])
       setIsArticleModalOpen(false)
     } catch (e) {
@@ -741,292 +769,323 @@ export default function AdminDashboard() {
                         Nuevo Conversatorio
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="bg-white border-gray-200 max-w-2xl max-h-[90vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle className="text-xl">{editingItem ? "Editar" : "Crear"} Conversatorio</DialogTitle>
-                        <DialogDescription className="text-gray-500">
-                          {editingItem ? "Modifica" : "Completa"} los detalles del conversatorio. Los campos marcados
-                          son obligatorios.
-                        </DialogDescription>
+                    <DialogContent className="bg-white border-gray-100 max-w-[92vw] lg:max-w-6xl max-h-[96vh] w-full flex flex-col p-0 overflow-hidden rounded-[2.5rem] shadow-[0_32px_128px_-16px_rgba(0,0,0,0.15)] ring-1 ring-slate-900/5">
+                      <DialogHeader className="px-8 py-6 border-b bg-slate-50/80 backdrop-blur-sm">
+                        <div className="flex items-center gap-4">
+                          <div className="p-3 bg-blue-600 rounded-xl shadow-lg shadow-blue-200">
+                            <Plus className="h-7 w-7 text-white" />
+                          </div>
+                          <div>
+                            <DialogTitle className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                              {editingItem ? "Editar" : "Crear Nuevo"} Conversatorio
+                            </DialogTitle>
+                            <DialogDescription className="text-slate-500 text-lg">
+                              {editingItem ? "Refina los detalles del evento" : "Configura un nuevo espacio de aprendizaje para la comunidad"}.
+                            </DialogDescription>
+                          </div>
+                        </div>
                       </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                          <Label htmlFor="titulo" className="text-sm font-medium flex items-center gap-1">
-                            Título <span className="text-red-500">*</span>
-                          </Label>
-                          <Input
-                            id="titulo"
-                            placeholder="Ej: Innovación en Tecnología Educativa"
-                            value={conversatorioForm.titulo}
-                            onChange={(e) => setConversatorioForm({ ...conversatorioForm, titulo: e.target.value })}
-                            className="focus:border-blue-500/50 transition-colors"
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="descripcion" className="text-sm font-medium flex items-center gap-1">
-                            Descripción <span className="text-red-500">*</span>
-                          </Label>
-                          <Textarea
-                            id="descripcion"
-                            placeholder="Describe el contenido y objetivos del conversatorio..."
-                            value={conversatorioForm.descripcion}
-                            onChange={(e) =>
-                              setConversatorioForm({ ...conversatorioForm, descripcion: e.target.value })
-                            }
-                            className="focus:border-blue-500/50 transition-colors min-h-[100px]"
-                            rows={4}
-                          />
-                        </div>
-                        <div className="space-y-4">
-                          <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                            <Label className="text-sm font-semibold text-emerald-700 mb-2 block">Inicio del Evento</Label>
-                            <div className="flex flex-col sm:flex-row gap-3">
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    className={cn(
-                                      "justify-start text-left font-normal focus:border-emerald-500/50 transition-colors flex-1 bg-white",
-                                      !conversatorioForm.fecha_inicio && "text-muted-foreground",
-                                    )}
-                                  >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {conversatorioForm.fecha_inicio ? (
-                                      format(conversatorioForm.fecha_inicio, "PPP", { locale: es })
-                                    ) : (
-                                      <span>Seleccionar fecha</span>
-                                    )}
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0 bg-white border-gray-200">
-                                  <Calendar
-                                    mode="single"
-                                    selected={conversatorioForm.fecha_inicio}
-                                    onSelect={(date) =>
-                                      date && setConversatorioForm({ ...conversatorioForm, fecha_inicio: date })
-                                    }
-                                    initialFocus
-                                  />
-                                </PopoverContent>
-                              </Popover>
-                              <div className="relative">
-                                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                                <Input
-                                  type="time"
-                                  value={conversatorioForm.hora_inicio}
-                                  onChange={(e) => setConversatorioForm({ ...conversatorioForm, hora_inicio: e.target.value })}
-                                  className="pl-9 w-full sm:w-36 bg-white focus:border-emerald-500/50"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                          <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                            <Label className="text-sm font-semibold text-blue-700 mb-2 block">Finalización del Evento</Label>
-                            <div className="flex flex-col sm:flex-row gap-3">
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    className={cn(
-                                      "justify-start text-left font-normal focus:border-blue-500/50 transition-colors flex-1 bg-white",
-                                      !conversatorioForm.fecha_fin && "text-muted-foreground",
-                                    )}
-                                  >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {conversatorioForm.fecha_fin ? (
-                                      format(conversatorioForm.fecha_fin, "PPP", { locale: es })
-                                    ) : (
-                                      <span>Seleccionar fecha</span>
-                                    )}
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0 bg-white border-gray-200">
-                                  <Calendar
-                                    mode="single"
-                                    selected={conversatorioForm.fecha_fin}
-                                    onSelect={(date) =>
-                                      date && setConversatorioForm({ ...conversatorioForm, fecha_fin: date })
-                                    }
-                                    initialFocus
-                                  />
-                                </PopoverContent>
-                              </Popover>
-                              <div className="relative">
-                                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                                <Input
-                                  type="time"
-                                  value={conversatorioForm.hora_fin}
-                                  onChange={(e) => setConversatorioForm({ ...conversatorioForm, hora_fin: e.target.value })}
-                                  className="pl-9 w-full sm:w-36 bg-white focus:border-blue-500/50"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="grid gap-2">
-                            <Label htmlFor="precio" className="text-sm font-medium">
-                              Precio (USD)
-                            </Label>
-                            <Input
-                              id="precio"
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              placeholder="0.00"
-                              value={conversatorioForm.precio}
-                              onChange={(e) =>
-                                setConversatorioForm({
-                                  ...conversatorioForm,
-                                  precio: e.target.value === "" ? 0 : Number.parseFloat(e.target.value),
-                                })
-                              }
-                              className="focus:border-blue-500/50 transition-colors"
-                            />
-                          </div>
-                          <div className="grid gap-2">
-                            <Label htmlFor="cupo" className="text-sm font-medium">
-                              Cupo Máximo
-                            </Label>
-                            <Input
-                              id="cupo"
-                              type="number"
-                              min="1"
-                              placeholder="100"
-                              value={conversatorioForm.cupo || ""}
-                              onChange={(e) =>
-                                setConversatorioForm({
-                                  ...conversatorioForm,
-                                  cupo: e.target.value === "" ? 0 : Number.parseInt(e.target.value)
-                                })
-                              }
-                              className="focus:border-blue-500/50 transition-colors"
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                              <Label htmlFor="provincia" className="text-sm font-medium">Provincia</Label>
-                              <Select
-                                value={conversatorioForm.provincia_id ? conversatorioForm.provincia_id.toString() : ""}
-                                onValueChange={(val) => handleProvinciaChange(val)}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Seleccionar provincia" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {provincias.map((prov: any) => (
-                                    <SelectItem key={prov.id} value={prov.id.toString()}>{prov.nombre}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="grid gap-2">
-                              <Label htmlFor="ciudad" className="text-sm font-medium">Ciudad</Label>
-                              <Select
-                                value={conversatorioForm.ciudad_id ? conversatorioForm.ciudad_id.toString() : ""}
-                                onValueChange={(val) => setConversatorioForm(prev => ({ ...prev, ciudad_id: Number(val) }))}
-                                disabled={!conversatorioForm.provincia_id}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Seleccionar ciudad" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {ciudades.map((ciudad: any) => (
-                                    <SelectItem key={ciudad.id} value={ciudad.id.toString()}>{ciudad.nombre}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
 
-                          <div className="space-y-4 border border-gray-100 rounded-lg p-4 bg-gray-50/50">
-                            <Label className="text-sm font-medium block mb-2">Ubicación del Evento (Manual)</Label>
-                            <div className="grid gap-4">
-                              <div className="h-[300px] w-full rounded-md overflow-hidden border">
-                                <LocationMap
-                                  lat={conversatorioForm.latitud}
-                                  lng={conversatorioForm.longitud}
-                                  onChange={handleLocationChange}
-                                />
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                Haz clic en el mapa para establecer las coordenadas exactas.
-                              </p>
-                              <div className="grid gap-2">
-                                <Label htmlFor="direccion" className="text-sm font-medium">Dirección Escrita</Label>
-                                <Textarea
-                                  id="direccion"
-                                  placeholder="Ej: Av. Amazonas y Naciones Unidas, Edificio X, Piso 2"
-                                  value={conversatorioForm.direccion || ""}
-                                  onChange={(e) => setConversatorioForm({ ...conversatorioForm, direccion: e.target.value })}
-                                  rows={2}
-                                />
-                              </div>
+                      <div className="flex-1 overflow-y-auto p-0 bg-[#FDFDFD]">
+                        <div className="w-full">
+                          <div className="grid grid-cols-1 xl:grid-cols-12 gap-0">
+                            {/* COLUMNA PRINCIPAL DE DATOS (7/12) */}
+                            <div className="xl:col-span-7 p-8 lg:p-10 space-y-8 border-r border-slate-50">
+                              {/* SECCIÓN 1: IDENTIDAD DEL EVENTO */}
+                              <section className="space-y-8 animate-in fade-in slide-in-from-left-4 duration-700">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-blue-600/10 rounded-2xl">
+                                      <BookOpen className="h-6 w-6 text-blue-600" />
+                                    </div>
+                                    <div>
+                                      <h3 className="text-2xl font-black text-slate-900 tracking-tight">Esencia del Evento</h3>
+                                      <p className="text-slate-500 text-sm">Define la temática y el público objetivo</p>
+                                    </div>
+                                  </div>
+                                  {getEstadoBadge(conversatorioForm.estado)}
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-8">
+                                  <div className="space-y-3">
+                                    <Label htmlFor="titulo" className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">
+                                      Título Descriptivo
+                                    </Label>
+                                    <Input
+                                      id="titulo"
+                                      placeholder="Ej: Masterclass de Gestión de Proyectos"
+                                      value={conversatorioForm.titulo}
+                                      onChange={(e) => setConversatorioForm({ ...conversatorioForm, titulo: e.target.value })}
+                                      className="h-16 text-2xl font-black focus:ring-0 focus:border-blue-600 transition-all border-none bg-slate-50/50 rounded-2xl shadow-inner px-6"
+                                    />
+                                  </div>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-3">
+                                      <Label htmlFor="profesion" className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">
+                                        Público Objetivo
+                                      </Label>
+                                      <Select
+                                        value={conversatorioForm.profesion_id ? conversatorioForm.profesion_id.toString() : ""}
+                                        onValueChange={(value: string) =>
+                                          setConversatorioForm({ ...conversatorioForm, profesion_id: Number(value) })
+                                        }
+                                      >
+                                        <SelectTrigger className="h-14 focus:ring-4 focus:ring-blue-600/5 transition-all border-slate-100 rounded-2xl bg-white shadow-sm font-bold text-slate-700 px-6">
+                                          <SelectValue placeholder="Seleccionar profesión" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-white border-slate-100 rounded-2xl shadow-2xl">
+                                          {profesiones.map((prof: any) => (
+                                            <SelectItem key={prof.id} value={prof.id.toString()} className="focus:bg-blue-50 py-3">
+                                              {prof.nombre}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                      <Label className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Estado de Publicación</Label>
+                                      <Select
+                                        value={conversatorioForm.estado}
+                                        onValueChange={(value: any) =>
+                                          setConversatorioForm({ ...conversatorioForm, estado: value })
+                                        }
+                                      >
+                                        <SelectTrigger className={`h-14 border-none rounded-2xl font-black shadow-lg shadow-blue-900/5 transition-all px-6 ${conversatorioForm.estado === 'publicada' ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'
+                                          }`}>
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-white border-slate-100 rounded-2xl overflow-hidden">
+                                          <SelectItem value="borrador" className="focus:bg-slate-50 italic py-3">📌 Borrador Interno</SelectItem>
+                                          <SelectItem value="publicada" className="focus:bg-blue-50 text-blue-600 font-black py-3">🚀 Publicar Globalmente</SelectItem>
+                                          <SelectItem value="finalizada" className="focus:bg-red-50 text-red-600 py-3">🔒 Cerrar Evento</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  </div>
+
+                                  <div className="space-y-3">
+                                    <Label htmlFor="descripcion" className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">
+                                      Descripción y Agenda
+                                    </Label>
+                                    <Textarea
+                                      id="descripcion"
+                                      placeholder="Describe los módulos, ponentes y beneficios..."
+                                      value={conversatorioForm.descripcion}
+                                      onChange={(e) =>
+                                        setConversatorioForm({ ...conversatorioForm, descripcion: e.target.value })
+                                      }
+                                      className="focus:ring-0 focus:border-blue-600 transition-all border-none bg-slate-50/50 rounded-[2rem] min-h-[200px] text-lg leading-relaxed shadow-inner p-8"
+                                    />
+                                  </div>
+                                </div>
+                              </section>
+                            </div>
+
+                            {/* COLUMNA LATERAL DE LOGÍSTICA (5/12) */}
+                            <div className="xl:col-span-5 bg-slate-50/30 p-8 lg:p-10 space-y-8">
+                              {/* SECCIÓN 2: LOGÍSTICA Y COSTOS */}
+                              <section className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-700 delay-100">
+                                <div className="flex items-center gap-4">
+                                  <div className="p-3 bg-emerald-600/10 rounded-2xl">
+                                    <Clock className="h-6 w-6 text-emerald-600" />
+                                  </div>
+                                  <div>
+                                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">Logística</h3>
+                                    <p className="text-slate-500 text-sm">Cronograma y disponibilidad</p>
+                                  </div>
+                                </div>
+
+                                <div className="space-y-8">
+                                  {/* Rango de Fechas en una fila elegante */}
+                                  <div className="bg-white p-2 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+                                    <div className="flex-1 p-6 space-y-4">
+                                      <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                        <CalendarIcon className="h-4 w-4 text-blue-500" /> Comienzo
+                                      </Label>
+                                      <div className="space-y-3">
+                                        <Popover>
+                                          <PopoverTrigger asChild>
+                                            <Button variant="ghost" className="h-auto p-0 text-xl font-black text-slate-800 hover:bg-transparent justify-start w-full">
+                                              {conversatorioForm.fecha_inicio ? format(conversatorioForm.fecha_inicio, "EEE, dd MMM", { locale: es }) : "Elegir fecha"}
+                                            </Button>
+                                          </PopoverTrigger>
+                                          <PopoverContent className="w-auto p-0 bg-white border-slate-100 rounded-3xl shadow-2xl">
+                                            <Calendar mode="single" selected={conversatorioForm.fecha_inicio} onSelect={(date) => date && setConversatorioForm({ ...conversatorioForm, fecha_inicio: date })} initialFocus />
+                                          </PopoverContent>
+                                        </Popover>
+                                        <Input type="time" value={conversatorioForm.hora_inicio} onChange={(e) => setConversatorioForm({ ...conversatorioForm, hora_inicio: e.target.value })} className="h-10 border-none bg-slate-100/50 rounded-xl font-bold text-center w-32 ml-auto" />
+                                      </div>
+                                    </div>
+                                    <div className="flex-1 p-6 space-y-4">
+                                      <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                        <Clock className="h-4 w-4 text-orange-500" /> Conclusión
+                                      </Label>
+                                      <div className="space-y-3">
+                                        <Popover>
+                                          <PopoverTrigger asChild>
+                                            <Button variant="ghost" className="h-auto p-0 text-xl font-black text-slate-800 hover:bg-transparent justify-start w-full">
+                                              {conversatorioForm.fecha_fin ? format(conversatorioForm.fecha_fin, "EEE, dd MMM", { locale: es }) : "Elegir fecha"}
+                                            </Button>
+                                          </PopoverTrigger>
+                                          <PopoverContent className="w-auto p-0 bg-white border-slate-100 rounded-3xl shadow-2xl">
+                                            <Calendar mode="single" selected={conversatorioForm.fecha_fin} onSelect={(date) => date && setConversatorioForm({ ...conversatorioForm, fecha_fin: date })} initialFocus />
+                                          </PopoverContent>
+                                        </Popover>
+                                        <Input type="time" value={conversatorioForm.hora_fin} onChange={(e) => setConversatorioForm({ ...conversatorioForm, hora_fin: e.target.value })} className="h-10 border-none bg-slate-100/50 rounded-xl font-bold text-center w-32 ml-auto" />
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="grid grid-cols-2 gap-6">
+                                    <div className="space-y-4 bg-white p-8 rounded-[2rem] shadow-lg shadow-emerald-900/5 border border-slate-100 relative overflow-hidden group">
+                                      <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full -mr-12 -mt-12 transition-all group-hover:bg-emerald-500/10"></div>
+                                      <Label htmlFor="precio" className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                        <DollarSign className="h-4 w-4 text-emerald-500" /> Inversión
+                                      </Label>
+                                      <div className="flex items-baseline gap-1">
+                                        <span className="text-2xl font-bold text-slate-300">$</span>
+                                        <Input
+                                          id="precio"
+                                          type="number"
+                                          step="0.01"
+                                          value={conversatorioForm.precio === 0 ? "" : conversatorioForm.precio}
+                                          onChange={(e) => setConversatorioForm({ ...conversatorioForm, precio: e.target.value === "" ? 0 : Number(e.target.value) })}
+                                          className="h-auto p-0 border-none text-4xl font-black text-slate-900 focus-visible:ring-0 bg-transparent w-full"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="space-y-4 bg-white p-8 rounded-[2rem] shadow-lg shadow-blue-900/5 border border-slate-100 relative overflow-hidden group">
+                                      <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full -mr-12 -mt-12 transition-all group-hover:bg-blue-500/10"></div>
+                                      <Label htmlFor="cupo" className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                        <Users className="h-4 w-4 text-blue-500" /> Capacidad
+                                      </Label>
+                                      <div className="flex items-baseline gap-2">
+                                        <Input
+                                          id="cupo"
+                                          type="number"
+                                          value={conversatorioForm.cupo === 0 ? "" : conversatorioForm.cupo}
+                                          onChange={(e) => setConversatorioForm({ ...conversatorioForm, cupo: e.target.value === "" ? 0 : Number(e.target.value) })}
+                                          className="h-auto p-0 border-none text-4xl font-black text-slate-900 focus-visible:ring-0 bg-transparent w-full"
+                                        />
+                                        <span className="text-lg font-bold text-slate-300 uppercase">Pax</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </section>
+                            </div>
+
+                            {/* SECCIÓN 3: UBICACIÓN GEOGRÁFICA - 100% WIDTH BELOW */}
+                            <div className="xl:col-span-12 p-8 lg:p-10 border-t border-slate-100 bg-white">
+                              <section className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+                                <div className="flex items-end justify-between">
+                                  <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-slate-900 rounded-2xl shadow-xl shadow-slate-900/20">
+                                      <MapPin className="h-6 w-6 text-white" />
+                                    </div>
+                                    <div>
+                                      <h3 className="text-2xl font-black text-slate-900 tracking-tight">Geolocalización</h3>
+                                      <p className="text-slate-500 text-sm">Precisión física para tus asistentes</p>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex gap-4">
+                                    <div className="space-y-2">
+                                      <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Provincia</Label>
+                                      <Select
+                                        value={conversatorioForm.provincia_id ? conversatorioForm.provincia_id.toString() : ""}
+                                        onValueChange={(val) => handleProvinciaChange(val)}
+                                      >
+                                        <SelectTrigger className="h-12 bg-slate-50 border-none text-slate-900 font-bold focus:ring-2 focus:ring-blue-600 rounded-xl w-48 transition-all">
+                                          <SelectValue placeholder="Elegir..." />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-white border-slate-100 rounded-xl shadow-2xl">
+                                          {provincias.map((prov: any) => (
+                                            <SelectItem key={prov.id} value={prov.id.toString()}>{prov.nombre}</SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Ciudad</Label>
+                                      <Select
+                                        value={conversatorioForm.ciudad_id ? conversatorioForm.ciudad_id.toString() : ""}
+                                        onValueChange={(val) => setConversatorioForm(prev => ({ ...prev, ciudad_id: Number(val) }))}
+                                        disabled={!conversatorioForm.provincia_id}
+                                      >
+                                        <SelectTrigger className="h-12 bg-slate-50 border-none text-slate-900 font-bold focus:ring-2 focus:ring-blue-600 rounded-xl w-48 transition-all disabled:opacity-30">
+                                          <SelectValue placeholder="Elegir..." />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-white border-slate-100 rounded-xl shadow-2xl">
+                                          {ciudades.map((ciudad: any) => (
+                                            <SelectItem key={ciudad.id} value={ciudad.id.toString()}>{ciudad.nombre}</SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                  <div className="lg:col-span-2 relative group/map rounded-[3rem] overflow-hidden border-8 border-slate-50 shadow-xl bg-white h-[550px]">
+                                    <LocationMap
+                                      lat={conversatorioForm.latitud}
+                                      lng={conversatorioForm.longitud}
+                                      onChange={handleLocationChange}
+                                    />
+                                  </div>
+
+                                  <div className="space-y-6 flex flex-col justify-center">
+                                    <div className="bg-slate-50/50 p-8 rounded-[2.5rem] border border-slate-100 space-y-6">
+                                      <Label htmlFor="direccion" className="text-xl font-black text-slate-800 flex items-center gap-2">
+                                        <MapPin className="h-5 w-5 text-blue-600" /> Dirección Exacta
+                                      </Label>
+                                      <Textarea
+                                        id="direccion"
+                                        placeholder="Ej: Frente al centro comercial, junto a la torre bancaria..."
+                                        value={conversatorioForm.direccion || ""}
+                                        onChange={(e) => setConversatorioForm({ ...conversatorioForm, direccion: e.target.value })}
+                                        className="bg-white border-slate-100 focus:ring-0 focus:border-blue-600 rounded-3xl min-h-[140px] text-lg p-6 shadow-inner leading-relaxed placeholder:text-slate-300"
+                                        rows={3}
+                                      />
+                                      <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50 text-xs text-blue-600 font-bold leading-relaxed">
+                                        💡 Una dirección clara reduce el margen de error y mejora la experiencia de llegada del profesional.
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </section>
                             </div>
                           </div>
-
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="estado" className="text-sm font-medium">
-                            Estado
-                          </Label>
-                          <Select
-                            value={conversatorioForm.estado}
-                            onValueChange={(value: any) =>
-                              setConversatorioForm({ ...conversatorioForm, estado: value })
-                            }
-                          >
-                            <SelectTrigger className="focus:border-blue-500/50 transition-colors">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="bg-white border-gray-200">
-                              <SelectItem value="borrador">Borrador</SelectItem>
-                              <SelectItem value="publicada">Publicada</SelectItem>
-                              <SelectItem value="finalizada">Finalizada</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="profesion" className="text-sm font-medium">
-                            Profesión Relacionada
-                          </Label>
-                          <Select
-                            value={conversatorioForm.profesion_id ? conversatorioForm.profesion_id.toString() : ""}
-                            onValueChange={(value: string) =>
-                              setConversatorioForm({ ...conversatorioForm, profesion_id: Number(value) })
-                            }
-                          >
-                            <SelectTrigger className="focus:border-blue-500/50 transition-colors">
-                              <SelectValue placeholder="Seleccionar profesión" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-white border-gray-200">
-                              {profesiones.map((prof: any) => (
-                                <SelectItem key={prof.id} value={prof.id.toString()}>
-                                  {prof.nombre}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
                         </div>
                       </div>
-                      <DialogFooter>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setIsConversatorioDialogOpen(false)
-                            setEditingItem(null)
-                            resetConversatorioForm()
-                          }}
-                          className="hover:bg-gray-100 transition-colors"
-                        >
-                          Cancelar
-                        </Button>
-                        <Button
-                          onClick={handleSaveConversatorio}
-                          className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-300"
-                        >
-                          {editingItem ? "Actualizar" : "Crear"} Conversatorio
-                        </Button>
+
+                      <DialogFooter className="px-8 py-6 border-t bg-slate-50 flex items-center justify-between">
+                        <p className="text-xs text-slate-400 hidden sm:flex items-center gap-2 italic font-medium">
+                          <Info className="h-4 w-4" /> Los eventos publicados son visibles en la agenda pública de Profesionales.EC
+                        </p>
+                        <div className="flex gap-3">
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setIsConversatorioDialogOpen(false)
+                              setEditingItem(null)
+                              resetConversatorioForm()
+                            }}
+                            className="border-gray-300 hover:bg-white transition-colors"
+                          >
+                            Cancelar
+                          </Button>
+                          <Button
+                            onClick={handleSaveConversatorio}
+                            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md shadow-blue-200 transition-all active:scale-95"
+                          >
+                            {editingItem ? "Guardar Cambios" : "Publicar Conversatorio"}
+                          </Button>
+                        </div>
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
@@ -1056,6 +1115,15 @@ export default function AdminDashboard() {
                               <TableCell>{getEstadoBadge(ponencia.estado)}</TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openConversatorioDetails(ponencia)}
+                                    className="hover:bg-amber-500/20 hover:text-amber-600 transition-colors"
+                                    title="Ver Detalles"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -1094,29 +1162,18 @@ export default function AdminDashboard() {
                   </CardContent>
                 </Card>
 
-                {/* Ponentes Management Panel */}
-                {selectedPonenciaId && (
-                  <Card className="bg-white border-gray-200 mt-4 animate-in fade-in duration-300">
-                    <CardHeader>
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <CardTitle className="text-lg flex items-center gap-2">
-                            <UserPlus className="h-5 w-5 text-emerald-600" />
-                            Ponentes — {ponencias.find(p => p.id === selectedPonenciaId)?.titulo || ""}
-                          </CardTitle>
-                          <CardDescription>Asigna o remueve ponentes de este conversatorio</CardDescription>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => { setSelectedPonenciaId(null); setPonentesList([]); }}
-                          className="hover:bg-gray-100"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                {/* Ponentes Management Dialog */}
+                <Dialog open={!!selectedPonenciaId} onOpenChange={(open) => { if (!open) { setSelectedPonenciaId(null); setPonentesList([]); } }}>
+                  <DialogContent className="bg-white border-gray-200 max-w-2xl max-h-[85vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle className="text-lg flex items-center gap-2">
+                        <UserPlus className="h-5 w-5 text-emerald-600" />
+                        Ponentes — {ponencias.find(p => p.id === selectedPonenciaId)?.titulo || ""}
+                      </DialogTitle>
+                      <DialogDescription>Asigna o remueve ponentes de este conversatorio</DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-2">
                       {/* Assign new ponente */}
                       <div className="flex flex-col gap-3 w-full bg-gray-50 p-4 rounded-lg border border-gray-100">
                         <div className="flex items-center space-x-2">
@@ -1139,7 +1196,7 @@ export default function AdminDashboard() {
                               className="bg-white"
                             />
                             <Button
-                              onClick={() => handleAsignarPonente(selectedPonenciaId, null, externalSpeakerName)}
+                              onClick={() => handleAsignarPonente(selectedPonenciaId!, null, externalSpeakerName)}
                               disabled={!externalSpeakerName.trim()}
                               className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
                             >
@@ -1151,7 +1208,7 @@ export default function AdminDashboard() {
                           <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
                             <Select
                               onValueChange={(value: string) => {
-                                handleAsignarPonente(selectedPonenciaId, Number(value))
+                                handleAsignarPonente(selectedPonenciaId!, Number(value))
                               }}
                             >
                               <SelectTrigger className="flex-1 bg-white">
@@ -1184,7 +1241,9 @@ export default function AdminDashboard() {
                               className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3 border border-gray-100"
                             >
                               <div>
-                                <p className="font-medium text-gray-900">{ponente.usuario?.nombre || `Usuario #${ponente.usuario_id}`}</p>
+                                <p className="font-medium text-gray-900">
+                                  {ponente.nombre_ponente || ponente.usuario?.nombre || `Usuario #${ponente.usuario_id}`}
+                                </p>
                                 <p className="text-xs text-gray-500">{ponente.usuario?.correo || ""}</p>
                               </div>
                               <Button
@@ -1199,9 +1258,9 @@ export default function AdminDashboard() {
                           ))}
                         </div>
                       )}
-                    </CardContent>
-                  </Card>
-                )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
 
               </div>
             </TabsContent>
@@ -1665,6 +1724,180 @@ export default function AdminDashboard() {
           </Tabs>
 
           {/* Dialog Detalle Perfil */}
+          {/* Dialog Detalle Conversatorio */}
+          <Dialog open={isConversatorioDetailsOpen} onOpenChange={setIsConversatorioDetailsOpen}>
+            <DialogContent className="bg-white border-gray-200 max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                  {selectedConversatorio?.titulo}
+                  {selectedConversatorio && getEstadoBadge(selectedConversatorio.estado)}
+                </DialogTitle>
+                <DialogDescription className="text-gray-500 text-lg">
+                  Detalles completos del evento seleccionado
+                </DialogDescription>
+              </DialogHeader>
+
+              {selectedConversatorio && (
+                <div className="grid gap-6 py-4">
+                  {/* Resumen y Descripción */}
+                  <div className="space-y-4">
+                    <Card className="bg-amber-50 border-amber-100 shadow-none">
+                      <CardContent className="p-4">
+                        <h3 className="font-semibold text-amber-900 mb-1 flex items-center gap-2">
+                          <BookOpen className="h-4 w-4" /> Resumen Informativo
+                        </h3>
+                        <p className="text-amber-800 text-sm italic">
+                          {selectedConversatorio.resumen || "No se ha proporcionado un resumen para este evento."}
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <div className="p-5 bg-white border border-gray-100 rounded-xl shadow-sm">
+                      <h3 className="font-bold text-gray-900 mb-3 text-lg border-b pb-2 flex items-center gap-2">
+                        <Info className="h-5 w-5 text-blue-500" /> Descripción del Conversatorio
+                      </h3>
+                      <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                        {selectedConversatorio.descripcion}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Grid de Información de Sesión */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Panel de Tiempo */}
+                    <Card className="border-gray-100 shadow-sm bg-gray-50/50">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-emerald-600" /> Horarios y Logística
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-500 flex items-center gap-2"><CalendarIcon className="h-4 w-4" /> Fecha:</span>
+                          <span className="font-semibold">{format(new Date(selectedConversatorio.fecha_inicio), "PPP", { locale: es })}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-500 flex items-center gap-2"><Clock className="h-4 w-4" /> Inicio:</span>
+                          <span className="font-semibold text-emerald-700">
+                            {format(new Date(selectedConversatorio.fecha_inicio), "p")}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-500 flex items-center gap-2"><Clock className="h-4 w-4" /> Fin:</span>
+                          <span className="font-semibold text-red-700">
+                            {format(new Date(selectedConversatorio.fecha_fin), "p")}
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Panel de Capacidad y Costo */}
+                    <Card className="border-gray-100 shadow-sm bg-gray-50/50">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4 text-amber-600" /> Inversión y Disponibilidad
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-500 flex items-center gap-2"><DollarSign className="h-4 w-4" /> Precio:</span>
+                          <span className="text-lg font-bold text-gray-900">${Number(selectedConversatorio.precio).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-500 flex items-center gap-2"><Users className="h-4 w-4" /> Cupos Totales:</span>
+                          <span className="font-semibold">{selectedConversatorio.cupo} personas</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-500 flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-green-500" /> Estado:</span>
+                          <Badge variant="outline" className="capitalize">{selectedConversatorio.estado}</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Ubicación Geográfica */}
+                  <Card className="border-gray-100 shadow-sm overflow-hidden">
+                    <CardHeader className="bg-gray-50 pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-red-500" /> Localización del Evento
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="p-4 space-y-2 border-b">
+                        <p className="text-sm font-medium text-gray-800">{selectedConversatorio.direccion_texto || "Dirección no especificada"}</p>
+                        <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+                          <span className="bg-gray-100 px-2 py-1 rounded">Lat: {selectedConversatorio.latitud ? Number(selectedConversatorio.latitud).toFixed(6) : "N/A"}</span>
+                          <span className="bg-gray-100 px-2 py-1 rounded">Long: {selectedConversatorio.longitud ? Number(selectedConversatorio.longitud).toFixed(6) : "N/A"}</span>
+                          {selectedConversatorio.latitud && selectedConversatorio.longitud && (
+                            <a
+                              href={`https://www.google.com/maps?q=${selectedConversatorio.latitud},${selectedConversatorio.longitud}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 underline font-medium flex items-center gap-1"
+                            >
+                              <Globe className="h-3 w-3" /> Ver en Google Maps
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                      <div className="h-64 relative bg-gray-100 flex items-center justify-center">
+                        {selectedConversatorio.latitud && selectedConversatorio.longitud ? (
+                          <LocationMap
+                            lat={selectedConversatorio.latitud}
+                            lng={selectedConversatorio.longitud}
+                            readonly
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center text-gray-400 gap-2">
+                            <MapPin className="h-8 w-8 opacity-20" />
+                            <span className="text-xs">Ubicación física no disponible</span>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Ponentes Asignados */}
+                  <Card className="border-gray-100 shadow-sm">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <UserPlus className="h-4 w-4 text-emerald-600" /> Ponentes Asignados
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {loadingPonentes ? (
+                        <p className="text-sm text-gray-500 text-center py-4">Cargando ponentes...</p>
+                      ) : ponentesList.length === 0 ? (
+                        <p className="text-sm text-gray-400 italic text-center py-4">No hay ponentes asignados a este conversatorio.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {ponentesList.map((ponente: any) => (
+                            <div key={ponente.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                              <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-sm">
+                                {(ponente.nombre || ponente.nombre_ponente || "P").charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-900 text-sm">{ponente.nombre || ponente.nombre_ponente}</p>
+                                <p className="text-xs text-gray-500">{ponente.tipo === 'registrado' ? 'Profesional EC' : 'Experto Invitado'}{ponente.correo ? ` · ${ponente.correo}` : ''}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Footer */}
+                  <div className="flex justify-end pt-4 border-t">
+                    <Button variant="outline" onClick={() => setIsConversatorioDetailsOpen(false)} className="px-8 hover:bg-gray-100">
+                      Cerrar Detalles
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+
           <Dialog open={isProfileDetailsOpen} onOpenChange={setIsProfileDetailsOpen}>
             <DialogContent className="bg-white border-gray-200 max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
@@ -1918,9 +2151,9 @@ export default function AdminDashboard() {
           />
 
         </div>
-      </main>
+      </main >
 
       <Footer />
-    </div>
+    </div >
   )
 }

@@ -1,11 +1,14 @@
 "use client"
 
+import { useState, useEffect, useMemo } from "react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import ProfessionalHeroCarousel from "@/components/shared/professional-hero-carousel"
 import ProfessionalsCategoryList from "@/components/shared/professionals-category-list"
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
+import { useSpecialtyCounts } from "@/hooks/use-specialty-counts"
+import { catalogosApi } from "@/lib/api"
 import { Building2, Home, Mountain, Hammer, Ruler, PenTool } from "lucide-react"
 
 export default function DisenoYConstruccionPage() {
@@ -45,50 +48,50 @@ export default function DisenoYConstruccionPage() {
     satisfaction: 97,
   }
 
-  const serviceCategories = [
-    {
-      id: "arquitectura",
-      name: "Arquitectura",
-      description: "Diseño arquitectónico residencial y comercial",
-      icon: Building2,
-      count: 48,
-    },
-    {
-      id: "interiores",
-      name: "Diseño de Interiores",
-      description: "Espacios interiores funcionales y estéticos",
-      icon: Home,
-      count: 42,
-    },
-    {
-      id: "topografia",
-      name: "Topografía",
-      description: "Levantamiento topográfico y mediciones",
-      icon: Mountain,
-      count: 28,
-    },
-    {
-      id: "construccion",
-      name: "Construcción Civil",
-      description: "Gestión y supervisión de obras",
-      icon: Hammer,
-      count: 55,
-    },
-    {
-      id: "planificacion",
-      name: "Planificación Urbana",
-      description: "Diseño y planificación de espacios urbanos",
-      icon: Ruler,
-      count: 22,
-    },
-    {
-      id: "diseno-estructural",
-      name: "Diseño Estructural",
-      description: "Cálculo y diseño de estructuras",
-      icon: PenTool,
-      count: 35,
-    },
-  ]
+  // Esta página ya usaba [4, 8] en su CategoryList, así que usaremos ambas.
+  // 4 y 8 corresponden posiblemente a Diseño y Arquitectura / Construcción Civil
+  const PROFESSION_IDS = [4, 8]
+  const { countsBySpecialty } = useSpecialtyCounts(PROFESSION_IDS)
+  const [apiSpecialties, setApiSpecialties] = useState<any[]>([])
+
+  useEffect(() => {
+    // Para esta página vamos a traer especialidades de ambas profesiones si es posible,
+    // o simplemente usamos 4 como base para los catálogos.
+    Promise.all(PROFESSION_IDS.map(id => catalogosApi.obtenerEspecialidades(id)))
+      .then(results => {
+        const combined = results.flatMap(data => Array.isArray(data) ? data : [])
+        // Filtrar duplicados por id si existen
+        const unique = Array.from(new Map(combined.map(item => [item.id, item])).values())
+        setApiSpecialties(unique)
+      })
+      .catch(() => setApiSpecialties([]))
+  }, [])
+
+  const editorialMeta: Record<string, { description: string; icon: any }> = {
+    "Arquitectura": { description: "Diseño arquitectónico residencial y comercial", icon: Building2 },
+    "Diseño de Interiores": { description: "Espacios interiores funcionales y estéticos", icon: Home },
+    "Topografía": { description: "Levantamiento topográfico y mediciones", icon: Mountain },
+    "Construcción Civil": { description: "Gestión y supervisión de obras", icon: Hammer },
+    "Planificación Urbana": { description: "Diseño y planificación de espacios urbanos", icon: Ruler },
+    "Diseño Estructural": { description: "Cálculo y diseño de estructuras", icon: PenTool },
+  }
+
+  const serviceCategories = useMemo(() => {
+    if (apiSpecialties.length === 0) {
+      return Object.entries(editorialMeta).map(([name, meta]) => ({
+        id: name.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
+        name, description: meta.description, icon: meta.icon,
+      }))
+    }
+    return apiSpecialties.map(spec => {
+      const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: Building2 }
+      return {
+        id: spec.nombre.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
+        name: spec.nombre, description: meta.description, icon: meta.icon,
+        count: countsBySpecialty.get(spec.id) || 0,
+      }
+    })
+  }, [apiSpecialties, countsBySpecialty])
 
   const blogPosts = [
     {
