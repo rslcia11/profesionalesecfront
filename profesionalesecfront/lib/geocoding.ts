@@ -1,6 +1,8 @@
 export async function getAddressFromCoordinates(lat: number, lng: number): Promise<{
     address: string
     reference?: string
+    province?: string
+    city?: string
 }> {
     try {
         const response = await fetch(
@@ -27,12 +29,62 @@ export async function getAddressFromCoordinates(lat: number, lng: number): Promi
         if (number) fullAddress += ` ${number}`
         if (suburb) fullAddress += `, ${suburb}`
 
+        try {
+            // Intenta obtener calles transversales dentro de un pequeño recuadro (aprox 20-30 metros)
+            const margin = 0.0002;
+            const bbox = `${lng - margin},${lat - margin},${lng + margin},${lat + margin}`;
+            const mapRes = await fetch(`https://api.openstreetmap.org/api/0.6/map?bbox=${bbox}`, {
+                headers: {
+                    "User-Agent": "ProfesionalesEc/1.0"
+                }
+            });
+            if (mapRes.ok) {
+                const xmlText = await mapRes.text();
+                // Parse XML manually simply for performance & browser compatibility
+                // looking for <way> ... <tag k="name" v="..."/> ... </way>
+                const ways = xmlText.split("<way");
+                const streetNames = new Set<string>();
+                
+                for (let i = 1; i < ways.length; i++) {
+                    const wayBody = ways[i];
+                    if (wayBody.includes('k="highway"')) {
+                        const nameMatch = wayBody.match(/<tag k="name" v="([^"]+)"/);
+                        if (nameMatch && nameMatch[1]) {
+                            const foundStreet = nameMatch[1];
+                            // Exclude the main street we already have
+                            if (foundStreet.toLowerCase() !== street.toLowerCase()) {
+                                streetNames.add(foundStreet);
+                            }
+                        }
+                    }
+                }
+                
+                const intersections = Array.from(streetNames);
+                if (intersections.length > 0) {
+                    // Si encontramos 1 o 2 intersecciones, las agregamos con "y"
+                    if (intersections.length <= 2) {
+                         fullAddress += ` y ${intersections.join(" y ")}`;
+                    } else {
+                         // Si hay muchas tomamos solo la primera para evitar sobrecargar la dirección
+                         fullAddress += ` y ${intersections[0]}`;
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Error fetching intersections:", err);
+            // Ignore error, main address is safe
+        }
+
         // Use other fields for reference if needed
         const reference = addr.public_building || addr.landmark || ""
+        const province = addr.state || addr.region || ""
+        const city = addr.city || addr.town || addr.village || addr.municipality || ""
 
         return {
             address: fullAddress || "Ubicación seleccionada",
-            reference: reference
+            reference: reference,
+            province,
+            city
         }
     } catch (error) {
         console.error("Error fetching address:", error)

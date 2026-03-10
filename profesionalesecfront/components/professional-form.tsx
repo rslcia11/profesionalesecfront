@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { CheckCircle2, ChevronLeft, ChevronRight, Home, Upload, Eye, EyeOff } from "lucide-react"
-import { Check } from "lucide-react" // Declared the Check variable
+import { Check, X } from "lucide-react" // Declared the Check variable
 import { authApi, profesionalApi, catalogosApi, saveToken, usuarioApi } from "@/lib/api"
 
 
@@ -27,7 +27,7 @@ interface FormData {
   specialty: string // Stores ID as string
   description: string
   yearsExperience: number
-  rate: number
+  rate: string
   workMode: string
   province: string // Stores ID as string
   city: string // Stores ID as string
@@ -72,7 +72,7 @@ export default function ProfessionalForm() {
     specialty: "",
     description: "",
     yearsExperience: 0,
-    rate: 0,
+    rate: "",
     workMode: "",
     province: "",
     city: "",
@@ -93,6 +93,7 @@ export default function ProfessionalForm() {
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right")
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [tagInput, setTagInput] = useState("")
 
   // Catalogs State
   const [professions, setProfessions] = useState<CatalogItem[]>([])
@@ -116,6 +117,69 @@ export default function ProfessionalForm() {
     }
     loadCatalogs()
   }, [])
+
+  // Prompt for location on step 2
+  useEffect(() => {
+    if (currentStep === 2 && formData.lat === undefined && formData.lng === undefined) {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const lat = position.coords.latitude
+            const lng = position.coords.longitude
+
+            // Set coordinates directly first
+            setFormData((prev) => ({ ...prev, lat, lng }))
+
+            try {
+              const { address, province, city } = await getAddressFromCoordinates(lat, lng)
+              
+              let newFormData: Partial<FormData> = {}
+              if (address) {
+                newFormData.address = address
+              }
+
+              // Match province
+              if (province && provinces.length > 0) {
+                const queryProv = province.toLowerCase();
+                const matchedProv = provinces.find(p => p.nombre.toLowerCase().includes(queryProv) || queryProv.includes(p.nombre.toLowerCase()))
+                
+                if (matchedProv) {
+                  newFormData.province = String(matchedProv.id)
+
+                  // Load cities for the matched province
+                  try {
+                    const res = await catalogosApi.obtenerCiudades(matchedProv.id)
+                    const filteredCities = Array.isArray(res) ? res.filter((c: any) => c.provincia_id === matchedProv.id || (c.provincia && c.provincia.id === matchedProv.id)) : []
+                    setCities(filteredCities)
+
+                    // Match city
+                    if (city && filteredCities.length > 0) {
+                      const queryCity = city.toLowerCase();
+                      const matchedCity = filteredCities.find((c: any) => c.nombre.toLowerCase().includes(queryCity) || queryCity.includes(c.nombre.toLowerCase()))
+                      if (matchedCity) {
+                        newFormData.city = String(matchedCity.id)
+                      }
+                    }
+                  } catch (cityErr) {
+                    console.error("Error al cargar ciudades en geolocalización:", cityErr)
+                  }
+                }
+              }
+
+              if (Object.keys(newFormData).length > 0) {
+                setFormData(prev => ({ ...prev, ...newFormData }))
+              }
+            } catch (error) {
+              console.error("Error obteniendo dirección:", error)
+            }
+          },
+          (error) => {
+            console.error("Error de geolocalización:", error)
+          }
+        )
+      }
+    }
+  }, [currentStep, formData.lat, formData.lng])
 
   const steps = [
 
@@ -152,6 +216,20 @@ export default function ProfessionalForm() {
       if (errors[name]) {
         setErrors((prev) => ({ ...prev, [name]: "" }))
       }
+      return
+    }
+
+    if (name === "rate") {
+      if (value === "") {
+        setFormData((prev) => ({ ...prev, [name]: "" }))
+        if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }))
+        return
+      }
+      if (!/^\d*\.?\d{0,2}$/.test(value)) {
+        return
+      }
+      setFormData((prev) => ({ ...prev, [name]: value }))
+      if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }))
       return
     }
 
@@ -226,6 +304,22 @@ export default function ProfessionalForm() {
   }
 
   const handleFileChange = (name: string, file: File | null) => {
+    if (file) {
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+      if (!allowedTypes.includes(file.type)) {
+        setErrors(prev => ({ ...prev, [name]: "Formato no soportado (solo .png, .jpg, .jpeg, .webp)" }));
+        setFormData(prev => ({ ...prev, [name]: null }));
+        return;
+      }
+      
+      const maxSize = 5 * 1024 * 1024; // 5 MB
+      if (file.size > maxSize) {
+        setErrors(prev => ({ ...prev, [name]: "El archivo no debe pesar más de 5MB" }));
+        setFormData(prev => ({ ...prev, [name]: null }));
+        return;
+      }
+    }
+
     setFormData({ ...formData, [name]: file })
     if (errors[name]) {
       setErrors({ ...errors, [name]: "" })
@@ -293,7 +387,9 @@ export default function ProfessionalForm() {
         if (!formData.specialty) newErrors.specialty = "Especialidad requerida"
         if (!formData.description.trim()) newErrors.description = "Descripción requerida"
         if (formData.description.length > 80) newErrors.description = "Descripción no puede exceder 80 caracteres"
-        if (formData.yearsExperience < 0) newErrors.yearsExperience = "Años válidos requeridos"
+        if (formData.yearsExperience < 0 || formData.yearsExperience > 70 || !Number.isInteger(formData.yearsExperience)) {
+          newErrors.yearsExperience = "Años válidos requeridos (0-70 como número entero)"
+        }
         if (!formData.workMode) newErrors.workMode = "Modalidad de trabajo requerida"
         break
       case 2:
@@ -303,6 +399,8 @@ export default function ProfessionalForm() {
         if (formData.lat === undefined || formData.lng === undefined) newErrors.map = "Por favor, haz clic o mueve el pin en el mapa para establecer tu ubicación"
         break
       case 3:
+        if (!formData.identityFront) newErrors.identityFront = "La foto frontal de la cédula es obligatoria"
+        if (!formData.identityBack) newErrors.identityBack = "La foto posterior de la cédula es obligatoria"
         break
       case 4:
         if (!formData.tags.trim()) newErrors.tags = "Al menos una palabra clave requerida"
@@ -393,8 +491,8 @@ export default function ProfessionalForm() {
           lng: formData.lng,
           latitud: formData.lat, // Required for Direccion creation in backend
           longitud: formData.lng, // Required for Direccion creation in backend
-          tarifa: formData.rate || 0,
-          tarifa_hora: formData.rate || 0,
+          tarifa: formData.rate ? parseFloat(formData.rate) : 0,
+          tarifa_hora: formData.rate ? parseFloat(formData.rate) : 0,
         }
 
         console.log("[v0] Creating professional profile with full data:", perfilData)
@@ -528,7 +626,7 @@ export default function ProfessionalForm() {
         <input
           id="profileImage"
           type="file"
-          accept="image/*"
+          accept="image/png, image/jpeg, image/jpg, image/webp"
           onChange={(e) => handleFileChange("profileImage", e.target.files?.[0] || null)}
           className="hidden"
         />
@@ -593,6 +691,8 @@ export default function ProfessionalForm() {
             type="number"
             name="yearsExperience"
             min="0"
+            max="70"
+            step="1"
             value={formData.yearsExperience === 0 ? "" : formData.yearsExperience}
             onChange={handleInputChange}
             onFocus={(e) => {
@@ -601,20 +701,31 @@ export default function ProfessionalForm() {
               }
             }}
             placeholder="0"
-            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            className={`w-full px-4 py-3 bg-card border ${errors.yearsExperience ? "border-red-400" : "border-border"} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
           />
+          {errors.yearsExperience && <p className="text-red-400 text-sm mt-1">{errors.yearsExperience}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-2">Tarifa o Precio (Opcional)</label>
           <input
-            type="number"
+            type="text"
+            inputMode="decimal"
             name="rate"
-            min="0"
-            step="0.01"
-            value={formData.rate || ""}
+            value={formData.rate}
             onChange={handleInputChange}
-            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            onBlur={(e) => {
+              const val = e.target.value;
+              if (val) {
+                const num = parseFloat(val);
+                if (!isNaN(num)) {
+                  setFormData(prev => ({ ...prev, rate: num.toFixed(2) }));
+                }
+              }
+            }}
+            placeholder="0.00"
+            className={`w-full px-4 py-3 bg-card border ${errors.rate ? "border-red-400" : "border-border"} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
           />
+          {errors.rate && <p className="text-red-400 text-sm mt-1">{errors.rate}</p>}
         </div>
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-muted-foreground mb-2">Modalidad de Trabajo *</label>
@@ -739,20 +850,21 @@ export default function ProfessionalForm() {
       <div className="space-y-6">
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-4">
-            Documento de Identidad (Cédula o DNI) - Opcional
+            Documento de Identidad (Cédula o DNI) - Obligatorio
           </label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <p className="text-xs text-muted-foreground mb-2">Parte Frontal</p>
               <input
                 type="file"
+                accept="image/png, image/jpeg, image/jpg, image/webp"
                 onChange={(e) => handleFileChange("identityFront", e.target.files?.[0] || null)}
                 className="hidden"
                 id="identityFront"
               />
               <label
                 htmlFor="identityFront"
-                className="flex items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group"
+                className={`flex items-center justify-center w-full h-32 border-2 border-dashed ${errors.identityFront ? "border-red-400" : "border-border"} rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group`}
               >
                 <div className="flex flex-col items-center justify-center px-2 text-center">
                   <Upload className="size-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
@@ -761,18 +873,20 @@ export default function ProfessionalForm() {
                   </p>
                 </div>
               </label>
+              {errors.identityFront && <p className="text-red-400 text-xs mt-1 text-center">{errors.identityFront}</p>}
             </div>
             <div>
               <p className="text-xs text-muted-foreground mb-2">Parte Posterior</p>
               <input
                 type="file"
+                accept="image/png, image/jpeg, image/jpg, image/webp"
                 onChange={(e) => handleFileChange("identityBack", e.target.files?.[0] || null)}
                 className="hidden"
                 id="identityBack"
               />
               <label
                 htmlFor="identityBack"
-                className="flex items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group"
+                className={`flex items-center justify-center w-full h-32 border-2 border-dashed ${errors.identityBack ? "border-red-400" : "border-border"} rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group`}
               >
                 <div className="flex flex-col items-center justify-center px-2 text-center">
                   <Upload className="size-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
@@ -781,6 +895,7 @@ export default function ProfessionalForm() {
                   </p>
                 </div>
               </label>
+              {errors.identityBack && <p className="text-red-400 text-xs mt-1 text-center">{errors.identityBack}</p>}
             </div>
           </div>
         </div>
@@ -788,13 +903,14 @@ export default function ProfessionalForm() {
           <label className="block text-sm font-medium text-muted-foreground mb-2">Título Profesional - Opcional</label>
           <input
             type="file"
+            accept="image/png, image/jpeg, image/jpg, image/webp"
             onChange={(e) => handleFileChange("title", e.target.files?.[0] || null)}
             className="hidden"
             id="title"
           />
           <label
             htmlFor="title"
-            className="flex items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group"
+            className={`flex items-center justify-center w-full h-32 border-2 border-dashed ${errors.title ? "border-red-400" : "border-border"} rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group`}
           >
             <div className="flex flex-col items-center justify-center">
               <Upload className="size-8 text-primary mb-2 group-hover:scale-110 transition-transform" />
@@ -803,6 +919,7 @@ export default function ProfessionalForm() {
               </p>
             </div>
           </label>
+          {errors.title && <p className="text-red-400 text-sm mt-1">{errors.title}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-2">
@@ -810,13 +927,14 @@ export default function ProfessionalForm() {
           </label>
           <input
             type="file"
+            accept="image/png, image/jpeg, image/jpg, image/webp"
             onChange={(e) => handleFileChange("license", e.target.files?.[0] || null)}
             className="hidden"
             id="license"
           />
           <label
             htmlFor="license"
-            className="flex items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group"
+            className={`flex items-center justify-center w-full h-32 border-2 border-dashed ${errors.license ? "border-red-400" : "border-border"} rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group`}
           >
             <div className="flex flex-col items-center justify-center">
               <Upload className="size-8 text-primary mb-2 group-hover:scale-110 transition-transform" />
@@ -825,6 +943,7 @@ export default function ProfessionalForm() {
               </p>
             </div>
           </label>
+          {errors.license && <p className="text-red-400 text-sm mt-1">{errors.license}</p>}
         </div>
       </div>
     </div>
@@ -863,15 +982,61 @@ export default function ProfessionalForm() {
       </div>
       <div>
         <label className="block text-sm font-medium text-muted-foreground mb-2">Palabras Clave (Tags) *</label>
-        <input
-          type="text"
-          name="tags"
-          value={formData.tags}
-          onChange={handleInputChange}
-          className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-        />
+        
+        <div className={`w-full min-h-[50px] px-3 py-2 bg-card border ${errors.tags ? "border-red-400" : "border-border"} rounded-lg text-foreground focus-within:ring-2 focus-within:ring-primary flex flex-wrap gap-2 items-center`}>
+          {formData.tags.split(',').filter(Boolean).map((tag, index) => (
+            <span key={index} className="flex items-center gap-1.5 bg-green-100/60 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+              <button
+                type="button"
+                className="hover:bg-green-200/50 rounded-full p-0.5 transition-colors focus:outline-none"
+                onClick={() => {
+                  const updatedTags = formData.tags.split(',').filter(Boolean).filter((_, i) => i !== index).join(',');
+                  setFormData(prev => ({ ...prev, tags: updatedTags }));
+                  if (errors.tags && updatedTags.length > 0) setErrors(prev => ({ ...prev, tags: "" }));
+                }}
+              >
+                <X size={14} className="text-green-700" />
+              </button>
+              <span>{tag}</span>
+            </span>
+          ))}
+
+          <input
+            type="text"
+            value={tagInput}
+            onChange={(e) => {
+              setTagInput(e.target.value)
+              if (errors.tags) setErrors(prev => ({ ...prev, tags: "" }))
+            }}
+            onKeyDown={(e) => {
+              if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                const newTag = tagInput.trim();
+                // Avoid empty tags or duplicates
+                if (newTag) {
+                  const currentList = formData.tags.split(',').filter(Boolean);
+                  if (!currentList.includes(newTag)) {
+                    currentList.push(newTag);
+                    setFormData(prev => ({ ...prev, tags: currentList.join(',') }));
+                  }
+                  setTagInput("");
+                }
+              } else if (e.key === 'Backspace' && tagInput === '') {
+                // Feature to remove last tag automatically if backspace on empty input
+                e.preventDefault();
+                const currentList = formData.tags.split(',').filter(Boolean);
+                if (currentList.length > 0) {
+                  currentList.pop();
+                  setFormData(prev => ({ ...prev, tags: currentList.join(',') }));
+                }
+              }
+            }}
+            placeholder="Escribe una palabra y presiona espacio"
+            className="flex-1 min-w-[120px] bg-transparent focus:outline-none placeholder:text-muted-foreground/50 text-foreground"
+          />
+        </div>
         {errors.tags && <p className="text-red-400 text-sm mt-1">{errors.tags}</p>}
-        <p className="text-xs text-muted-foreground mt-1">Separa con comas</p>
+        <p className="text-xs text-muted-foreground mt-2">Usa espacio para agregar una nueva etiqueta</p>
       </div>
     </div>
   )
@@ -898,25 +1063,39 @@ export default function ProfessionalForm() {
         {/* Progress Steps */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-8">
-            {steps.map((step, index) => (
-              <div key={index} className="flex flex-col items-center flex-1">
-                <div
-                  className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg transition-all ${index < currentStep
-                    ? "bg-primary text-primary-foreground"
-                    : index === currentStep
-                      ? "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2 ring-offset-background"
-                      : "bg-muted text-muted-foreground"
-                    }`}
-                >
-                  {index < currentStep ? <Check size={20} /> : index + 1}
+            {steps.map((step, index) => {
+              const isCompleted = index < currentStep;
+              const isActive = index === currentStep;
+
+              return (
+                <div key={index} className="flex flex-col items-center flex-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isCompleted) {
+                        setSlideDirection("left");
+                        setCurrentStep(index);
+                        setErrors({});
+                      }
+                    }}
+                    disabled={!isCompleted && !isActive}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg transition-all ${isCompleted
+                      ? "bg-primary text-primary-foreground cursor-pointer hover:opacity-80"
+                      : isActive
+                        ? "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2 ring-offset-background cursor-default"
+                        : "bg-muted text-muted-foreground cursor-not-allowed"
+                      }`}
+                  >
+                    {isCompleted ? <Check size={20} /> : index + 1}
+                  </button>
+                  <p
+                    className={`text-sm mt-2 font-medium ${isActive ? "text-primary" : "text-muted-foreground"}`}
+                  >
+                    {step.title}
+                  </p>
                 </div>
-                <p
-                  className={`text-sm mt-2 font-medium ${index === currentStep ? "text-primary" : "text-muted-foreground"}`}
-                >
-                  {step.title}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="h-1 bg-muted rounded-full overflow-hidden">
             <div
