@@ -5,13 +5,37 @@ import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { Calendar, MapPin, Users, Award, MessageSquare, DollarSign, ArrowRight, BookOpen, Clock } from "lucide-react"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
 import { ponenciasApi } from "@/lib/api"
+import CountdownTimer from "@/components/countdown-timer"
+import MagazineCard from "@/components/magazine-card"
+import { motion } from "framer-motion"
 
 export default function ConversatoriosPage() {
   const [selectedRole, setSelectedRole] = useState<"ponente" | "asistente" | "patrocinador" | null>(null)
   const [proximos, setProximos] = useState<any[]>([])
   const [realizados, setRealizados] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  
+  // Mock magazines until API is ready
+  const magazines = [
+    {
+      id: 1,
+      titulo: "Innovación y Sostenibilidad en la Práctica Profesional",
+      descripcion: "Explora los avances más recientes en ética profesional y nuevas tecnologías aplicadas.",
+      pdf_url: "#",
+      fecha_publicacion: "2026-01-15",
+      edicion: "03"
+    },
+    {
+      id: 2,
+      titulo: "El Futuro del Trabajo: Un Enfoque Multidisciplinario",
+      descripcion: "Compendio de investigaciones sobre teletrabajo y salud mental.",
+      pdf_url: "#",
+      fecha_publicacion: "2025-11-20",
+      edicion: "02"
+    }
+  ]
 
   useEffect(() => {
     const loadData = async () => {
@@ -47,16 +71,22 @@ export default function ConversatoriosPage() {
     <main className="min-h-screen bg-white">
       <Header />
 
-      {/* Hero Section - Black background with white text */}
-      <section className="relative pt-32 pb-12 px-6 bg-black">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">Conversatorios Profesionales</h1>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              Espacios de conocimiento, networking y crecimiento profesional. Conecta con expertos y amplía tu red de
-              contactos.
+      {/* Hero Section - Minimalist & Premium */}
+      <section className="relative pt-32 pb-16 px-6 overflow-hidden bg-black">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(16,185,129,0.08),transparent_50%)]" />
+        <div className="max-w-7xl mx-auto relative z-10">
+          <motion.div 
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center"
+          >
+            <h1 className="text-5xl md:text-7xl font-black text-white mb-4 tracking-tighter">
+              EDUCACIÓN
+            </h1>
+            <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed font-light">
+              Espacios de conocimiento y <span className="text-emerald-500/80">crecimiento exponencial</span> para el profesional moderno.
             </p>
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -106,12 +136,14 @@ export default function ConversatoriosPage() {
         </div>
       </section>
 
-      {/* Próximo Conversatorio - Reduced spacing */}
-      <section className="py-12 px-6 bg-white">
+      {/* Próximo Conversatorio - Minimalist High Impact */}
+      <section className="py-20 px-6 bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-8">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Próximos Conversatorios</h2>
-            <p className="text-gray-600 text-lg">Inscríbete y participa</p>
+          <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-10">
+            <div className="animate-in fade-in slide-in-from-left-4 duration-700">
+              <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-2 tracking-tight">Próximos Eventos</h2>
+              <p className="text-gray-400 text-lg font-light">Inscríbete y forma parte de la vanguardia profesional.</p>
+            </div>
           </div>
 
           {loading ? (
@@ -119,55 +151,46 @@ export default function ConversatoriosPage() {
           ) : proximos.length > 0 ? (
             <div className="grid gap-8">
               {proximos.map((evento) => (
-                <div key={evento.id} className="bg-white border border-gray-200 rounded-2xl p-8 md:p-12 hover:shadow-xl transition-all duration-300">
-                  <div className="flex items-start gap-4 mb-6">
-                    <div className="bg-emerald-100 p-4 rounded-xl">
-                      <Calendar className="w-8 h-8 text-emerald-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-                        {evento.titulo}
-                      </h3>
-                      <div className="flex flex-wrap items-center gap-4 text-emerald-600 font-medium mb-4">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-5 h-5" />
-                          <span>{new Date(evento.fecha_inicio).toLocaleDateString()}</span>
-                        </div>
-                        {evento.hora_inicio && (
+                <div key={evento.id} className="group relative bg-white border border-gray-100 rounded-[2.5rem] p-8 md:p-12 shadow-xl overflow-hidden hover:shadow-emerald-50 transition-all duration-500">
+                  <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-50 rounded-full blur-3xl opacity-30 -translate-y-1/2 translate-x-1/2" />
+                  
+                  <div className="relative z-10">
+                       <span className="inline-block px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-full mb-4 uppercase tracking-[0.2em] border border-emerald-100">
+                         {new Date(evento.fecha_inicio).toLocaleDateString('es-EC', { month: 'long', year: 'numeric' })}
+                       </span>
+                       <h3 className="text-2xl md:text-4xl font-extrabold text-gray-900 mb-4 leading-tight group-hover:text-emerald-700 transition-colors">
+                          {evento.titulo}
+                       </h3>
+                       <p className="text-base text-gray-400 mb-8 max-w-2xl leading-relaxed font-light">
+                          {evento.descripcion}
+                       </p>
+
+                       <div className="flex flex-wrap items-center gap-6 mb-8 text-gray-400 text-sm font-medium">
                           <div className="flex items-center gap-2">
-                            <Clock className="w-5 h-5" />
-                            <span>{evento.hora_inicio.slice(0, 5)}</span>
+                            <MapPin className="w-4 h-4 text-emerald-500" />
+                            <span>{evento.ciudad?.nombre || "Nacional"}</span>
                           </div>
-                        )}
-                        <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1 rounded-full text-sm border border-emerald-100">
-                          <DollarSign className="w-4 h-4" />
-                          <span>{Number(evento.precio) === 0 ? "Gratis" : `$${Number(evento.precio).toFixed(2)}`}</span>
-                        </div>
-                        <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full text-sm border border-blue-100 text-blue-600">
-                          <Users className="w-4 h-4" />
-                          <span>{evento.cupo} Cupos</span>
-                        </div>
-                      </div>
-                      <p className="text-gray-600 leading-relaxed">
-                        {evento.descripcion}
-                      </p>
-                    </div>
-                  </div>
+                          <div className="flex items-center gap-2">
+                            <Users className="w-4 h-4 text-emerald-500" />
+                            <span>{evento.cupo} Cupos</span>
+                          </div>
+                       </div>
+                       
+                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
+                          <div className="shrink-0">
+                             <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-3">Comienza en:</p>
+                             <CountdownTimer targetDate={evento.fecha_inicio} />
+                          </div>
 
-                  <div className="flex items-center gap-2 text-gray-600 mb-6">
-                    <MapPin className="w-5 h-5" />
-                    <span>
-                      {evento.ciudad?.nombre ? `Lugar: ${evento.ciudad.nombre}, ${evento.provincia?.nombre}` : "Lugar: Por Confirmarse"}
-                    </span>
+                          <Link
+                            href={`/conversatorios/${evento.id}`}
+                            className="inline-flex items-center justify-center gap-3 bg-black text-white px-8 py-4 rounded-xl font-bold hover:bg-emerald-600 transition-all duration-300 hover:scale-[1.02] active:scale-95 shadow-lg shadow-black/5"
+                          >
+                            VER DETALLES
+                            <ArrowRight className="w-5 h-5" />
+                          </Link>
+                       </div>
                   </div>
-
-                  <Link
-                    href={`/conversatorios/${evento.id}`}
-                    className="inline-flex items-center gap-2 bg-emerald-500 text-white px-6 py-3 rounded-full font-medium hover:bg-emerald-600 transition-all duration-300 hover:scale-105 active:scale-95"
-                  >
-                    Más Información del Evento
-                    <ArrowRight className="w-5 h-5" />
-                  </Link>
                 </div>
               ))}
             </div>
@@ -179,60 +202,102 @@ export default function ConversatoriosPage() {
         </div>
       </section>
 
-      {/* Conversatorios Realizados - Reduced spacing */}
-      <section className="py-12 px-6 bg-gray-50">
+      {/* Conversatorios Realizados - Minimalist History */}
+      <section className="py-20 px-6 bg-slate-50/50">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-8">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Conversatorios Realizados</h2>
-            <p className="text-gray-600 text-lg">Eventos anteriores</p>
+          <div className="mb-12">
+            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-2 tracking-tight">Conversatorios Realizados</h2>
+            <p className="text-gray-400 text-lg font-light italic">Revive junto a nosotros el conocimiento y la innovación.</p>
           </div>
 
           {loading ? (
-            <div className="text-center py-12">Loading...</div>
+            <div className="text-center py-12">Cargando...</div>
           ) : realizados.length > 0 ? (
-            <div className="grid gap-8">
+            <div className="grid md:grid-cols-3 gap-8">
               {realizados.map((evento) => (
-                <div key={evento.id} className="bg-white border border-gray-200 rounded-2xl p-8 md:p-12 hover:shadow-xl transition-all duration-300">
-                  <div className="flex items-start gap-4 mb-6">
-                    <div className="bg-emerald-100 p-4 rounded-xl">
-                      <Award className="w-8 h-8 text-emerald-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-                        {evento.titulo}
-                      </h3>
-                      <p className="text-lg text-gray-700 mb-4">
-                        {evento.descripcion}
-                      </p>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <MapPin className="w-5 h-5" />
-                        <span>
-                          {evento.ciudad?.nombre ? `Lugar: ${evento.ciudad.nombre}, ${evento.provincia?.nombre}` : "Lugar: Por Confirmarse"}
-                        </span>
-                      </div>
+                <div key={evento.id} className="group flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-500 border border-gray-100">
+                  <div className="aspect-video relative bg-black flex items-center justify-center overflow-hidden">
+                    <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent z-10" />
+                    <img 
+                       src="/images/event-placeholder.jpg" 
+                       alt={evento.titulo}
+                       className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700"
+                    />
+                    <div className="relative z-20">
+                       <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 group-hover:bg-emerald-500 transition-colors">
+                          <Award className="w-6 h-6 text-white" />
+                       </div>
                     </div>
                   </div>
-
-                  <Link
-                    href={`/conversatorios/${evento.id}`}
-                    className="inline-flex items-center gap-2 bg-gray-100 text-gray-900 px-6 py-3 rounded-full font-medium hover:bg-gray-200 transition-all duration-300 border border-gray-300"
-                  >
-                    Ver detalle
-                    <ArrowRight className="w-5 h-5" />
-                  </Link>
+                  
+                  <div className="p-6 grow flex flex-col">
+                    <span className="text-emerald-500 text-[10px] font-bold uppercase tracking-widest mb-2">
+                       {new Date(evento.fecha_inicio).toLocaleDateString('es-EC', { year: 'numeric' })}
+                    </span>
+                    <h3 className="text-lg font-bold text-gray-900 mb-3 group-hover:text-emerald-600 transition-colors line-clamp-1">
+                      {evento.titulo}
+                    </h3>
+                    <p className="text-gray-400 text-xs leading-relaxed line-clamp-2 mb-6 font-light">
+                       {evento.descripcion}
+                    </p>
+                    
+                    <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
+                       <div className="flex items-center gap-1.5 text-gray-300 text-[10px] font-medium">
+                          <MapPin className="w-3 h-3" />
+                          <span>{evento.ciudad?.nombre || "Nacional"}</span>
+                       </div>
+                       <Link
+                        href={`/conversatorios/${evento.id}`}
+                        className="text-[10px] font-black text-emerald-600 tracking-widest hover:text-emerald-700 transition-colors"
+                      >
+                        VER EVENTO
+                      </Link>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
-              <p className="text-gray-500">No hay eventos pasados registrados.</p>
+            <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
+              <p className="text-gray-400 text-sm italic">Próximamente estaremos publicando nuestras memorias.</p>
             </div>
           )}
         </div>
       </section>
 
+      {/* Revista Científica Section - Refined & Minimalist */}
+      <section className="py-24 px-6 bg-white overflow-hidden">
+         <div className="max-w-7xl mx-auto">
+            <div className="relative bg-[#0A0A0A] rounded-[3rem] p-8 md:p-16 overflow-hidden border border-white/5">
+               <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(16,185,129,0.05),transparent_50%)]" />
+               
+               <div className="relative z-10 grid lg:grid-cols-5 gap-16 items-center">
+                  <div className="lg:col-span-2">
+                     <h2 className="text-3xl md:text-5xl font-black text-white mb-6 leading-tight tracking-tighter">
+                        Revista Científica <br/>
+                        <span className="bg-linear-to-r from-emerald-400 to-emerald-600 bg-clip-text text-transparent opacity-80">Profesionales.ec</span>
+                     </h2>
+                     <p className="text-base text-gray-500 mb-8 leading-relaxed font-light">
+                        Investigación e innovación multidisciplinaria. Accede a las últimas ediciones de nuestra publicación digital de forma gratuita.
+                     </p>
+                     <Button className="bg-emerald-600 text-white hover:bg-emerald-500 px-8 py-6 rounded-xl font-bold text-sm transition-all duration-300 hover:scale-[1.02] active:scale-95">
+                        LEER REVISTA
+                        <ArrowRight className="ml-2 w-4 h-4" />
+                     </Button>
+                  </div>
+                  
+                  <div className="lg:col-span-3 grid grid-cols-2 gap-4">
+                     {magazines.map((mag) => (
+                        <MagazineCard key={mag.id} magazine={mag} />
+                     ))}
+                  </div>
+               </div>
+            </div>
+         </div>
+      </section>
+
       {/* Articles CTA Section */}
-      <section className="py-16 px-6 bg-gradient-to-br from-emerald-50 to-blue-50">
+      <section className="py-16 px-6 bg-linear-to-br from-emerald-50 to-blue-50">
         <div className="max-w-4xl mx-auto text-center animate-in fade-in slide-in-from-bottom-6 duration-700">
           <BookOpen className="w-16 h-16 text-emerald-600 mx-auto mb-6" />
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Explora el Conocimiento de Nuestra Comunidad</h2>

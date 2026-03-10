@@ -1,0 +1,54 @@
+# Ticket de Desarrollo Backend: Gestión de Inscripciones y Certificados
+
+## Objetivo
+Implementar las funcionalidades faltantes para que los administradores puedan gestionar asistentes a conversatorios, y asegurar que el flujo de inscripción y certificación sea automático y profesional.
+
+---
+
+## 1. Listado de Inscritos para Administradores
+**Ruta**: `GET /ponencias/:id/inscritos`
+**Seguridad**: `verifyToken`, `isAdmin` (Roles 3, 4, 5)
+**Descripción**: Retornar la lista completa de personas inscritas a un conversatorio específico.
+**Campos requeridos**:
+- ID de inscripción
+- Nombre del usuario (si está registrado) o correo (si es invitado)
+- Cédula
+- Celular
+- Fecha de inscripción
+- Estado de asistencia (vinculado a la tabla `AsistenciaPonencia`)
+
+## 2. Recuento Público de Cupos
+**Ruta**: `GET /ponencias/:id/estado-cupos`
+**Seguridad**: Público
+**Descripción**: Retornar el estado actual de los cupos para mostrarlo en la página de detalles del conversatorio.
+**Respuesta esperada**:
+```json
+{
+  "total": 50,
+  "inscritos": 32,
+  "disponibles": 18
+}
+```
+
+## 3. Activación de Correos de Confirmación
+**Problema**: Actualmente `PonenciaController.inscribir` crea el registro en la DB pero no gatilla el envío de correos.
+**Acción**: 
+- Asegurar que el controlador use el método `PonenciaService.inscribir` el cual ya tiene la lógica de `MailService.enviarCorreo`.
+- Personalizar el template del correo en [MailService](file:///C:/Users/Usuario/Documents/GitHub/profesionales_back/services/core/mail.service.js#6-54) para que use el branding de Profesionales.ec (Logo, colores corporativos).
+
+## 4. Generación Automática de Certificados
+**Problema**: El sistema actual requiere que el Admin proporcione una `url_pdf` manualmente. No hay generación real de documentos.
+**Requerimiento**:
+- Integrar una librería de generación de PDF en el backend (ej. `pdfkit`, `html-pdf-node` o `puppeteer`).
+- Crear un endpoint `POST /ponencias/:id/generar-certificados-masivo` que:
+    1. Tome a todos los asistentes confirmados.
+    2. Genere un PDF usando un template HTML/CSS con el nombre del asistente y el título de la ponencia.
+    3. Suba el PDF a Cloudinary.
+    4. Guarde el registro en la tabla `Certificados`.
+    5. Envíe el correo con el link de descarga.
+
+---
+
+## Notas Técnicas
+- **Modelos involucrados**: `InscripcionPonencia`, `AsistenciaPonencia`, [Certificado](file:///c:/Users/Usuario/Documents/GitHub/profesionalesecfront/profesionalesecfront/lib/api.ts#86-94).
+- **Integridad**: Validar que un usuario no pueda inscribirse dos veces al mismo evento.
