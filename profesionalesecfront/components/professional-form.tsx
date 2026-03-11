@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { CheckCircle2, ChevronLeft, ChevronRight, Home, Upload, Eye, EyeOff } from "lucide-react"
@@ -54,6 +54,10 @@ interface FormErrors {
   [key: string]: string
 }
 
+interface FormTouched {
+  [key: string]: boolean
+}
+
 export default function ProfessionalForm() {
   const searchParams = useSearchParams()
   const plan = searchParams.get("plan") // Get plan from URL
@@ -89,11 +93,14 @@ export default function ProfessionalForm() {
     lng: undefined,
   })
   const [errors, setErrors] = useState<FormErrors>({})
+  const [touched, setTouched] = useState<FormTouched>({})
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right")
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [tagInput, setTagInput] = useState("")
+  const isAddressManuallyEdited = useRef(false)
+  const emailInputRef = useRef<HTMLInputElement>(null)
 
   // Catalogs State
   const [professions, setProfessions] = useState<CatalogItem[]>([])
@@ -134,7 +141,7 @@ export default function ProfessionalForm() {
               const { address, province, city } = await getAddressFromCoordinates(lat, lng)
               
               let newFormData: Partial<FormData> = {}
-              if (address) {
+              if (address && !isAddressManuallyEdited.current) {
                 newFormData.address = address
               }
 
@@ -193,6 +200,10 @@ export default function ProfessionalForm() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
 
+    if (name === "address") {
+      isAddressManuallyEdited.current = value.trim() !== ""
+    }
+
     // Nombres: no permite números
     if (name === "fullName") {
       if (/\d/.test(value)) {
@@ -241,13 +252,16 @@ export default function ProfessionalForm() {
       setFormData({ ...formData, [name]: value })
     }
 
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: "" })
+    if (touched[name]) {
+       validateField(name, value)
     }
   }
 
   const handleSelectChange = async (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }))
+    if (touched[name]) {
+       validateField(name, value)
+    }
 
     if (name === "profession") {
       setFormData((prev) => ({ ...prev, specialty: "" }))
@@ -297,10 +311,6 @@ export default function ProfessionalForm() {
           .catch(err => console.error("Error auto-centering map:", err))
       }
     }
-
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: "" })
-    }
   }
 
   const handleFileChange = (name: string, file: File | null) => {
@@ -321,94 +331,154 @@ export default function ProfessionalForm() {
     }
 
     setFormData({ ...formData, [name]: file })
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: "" })
-    }
+    setTouched(prev => ({ ...prev, [name]: true }))
+    validateField(name, file)
   }
 
   const handleLocationChange = async (lat: number, lng: number) => {
     setFormData(prev => ({ ...prev, lat, lng }))
+    setTouched(prev => ({ ...prev, map: true }))
 
-    // Reverse geocoding disabled to allow manual address entry
-    /* const { address, reference } = await getAddressFromCoordinates(lat, lng)
-    if (address) {
-      setFormData(prev => ({
-        ...prev,
-        address: address,
-        reference: reference || prev.reference // Keep existing reference if none returned
-      }))
-    } */
+    if (!isAddressManuallyEdited.current) {
+      const { address, reference } = await getAddressFromCoordinates(lat, lng)
+      if (address) {
+        setFormData(prev => ({
+          ...prev,
+          address: address,
+          reference: reference || prev.reference
+        }))
+        setTouched(prev => ({ ...prev, address: true }))
+        validateField("address", address)
+      }
+    }
   }
 
-
-
-  const validateStep = (): boolean => {
-    const newErrors: FormErrors = {}
-
-    switch (currentStep) {
-      case 0:
-        if (!formData.fullName.trim()) newErrors.fullName = "Nombre requerido"
-
-        if (!formData.cedula.trim()) {
-          newErrors.cedula = "Cédula requerida"
-        } else if (formData.cedula.length !== 10) {
-          newErrors.cedula = "Debe tener 10 dígitos"
-        }
-
-        if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-          newErrors.email = "Email válido requerido"
-        }
-        if (!formData.password) {
-          newErrors.password = "Contraseña requerida"
-        } else {
-          if (formData.password.length < 8) {
-            newErrors.password = "Mínimo 8 caracteres"
-          } else if (!/[A-Z]/.test(formData.password)) {
-            newErrors.password = "Debe incluir una mayúscula"
-          } else if (!/[a-z]/.test(formData.password)) {
-            newErrors.password = "Debe incluir una minúscula"
-          }
-        }
-
-        if (formData.password !== formData.confirmPassword) {
-          newErrors.confirmPassword = "Las contraseñas no coinciden"
-        }
-
-        if (!formData.phone.trim()) {
-          newErrors.phone = "Teléfono requerido"
-        } else if (formData.phone.length !== 10) {
-          newErrors.phone = "Debe tener 10 dígitos"
-        }
-
-        if (!formData.profileImage) newErrors.profileImage = "Foto de perfil requerida"
+  const validateField = (name: string, value: any) => {
+    let error = ""
+    switch (name) {
+      case "fullName":
+        if (!value.trim()) error = "Nombre requerido"
         break
-      case 1:
-        if (!formData.profession) newErrors.profession = "Profesión requerida"
-        if (!formData.specialty) newErrors.specialty = "Especialidad requerida"
-        if (!formData.description.trim()) newErrors.description = "Descripción requerida"
-        if (formData.description.length > 80) newErrors.description = "Descripción no puede exceder 80 caracteres"
-        if (formData.yearsExperience < 0 || formData.yearsExperience > 70 || !Number.isInteger(formData.yearsExperience)) {
-          newErrors.yearsExperience = "Años válidos requeridos (0-70 como número entero)"
+      case "cedula":
+        if (!value.trim()) error = "Cédula requerida"
+        else if (value.length !== 10) error = "Debe tener 10 dígitos"
+        break
+      case "email":
+        if (!value.trim()) {
+          error = "Correo electrónico requerido"
+        } else if (!value.includes("@")) {
+          error = "El correo debe contener un '@'"
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          error = "Formato inválido (ej: usuario@dominio.com)"
         }
-        if (!formData.workMode) newErrors.workMode = "Modalidad de trabajo requerida"
         break
-      case 2:
-        if (!formData.province) newErrors.province = "Provincia requerida"
-        if (!formData.city) newErrors.city = "Ciudad requerida"
-        if (!formData.address.trim()) newErrors.address = "Dirección requerida"
-        if (formData.lat === undefined || formData.lng === undefined) newErrors.map = "Por favor, haz clic o mueve el pin en el mapa para establecer tu ubicación"
+      case "password":
+        if (!value) error = "Contraseña requerida"
+        else if (value.length < 8) error = "Mínimo 8 caracteres"
+        else if (!/[A-Z]/.test(value)) error = "Debe incluir una mayúscula"
+        else if (!/[a-z]/.test(value)) error = "Debe incluir una minúscula"
+        else if (!/[!@#$%^&*(),.?":{}|<>]/.test(value)) error = "Debe incluir un carácter especial (ej: @, $, !)"
         break
-      case 3:
-        if (!formData.identityFront) newErrors.identityFront = "La foto frontal de la cédula es obligatoria"
-        if (!formData.identityBack) newErrors.identityBack = "La foto posterior de la cédula es obligatoria"
+      case "confirmPassword":
+        if (value !== formData.password) error = "Las contraseñas no coinciden"
         break
-      case 4:
-        if (!formData.tags.trim()) newErrors.tags = "Al menos una palabra clave requerida"
+      case "phone":
+        if (!value.trim()) error = "Teléfono requerido"
+        else if (value.length !== 10) error = "Debe tener 10 dígitos"
+        break
+      case "profileImage":
+        if (!value) error = "Foto de perfil requerida"
+        break
+      case "profession":
+        if (!value) error = "Profesión requerida"
+        break
+      case "specialty":
+        if (!value) error = "Especialidad requerida"
+        break
+      case "description":
+        if (!value.trim()) error = "Descripción requerida"
+        else if (value.length > 80) error = "Descripción no puede exceder 80 caracteres"
+        break
+      case "yearsExperience":
+        if (value < 0 || value > 70 || !Number.isInteger(Number(value))) error = "Años válidos requeridos (0-70 como número entero)"
+        break
+      case "workMode":
+        if (!value) error = "Modalidad de trabajo requerida"
+        break
+      case "province":
+        if (!value) error = "Provincia requerida"
+        break
+      case "city":
+        if (!value) error = "Ciudad requerida"
+        break
+      case "address":
+        if (!value.trim()) error = "Dirección requerida"
+        break
+      case "map":
+        if (formData.lat === undefined || formData.lng === undefined) error = "Por favor, haz clic o mueve el pin en el mapa"
+        break
+      case "identityFront":
+        if (!value) error = "La foto frontal de la cédula es obligatoria"
+        break
+      case "identityBack":
+        if (!value) error = "La foto posterior de la cédula es obligatoria"
+        break
+      case "tags":
+        if (!value.trim()) error = "Al menos una palabra clave requerida"
         break
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    setErrors(prev => ({
+      ...prev,
+      [name]: error
+    }))
+    return !error
+  }
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+    setTouched(prev => ({ ...prev, [name]: true }))
+    validateField(name, value)
+  }
+
+  const getInputBorderColor = (name: string) => {
+    if (errors[name]) return "border-red-400"
+    if (touched[name] && !errors[name] && formData[name as keyof FormData] !== "" && formData[name as keyof FormData] !== null) return "border-green-500"
+    return "border-border"
+  }
+
+  const validateStep = (): boolean => {
+    const currentFieldsToValidate: string[] = []
+    switch (currentStep) {
+      case 0:
+        currentFieldsToValidate.push("fullName", "cedula", "email", "password", "confirmPassword", "phone", "profileImage")
+        break
+      case 1:
+        currentFieldsToValidate.push("profession", "specialty", "description", "yearsExperience", "workMode")
+        break
+      case 2:
+        currentFieldsToValidate.push("province", "city", "address", "map")
+        break
+      case 3:
+        currentFieldsToValidate.push("identityFront", "identityBack")
+        break
+      case 4:
+        currentFieldsToValidate.push("tags")
+        break
+    }
+
+    let isValid = true
+    const newTouched = { ...touched }
+
+    currentFieldsToValidate.forEach(field => {
+      newTouched[field] = true
+      const value = field === "map" ? (formData.lat !== undefined ? "valid" : undefined) : formData[field as keyof FormData]
+      const isFieldValid = validateField(field, value)
+      if (!isFieldValid) isValid = false
+    })
+
+    setTouched(newTouched)
+    return isValid
   }
 
   const nextStep = () => {
@@ -519,7 +589,29 @@ export default function ProfessionalForm() {
         setShowSuccessModal(true)
       } catch (error: any) {
         console.error("[v0] Registration error:", error)
-        alert(`Error al registrar: ${error.message || "Error desconocido"}`)
+        
+        const errorMsg = error.message ? error.message.toLowerCase() : ""
+        if (errorMsg.includes("correo") && errorMsg.includes("registrado")) {
+          // Keep all data, but clear email
+          setFormData(prev => ({ ...prev, email: "" }))
+          
+          // Set error and touched for email
+          setErrors(prev => ({ ...prev, email: "Este correo ya se encuentra registrado" }))
+          setTouched(prev => ({ ...prev, email: true }))
+          
+          // Change step to the personal info step (Step 0)
+          setSlideDirection("left")
+          setCurrentStep(0)
+          
+          // Focus on the input after the step transition finishes
+          setTimeout(() => {
+            if (emailInputRef.current) {
+              emailInputRef.current.focus()
+            }
+          }, 500) // 500ms to allow the slide animation to finish
+        } else {
+          alert(`Error al registrar: ${error.message || "Error desconocido"}`)
+        }
       }
     }
   }
@@ -535,9 +627,10 @@ export default function ProfessionalForm() {
             name="fullName"
             value={formData.fullName}
             onChange={handleInputChange}
-            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            onBlur={handleBlur}
+            className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("fullName")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
           />
-          {errors.fullName && <p className="text-red-400 text-sm mt-1">{errors.fullName}</p>}
+          {errors.fullName && touched.fullName && <p className="text-red-400 text-sm mt-1">{errors.fullName}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-2">Cédula *</label>
@@ -546,11 +639,12 @@ export default function ProfessionalForm() {
             name="cedula"
             value={formData.cedula}
             onChange={handleInputChange}
+            onBlur={handleBlur}
             pattern="\d*"
             inputMode="numeric"
-            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("cedula")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
           />
-          {errors.cedula && <p className="text-red-400 text-sm mt-1">{errors.cedula}</p>}
+          {errors.cedula && touched.cedula && <p className="text-red-400 text-sm mt-1">{errors.cedula}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-2">Teléfono de Contacto *</label>
@@ -559,26 +653,29 @@ export default function ProfessionalForm() {
             name="phone"
             value={formData.phone}
             onChange={handleInputChange}
+            onBlur={handleBlur}
             pattern="\d*"
             inputMode="numeric"
-            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("phone")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
           />
-          {errors.phone && <p className="text-red-400 text-sm mt-1">{errors.phone}</p>}
+          {errors.phone && touched.phone && <p className="text-red-400 text-sm mt-1">{errors.phone}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-2">Correo Electrónico *</label>
           <input
+            ref={emailInputRef}
             type="email"
             name="email"
             value={formData.email}
             onChange={handleInputChange}
-            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            onBlur={handleBlur}
+            className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("email")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
           />
-          {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
+          {errors.email && touched.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
         </div>
         <div className="flex flex-col">
           <label className="block text-sm font-medium text-muted-foreground mb-2">
-            Contraseña (mínimo 8 caracteres, mayúscula y minúscula) *
+            Contraseña (mínimo 8 caracteres, mayúscula, minúscula y especial) *
           </label>
           <div className="relative mt-auto">
             <input
@@ -586,7 +683,8 @@ export default function ProfessionalForm() {
               name="password"
               value={formData.password}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary pr-10"
+              onBlur={handleBlur}
+              className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("password")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary pr-10`}
             />
             <button
               type="button"
@@ -596,7 +694,7 @@ export default function ProfessionalForm() {
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
-          {errors.password && <p className="text-red-400 text-sm mt-1">{errors.password}</p>}
+          {errors.password && touched.password && <p className="text-red-400 text-sm mt-1">{errors.password}</p>}
         </div>
         <div className="flex flex-col">
           <label className="block text-sm font-medium text-muted-foreground mb-2">
@@ -608,7 +706,8 @@ export default function ProfessionalForm() {
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary pr-10"
+              onBlur={handleBlur}
+              className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("confirmPassword")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary pr-10`}
             />
             <button
               type="button"
@@ -618,7 +717,7 @@ export default function ProfessionalForm() {
               {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
-          {errors.confirmPassword && <p className="text-red-400 text-sm mt-1">{errors.confirmPassword}</p>}
+          {errors.confirmPassword && touched.confirmPassword && <p className="text-red-400 text-sm mt-1">{errors.confirmPassword}</p>}
         </div>
       </div>
       <div>
@@ -632,11 +731,15 @@ export default function ProfessionalForm() {
         />
         <label
           htmlFor="profileImage"
-          className="flex items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group"
+          className={`flex items-center justify-center w-full h-32 border-2 border-dashed ${errors.profileImage ? "border-red-400" : formData.profileImage ? "border-green-500 bg-green-500/10" : "border-border"} rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group`}
         >
           <div className="flex flex-col items-center justify-center">
-            <Upload className="size-8 text-primary mb-2 group-hover:scale-110 transition-transform" />
-            <p className="text-muted-foreground text-sm">
+            {formData.profileImage ? (
+              <CheckCircle2 className="size-8 text-green-500 mb-2 group-hover:scale-110 transition-transform" />
+            ) : (
+              <Upload className="size-8 text-primary mb-2 group-hover:scale-110 transition-transform" />
+            )}
+            <p className={`text-sm ${formData.profileImage ? "text-green-600 font-medium" : "text-muted-foreground"}`}>
               {formData.profileImage ? formData.profileImage.name : "Sube tu foto de perfil"}
             </p>
           </div>
@@ -656,7 +759,11 @@ export default function ProfessionalForm() {
             name="profession"
             value={formData.profession}
             onChange={(e) => handleSelectChange("profession", e.target.value)}
-            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            onBlur={(e) => {
+              setTouched(prev => ({ ...prev, profession: true }))
+              validateField("profession", e.target.value)
+            }}
+            className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("profession")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
           >
             <option value="">Selecciona tu profesión</option>
             {professions.map((prof) => (
@@ -665,7 +772,7 @@ export default function ProfessionalForm() {
               </option>
             ))}
           </select>
-          {errors.profession && <p className="text-red-400 text-sm mt-1">{errors.profession}</p>}
+          {errors.profession && touched.profession && <p className="text-red-400 text-sm mt-1">{errors.profession}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-2">Especialidad *</label>
@@ -673,8 +780,12 @@ export default function ProfessionalForm() {
             name="specialty"
             value={formData.specialty}
             onChange={(e) => handleSelectChange("specialty", e.target.value)}
+            onBlur={(e) => {
+              setTouched(prev => ({ ...prev, specialty: true }))
+              validateField("specialty", e.target.value)
+            }}
             disabled={!formData.profession}
-            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+            className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("specialty")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50`}
           >
             <option value="">Selecciona tu especialidad</option>
             {specialties.map((spec) => (
@@ -683,7 +794,7 @@ export default function ProfessionalForm() {
               </option>
             ))}
           </select>
-          {errors.specialty && <p className="text-red-400 text-sm mt-1">{errors.specialty}</p>}
+          {errors.specialty && touched.specialty && <p className="text-red-400 text-sm mt-1">{errors.specialty}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-2">Años de Experiencia</label>
@@ -695,15 +806,16 @@ export default function ProfessionalForm() {
             step="1"
             value={formData.yearsExperience === 0 ? "" : formData.yearsExperience}
             onChange={handleInputChange}
+            onBlur={handleBlur}
             onFocus={(e) => {
               if (formData.yearsExperience === 0) {
                 e.target.value = ""
               }
             }}
             placeholder="0"
-            className={`w-full px-4 py-3 bg-card border ${errors.yearsExperience ? "border-red-400" : "border-border"} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
+            className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("yearsExperience")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
           />
-          {errors.yearsExperience && <p className="text-red-400 text-sm mt-1">{errors.yearsExperience}</p>}
+          {errors.yearsExperience && touched.yearsExperience && <p className="text-red-400 text-sm mt-1">{errors.yearsExperience}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-2">Tarifa o Precio (Opcional)</label>
@@ -733,7 +845,11 @@ export default function ProfessionalForm() {
             name="workMode"
             value={formData.workMode}
             onChange={(e) => handleSelectChange("workMode", e.target.value)}
-            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            onBlur={(e) => {
+              setTouched(prev => ({ ...prev, workMode: true }))
+              validateField("workMode", e.target.value)
+            }}
+            className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("workMode")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
           >
             <option value="">Selecciona la modalidad</option>
             {workModes.map((mode) => (
@@ -742,7 +858,7 @@ export default function ProfessionalForm() {
               </option>
             ))}
           </select>
-          {errors.workMode && <p className="text-red-400 text-sm mt-1">{errors.workMode}</p>}
+          {errors.workMode && touched.workMode && <p className="text-red-400 text-sm mt-1">{errors.workMode}</p>}
         </div>
       </div>
       <div>
@@ -753,12 +869,13 @@ export default function ProfessionalForm() {
           name="description"
           value={formData.description}
           onChange={handleInputChange}
+          onBlur={handleBlur}
           maxLength={80}
           rows={4}
-          className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("description")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
         />
         <p className="text-xs text-muted-foreground mt-1">{formData.description.length}/80 caracteres</p>
-        {errors.description && <p className="text-red-400 text-sm mt-1">{errors.description}</p>}
+        {errors.description && touched.description && <p className="text-red-400 text-sm mt-1">{errors.description}</p>}
       </div>
     </div>
   )
@@ -773,7 +890,11 @@ export default function ProfessionalForm() {
             name="province"
             value={formData.province}
             onChange={(e) => handleSelectChange("province", e.target.value)}
-            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            onBlur={(e) => {
+              setTouched(prev => ({ ...prev, province: true }))
+              validateField("province", e.target.value)
+            }}
+            className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("province")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
           >
             <option value="">Selecciona provincia</option>
             {provinces.map((prov) => (
@@ -782,7 +903,7 @@ export default function ProfessionalForm() {
               </option>
             ))}
           </select>
-          {errors.province && <p className="text-red-400 text-sm mt-1">{errors.province}</p>}
+          {errors.province && touched.province && <p className="text-red-400 text-sm mt-1">{errors.province}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-2">Ciudad *</label>
@@ -790,8 +911,12 @@ export default function ProfessionalForm() {
             name="city"
             value={formData.city}
             onChange={(e) => handleSelectChange("city", e.target.value)}
+            onBlur={(e) => {
+              setTouched(prev => ({ ...prev, city: true }))
+              validateField("city", e.target.value)
+            }}
             disabled={!formData.province}
-            className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+            className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("city")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50`}
           >
             <option value="">Selecciona ciudad</option>
             {cities.map((city) => (
@@ -800,12 +925,12 @@ export default function ProfessionalForm() {
               </option>
             ))}
           </select>
-          {errors.city && <p className="text-red-400 text-sm mt-1">{errors.city}</p>}
+          {errors.city && touched.city && <p className="text-red-400 text-sm mt-1">{errors.city}</p>}
         </div>
       </div>
       <div className="md:col-span-2">
         <label className="block text-sm font-medium text-muted-foreground mb-4">Ubicación en el Mapa</label>
-        <div className={`border ${errors.map ? 'border-red-400' : 'border-border'} rounded-lg overflow-hidden`}>
+        <div className={`border ${errors.map && touched.map ? 'border-red-400' : 'border-border'} rounded-lg overflow-hidden`}>
           <LocationMap
             lat={formData.lat}
             lng={formData.lng}
@@ -815,18 +940,21 @@ export default function ProfessionalForm() {
         <p className="text-xs text-muted-foreground mt-2">
           Mueve el pin o haz clic en el mapa para establecer tu ubicación exacta.
         </p>
-        {errors.map && <p className="text-red-400 text-sm mt-1">{errors.map}</p>}
+        {errors.map && touched.map && <p className="text-red-400 text-sm mt-1">{errors.map}</p>}
       </div>
       <div className="md:col-span-2">
-        <label className="block text-sm font-medium text-muted-foreground mb-2">Dirección Exacta *</label>
+        <label className="block text-sm font-medium text-muted-foreground mb-2">
+          Dirección Exacta * <span className="text-red-500 font-normal text-xs ml-1">(por favor revisa que la dirección esté correcta)</span>
+        </label>
         <input
           type="text"
           name="address"
           value={formData.address}
           onChange={handleInputChange}
-          className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          onBlur={handleBlur}
+          className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("address")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
         />
-        {errors.address && <p className="text-red-400 text-sm mt-1">{errors.address}</p>}
+        {errors.address && touched.address && <p className="text-red-400 text-sm mt-1">{errors.address}</p>}
       </div>
       <div className="md:col-span-2">
         <label className="block text-sm font-medium text-muted-foreground mb-2">Referencia (Opcional)</label>
@@ -864,11 +992,15 @@ export default function ProfessionalForm() {
               />
               <label
                 htmlFor="identityFront"
-                className={`flex items-center justify-center w-full h-32 border-2 border-dashed ${errors.identityFront ? "border-red-400" : "border-border"} rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group`}
+                className={`flex items-center justify-center w-full h-32 border-2 border-dashed ${errors.identityFront ? "border-red-400" : formData.identityFront ? "border-green-500 bg-green-500/10" : "border-border"} rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group`}
               >
                 <div className="flex flex-col items-center justify-center px-2 text-center">
-                  <Upload className="size-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
-                  <p className="text-muted-foreground text-xs truncate w-full">
+                  {formData.identityFront ? (
+                    <CheckCircle2 className="size-6 text-green-500 mb-2 group-hover:scale-110 transition-transform" />
+                  ) : (
+                    <Upload className="size-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
+                  )}
+                  <p className={`text-xs truncate w-full ${formData.identityFront ? "text-green-600 font-medium" : "text-muted-foreground"}`}>
                     {formData.identityFront ? formData.identityFront.name : "Subir Frontal"}
                   </p>
                 </div>
@@ -886,11 +1018,15 @@ export default function ProfessionalForm() {
               />
               <label
                 htmlFor="identityBack"
-                className={`flex items-center justify-center w-full h-32 border-2 border-dashed ${errors.identityBack ? "border-red-400" : "border-border"} rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group`}
+                className={`flex items-center justify-center w-full h-32 border-2 border-dashed ${errors.identityBack ? "border-red-400" : formData.identityBack ? "border-green-500 bg-green-500/10" : "border-border"} rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group`}
               >
                 <div className="flex flex-col items-center justify-center px-2 text-center">
-                  <Upload className="size-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
-                  <p className="text-muted-foreground text-xs truncate w-full">
+                  {formData.identityBack ? (
+                    <CheckCircle2 className="size-6 text-green-500 mb-2 group-hover:scale-110 transition-transform" />
+                  ) : (
+                    <Upload className="size-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
+                  )}
+                  <p className={`text-xs truncate w-full ${formData.identityBack ? "text-green-600 font-medium" : "text-muted-foreground"}`}>
                     {formData.identityBack ? formData.identityBack.name : "Subir Posterior"}
                   </p>
                 </div>
@@ -910,11 +1046,15 @@ export default function ProfessionalForm() {
           />
           <label
             htmlFor="title"
-            className={`flex items-center justify-center w-full h-32 border-2 border-dashed ${errors.title ? "border-red-400" : "border-border"} rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group`}
+            className={`flex items-center justify-center w-full h-32 border-2 border-dashed ${errors.title ? "border-red-400" : formData.title ? "border-green-500 bg-green-500/10" : "border-border"} rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group`}
           >
             <div className="flex flex-col items-center justify-center">
-              <Upload className="size-8 text-primary mb-2 group-hover:scale-110 transition-transform" />
-              <p className="text-muted-foreground text-sm">
+              {formData.title ? (
+                <CheckCircle2 className="size-8 text-green-500 mb-2 group-hover:scale-110 transition-transform" />
+              ) : (
+                <Upload className="size-8 text-primary mb-2 group-hover:scale-110 transition-transform" />
+              )}
+              <p className={`text-sm ${formData.title ? "text-green-600 font-medium" : "text-muted-foreground"}`}>
                 {formData.title ? formData.title.name : "Sube tu título profesional"}
               </p>
             </div>
@@ -934,11 +1074,15 @@ export default function ProfessionalForm() {
           />
           <label
             htmlFor="license"
-            className={`flex items-center justify-center w-full h-32 border-2 border-dashed ${errors.license ? "border-red-400" : "border-border"} rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group`}
+            className={`flex items-center justify-center w-full h-32 border-2 border-dashed ${errors.license ? "border-red-400" : formData.license ? "border-green-500 bg-green-500/10" : "border-border"} rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group`}
           >
             <div className="flex flex-col items-center justify-center">
-              <Upload className="size-8 text-primary mb-2 group-hover:scale-110 transition-transform" />
-              <p className="text-muted-foreground text-sm">
+              {formData.license ? (
+                <CheckCircle2 className="size-8 text-green-500 mb-2 group-hover:scale-110 transition-transform" />
+              ) : (
+                <Upload className="size-8 text-primary mb-2 group-hover:scale-110 transition-transform" />
+              )}
+              <p className={`text-sm ${formData.license ? "text-green-600 font-medium" : "text-muted-foreground"}`}>
                 {formData.license ? formData.license.name : "Sube tu licencia profesional"}
               </p>
             </div>
@@ -981,7 +1125,11 @@ export default function ProfessionalForm() {
         </label>
       </div>
       <div>
-        <label className="block text-sm font-medium text-muted-foreground mb-2">Palabras Clave (Tags) *</label>
+        <label className="block text-sm font-medium text-muted-foreground mb-2">
+          Palabras Clave (Tags) * <span className="text-red-500 font-normal text-xs ml-1">(Las usamos para que te encuentren más fácilmente en el buscador)</span>
+          <br />
+          <span className="text-gray-500 font-normal text-xs ml-1">Te recomendamos usar palabras clave relacionadas con tu especialidad, servicios y experiencia.</span>
+        </label>
         
         <div className={`w-full min-h-[50px] px-3 py-2 bg-card border ${errors.tags ? "border-red-400" : "border-border"} rounded-lg text-foreground focus-within:ring-2 focus-within:ring-primary flex flex-wrap gap-2 items-center`}>
           {formData.tags.split(',').filter(Boolean).map((tag, index) => (
@@ -992,7 +1140,8 @@ export default function ProfessionalForm() {
                 onClick={() => {
                   const updatedTags = formData.tags.split(',').filter(Boolean).filter((_, i) => i !== index).join(',');
                   setFormData(prev => ({ ...prev, tags: updatedTags }));
-                  if (errors.tags && updatedTags.length > 0) setErrors(prev => ({ ...prev, tags: "" }));
+                  setTouched(prev => ({ ...prev, tags: true }))
+                  validateField("tags", updatedTags)
                 }}
               >
                 <X size={14} className="text-green-700" />
@@ -1017,7 +1166,10 @@ export default function ProfessionalForm() {
                   const currentList = formData.tags.split(',').filter(Boolean);
                   if (!currentList.includes(newTag)) {
                     currentList.push(newTag);
-                    setFormData(prev => ({ ...prev, tags: currentList.join(',') }));
+                    const finalTags = currentList.join(',')
+                    setFormData(prev => ({ ...prev, tags: finalTags }));
+                    setTouched(prev => ({ ...prev, tags: true }))
+                    validateField("tags", finalTags)
                   }
                   setTagInput("");
                 }
@@ -1027,7 +1179,10 @@ export default function ProfessionalForm() {
                 const currentList = formData.tags.split(',').filter(Boolean);
                 if (currentList.length > 0) {
                   currentList.pop();
-                  setFormData(prev => ({ ...prev, tags: currentList.join(',') }));
+                  const finalTags = currentList.join(',')
+                  setFormData(prev => ({ ...prev, tags: finalTags }));
+                  setTouched(prev => ({ ...prev, tags: true }))
+                  validateField("tags", finalTags)
                 }
               }
             }}
@@ -1035,7 +1190,7 @@ export default function ProfessionalForm() {
             className="flex-1 min-w-[120px] bg-transparent focus:outline-none placeholder:text-muted-foreground/50 text-foreground"
           />
         </div>
-        {errors.tags && <p className="text-red-400 text-sm mt-1">{errors.tags}</p>}
+        {errors.tags && touched.tags && <p className="text-red-400 text-sm mt-1">{errors.tags}</p>}
         <p className="text-xs text-muted-foreground mt-2">Usa espacio para agregar una nueva etiqueta</p>
       </div>
     </div>

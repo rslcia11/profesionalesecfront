@@ -22,7 +22,8 @@ function LocationMarker({ position, onChange, readonly, address }: { position: {
 
     useEffect(() => {
         if (position) {
-            map.flyTo([position.lat, position.lng], map.getZoom())
+            // Usa zoom 17 para un nivel de detalle donde se puedan ver las calles
+            map.flyTo([position.lat, position.lng], 17, { duration: 1.5 })
         }
     }, [position, map])
 
