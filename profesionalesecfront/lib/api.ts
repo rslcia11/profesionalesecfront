@@ -316,13 +316,14 @@ export const profesionalApi = {
     });
   },
 
-  async obtenerMiPerfil(token: string) {
-    return fetchApi("/profesionales/perfil", {
+  async obtenerMiPerfil(token: string, id?: number) {
+    const query = id ? `?id=${id}` : ""
+    return fetchApi(`/profesionales/perfil${query}`, {
       headers: authHeader(token)
     });
   },
 
-  async actualizarPerfil(data: Partial<PerfilProfesionalData>, token: string) {
+  async actualizarPerfil(data: Partial<PerfilProfesionalData> & { id: number }, token: string) {
     return fetchApi("/profesionales/actualizar-perfil", {
       method: "PUT",
       headers: authHeader(token),
@@ -330,10 +331,11 @@ export const profesionalApi = {
     });
   },
 
-  async subirDocumento(tipo: string, archivo: File, token: string) {
+  async subirDocumento(tipo: string, archivo: File, token: string, perfilId?: number) {
     const formData = new FormData()
     formData.append("archivo", archivo)
     formData.append("tipo", tipo)
+    if (perfilId) formData.append("perfilId", perfilId.toString())
 
     // Custom fetch for FormData since it doesn't use Content-Type: application/json
     const res = await fetch(`${API_URL}/profesionales/documentos`, {
@@ -704,18 +706,18 @@ export const adminApi = {
 
 // Servicios API
 export const serviciosApi = {
-  async crear(data: { descripcion: string }, token: string) {
+  async crear(data: { perfilId: number, descripcion: string }, token: string) {
     return fetchApi("/servicios", {
       method: "POST",
       headers: authHeader(token),
       body: JSON.stringify(data),
     });
   },
-  async listarMios(token: string) {
-    return fetchApi("/servicios/mis-servicios", { headers: authHeader(token) });
+  async listarMios(perfilId: number, token: string) {
+    return fetchApi(`/servicios/mis-servicios?perfilId=${perfilId}`, { headers: authHeader(token) });
   },
-  async listarPorProfesional(usuarioId: number) {
-    return fetchApi(`/servicios/profesional/${usuarioId}`);
+  async listarPorPerfil(perfilId: number) {
+    return fetchApi(`/servicios/perfil/${perfilId}`);
   },
   async actualizar(id: number, data: { descripcion: string }, token: string) {
     return fetchApi(`/servicios/${id}`, {
@@ -800,6 +802,27 @@ export const articulosApi = {
     });
   },
 }
+
+// Horarios API
+export const horariosApi = {
+  async obtenerPorPerfil(perfilId: number, token: string) {
+    return fetchApi(`/horarios/perfil/${perfilId}`, {
+      headers: authHeader(token),
+    });
+  },
+
+  async actualizar(data: { perfilId: number; matriz: boolean[] }, token: string) {
+    return fetchApi(`/horarios/actualizar`, {
+      method: "POST",
+      headers: authHeader(token),
+      body: JSON.stringify(data),
+    });
+  },
+
+  async obtenerPublico(perfilId: number) {
+    return fetchApi(`/horarios/publico/${perfilId}`);
+  },
+};
 
 // Token helpers
 export const saveToken = (token: string) => {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { profesionalApi } from "@/lib/api"
+import { profesionalApi, horariosApi } from "@/lib/api"
 import { MapPin, Phone, Mail, Facebook, Instagram, Twitter } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
@@ -13,7 +13,11 @@ import LocationMap from "@/components/shared/location-map"
 export default function ProfessionalProfile() {
     const params = useParams()
     const [professional, setProfessional] = useState<any>(null)
+    const [schedule, setSchedule] = useState<boolean[] | null>(null)
     const [loading, setLoading] = useState(true)
+
+    const days = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+    const hours = Array.from({ length: 24 }, (_, i) => i)
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -22,8 +26,19 @@ export default function ProfessionalProfile() {
                 setLoading(true)
                 const allData = await profesionalApi.obtenerVerificados()
                 if (Array.isArray(allData)) {
-                    const found = allData.find((p: any) => p.usuario_id.toString() === params.id)
+                    const found = allData.find((p: any) => p.id.toString() === params.id)
                     setProfessional(found || null)
+                    
+                    if (found) {
+                        try {
+                            const schedData = await horariosApi.obtenerPublico(found.id)
+                            if (schedData && schedData.matriz) {
+                                setSchedule(schedData.matriz)
+                            }
+                        } catch (err) {
+                            console.warn("No availability data found or error fetching it:", err)
+                        }
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching profile:", error)
@@ -160,6 +175,58 @@ export default function ProfessionalProfile() {
                                             </p>
                                         </div>
                                     ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Disponibilidad Horaria */}
+                        {schedule && (
+                            <div className="mt-12">
+                                <h3 className="text-xl font-bold uppercase text-gray-800 mb-6 border-b pb-4">DISPONIBILIDAD HORARIA</h3>
+                                <div className="space-y-4">
+                                    <div className="overflow-x-auto pb-4 custom-scrollbar">
+                                        <div className="min-w-[700px]">
+                                            <div className="grid grid-cols-[80px_repeat(24,1fr)] mb-3">
+                                                <div className="text-[10px] font-bold text-gray-400 uppercase">H</div>
+                                                {hours.map(h => (
+                                                    <div key={h} className="text-[9px] text-center font-bold text-gray-400">
+                                                        {h.toString().padStart(2, '0')}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="space-y-1">
+                                                {days.map((day, dIdx) => (
+                                                    <div key={day} className="grid grid-cols-[80px_repeat(24,1fr)] items-center gap-1">
+                                                        <div className="text-[11px] font-bold text-gray-700">{day}</div>
+                                                        <div className="col-start-2 col-span-24 grid grid-cols-24 gap-1">
+                                                            {hours.map(h => {
+                                                                const available = schedule[(dIdx * 24) + h];
+                                                                return (
+                                                                    <div
+                                                                        key={h}
+                                                                        className={`h-5 rounded-sm border border-gray-50 ${
+                                                                            available ? "bg-black" : "bg-gray-100"
+                                                                        }`}
+                                                                        title={`${day} ${h}:00 - ${available ? 'Disponible' : 'Cerrado'}`}
+                                                                    />
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4 text-[10px] text-gray-500 font-medium">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-3 h-3 bg-black rounded-sm" />
+                                            <span>Disponible</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-3 h-3 bg-gray-100 rounded-sm" />
+                                            <span>No disponible</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}

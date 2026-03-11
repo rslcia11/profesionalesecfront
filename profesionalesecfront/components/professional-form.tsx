@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { CheckCircle2, ChevronLeft, ChevronRight, Home, Upload, Eye, EyeOff, PartyPopper, Loader2 } from "lucide-react"
 import { Check, X } from "lucide-react" // Declared the Check variable
-import { authApi, profesionalApi, catalogosApi, saveToken, usuarioApi } from "@/lib/api"
+import { authApi, profesionalApi, catalogosApi, saveToken, usuarioApi, horariosApi } from "@/lib/api"
 
 
 import LocationMap from "@/components/shared/location-map"
@@ -14,6 +14,8 @@ import { getAddressFromCoordinates, getCoordinatesFromAddress } from "@/lib/geoc
 import { useToast } from "@/hooks/use-toast"
 
 const workModes = ["Presencial", "Virtual", "Ambas modalidades"]
+const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+const hours = Array.from({ length: 24 }, (_, i) => i)
 
 
 interface FormData {
@@ -44,6 +46,7 @@ interface FormData {
   lat?: number
   lng?: number
   services: string[]
+  matrix: boolean[]
 }
 
 interface CatalogItem {
@@ -95,6 +98,7 @@ export default function ProfessionalForm() {
     lat: undefined,
     lng: undefined,
     services: [],
+    matrix: Array(168).fill(false),
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [touched, setTouched] = useState<FormTouched>({})
@@ -108,6 +112,24 @@ export default function ProfessionalForm() {
   const isAddressManuallyEdited = useRef(false)
   const emailInputRef = useRef<HTMLInputElement>(null)
   const cedulaInputRef = useRef<HTMLInputElement>(null)
+
+  const toggleAvailability = (dayIndex: number, hour: number) => {
+    const index = (dayIndex * 24) + hour
+    const newMatrix = [...formData.matrix]
+    newMatrix[index] = !newMatrix[index]
+    setFormData((prev) => ({ ...prev, matrix: newMatrix }))
+  }
+
+  const toggleDayAvailability = (dayIndex: number) => {
+    const startIndex = dayIndex * 24
+    const newMatrix = [...formData.matrix]
+    const allSelected = newMatrix.slice(startIndex, startIndex + 24).every(v => v)
+    
+    for (let h = 0; h < 24; h++) {
+      newMatrix[startIndex + h] = !allSelected
+    }
+    setFormData((prev) => ({ ...prev, matrix: newMatrix }))
+  }
 
   // Catalogs State
   const [professions, setProfessions] = useState<CatalogItem[]>([])
@@ -524,37 +546,7 @@ export default function ProfessionalForm() {
         if (!token) throw new Error("No se recibió el token de autenticación")
         console.log("[v0] User registered successfully")
 
-        // Step 2: Upload profile image FIRST to get URL (if exists)
-        let finalFotoUrl = ""
-        if (formData.profileImage) {
-          try {
-            console.log("[v0] Uploading profile image...")
-            const photoRes = await profesionalApi.subirDocumento("foto_perfil", formData.profileImage, token)
-            // The backend returns the saved document info: { mensaje: "...", doc: { id: ..., url: "..." } }
-            finalFotoUrl = photoRes.doc?.url || photoRes.archivo?.url || photoRes.url || photoRes.path || ""
-            console.log("[v0] Profile image uploaded:", finalFotoUrl)
-          } catch (uploadError) {
-            console.warn("Could not upload profile image, continuing without it:", uploadError)
-          }
-        }
-
-        // Step 2.5: SURGICAL FIX - Explicitly update user record in 'usuarios' table
-        // This ensures cedula and foto_url are saved where the admin panel looks for them
-        try {
-          console.log("[v0] Updating user profile record in 'usuarios' table...")
-          const userUpdateData = {
-            nombre: formData.fullName,
-            telefono: formData.phone,
-            cedula: formData.cedula,
-            foto_url: finalFotoUrl
-          }
-          await usuarioApi.actualizarPerfil(userUpdateData, token)
-          console.log("[v0] User profile record updated successfully")
-        } catch (updateError) {
-          console.warn("[v0] Could not update user profile record:", updateError)
-        }
-
-        // Step 3: Create professional profile with ALL data (persists to 'profesionales' table)
+        // Step 2: Create professional profile FIRST (Independent of photo/docs in new architecture)
         const perfilData: any = {
           profesion_id: Number(formData.profession),
           especialidad_id: Number(formData.specialty),
@@ -562,7 +554,6 @@ export default function ProfessionalForm() {
           descripcion: formData.description,
           telefono: formData.phone,
           cedula: formData.cedula,
-          foto_url: finalFotoUrl,
           calle_principal: formData.address,
           referencia: formData.reference,
           lat: formData.lat,
@@ -573,11 +564,53 @@ export default function ProfessionalForm() {
           tarifa_hora: formData.rate ? parseFloat(formData.rate) : 0,
         }
 
-        console.log("[v0] Creating professional profile with full data:", perfilData)
-        await profesionalApi.crearPerfil(perfilData, token)
-        console.log("[v0] Professional profile created")
+        console.log("[v0] Creating professional profile:", perfilData)
+        const profileRes = await profesionalApi.crearPerfil(perfilData, token)
+        const perfilId = profileRes?.perfil?.id || profileRes?.id || profileRes?.doc?.id
+        
+        if (!perfilId) throw new Error("No se pudo obtener el ID del perfil creado")
+        console.log("[v0] Professional profile created with ID:", perfilId)
 
-        // Step 4: Upload other verification documents (async)
+        // Step 3: Upload profile image using the new perfilId
+        let finalFotoUrl = ""
+        if (formData.profileImage) {
+          try {
+            console.log("[v0] Uploading profile image for profile:", perfilId)
+            const photoRes = await profesionalApi.subirDocumento("foto_perfil", formData.profileImage, token, perfilId)
+            finalFotoUrl = photoRes.doc?.url || photoRes.archivo?.url || photoRes.url || photoRes.path || ""
+            
+            // Update profile with the URL if we got it
+            if (finalFotoUrl) {
+              await profesionalApi.actualizarPerfil({ id: perfilId, foto_url: finalFotoUrl }, token)
+            }
+          } catch (uploadError) {
+            console.warn("Could not upload profile image:", uploadError)
+          }
+        }
+
+        // Step 4: Sync user record in 'usuarios' table
+        try {
+          const userUpdateData = {
+            nombre: formData.fullName,
+            telefono: formData.phone,
+            cedula: formData.cedula,
+            foto_url: finalFotoUrl
+          }
+          await usuarioApi.actualizarPerfil(userUpdateData, token)
+        } catch (updateError) {
+          console.warn("[v0] Could not update user record:", updateError)
+        }
+
+        // Step 5: Save Availability Schedule using perfilId
+        console.log("[v0] Saving availability matrix for profile:", perfilId)
+        try {
+          await horariosApi.actualizar({ perfilId, matriz: formData.matrix }, token)
+          console.log("[v0] Availability matrix saved")
+        } catch (horarioError) {
+          console.error("[v0] Error saving availability matrix:", horarioError)
+        }
+
+        // Step 6: Upload other verification documents using perfilId
         const otherDocs = [
           { file: formData.identityFront, type: "cedula_frontal" },
           { file: formData.identityBack, type: "cedula_posterior" },
@@ -588,20 +621,18 @@ export default function ProfessionalForm() {
         await Promise.all([
           ...otherDocs
             .filter(d => d.file)
-            .map(d => profesionalApi.subirDocumento(d.type, d.file as File, token).catch(err => {
+            .map(d => profesionalApi.subirDocumento(d.type, d.file as File, token, perfilId).catch(err => {
               console.error(`Error uploading ${d.type}:`, err)
             }))
         ])
 
-        console.log("[v0] Verification documents processed")
-
-        // Step 5: Process Services if provided
+        // Step 7: Process Services linked to perfilId
         if (formData.services.length > 0) {
-          console.log("[v0] Creating professional services:", formData.services)
+          console.log("[v0] Creating professional services for profile:", perfilId)
           const { serviciosApi } = await import("@/lib/api")
           await Promise.allSettled(
             formData.services.map(service => 
-              serviciosApi.crear({ descripcion: service }, token)
+              serviciosApi.crear({ perfilId, descripcion: service }, token)
             )
           )
         }
@@ -979,6 +1010,76 @@ export default function ProfessionalForm() {
         ) : (
           <p className="text-sm text-muted-foreground italic text-center py-4">No has añadido ningún servicio aún.</p>
         )}
+      </div>
+
+      {/* availability Selection Grid */}
+      <div className="pt-8 border-t border-border">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <label className="block text-lg font-bold text-foreground">Tu Disponibilidad Horaria</label>
+            <p className="text-sm text-muted-foreground">Selecciona las horas en las que estarás disponible para recibir citas.</p>
+          </div>
+        </div>
+        
+        <div className="overflow-x-auto pb-4 custom-scrollbar bg-card/30 p-4 rounded-xl border border-border/50">
+          <div className="min-w-[850px]">
+            {/* Hours Header */}
+            <div className="grid grid-cols-[100px_repeat(24,1fr)] mb-4 sticky top-0 bg-transparent z-10">
+              <div className="text-[10px] font-bold text-muted-foreground uppercase flex items-center">Día / Hora</div>
+              {hours.map(h => (
+                <div key={h} className="text-[9px] text-center font-bold text-muted-foreground">
+                  {h.toString().padStart(2, '0')}
+                </div>
+              ))}
+            </div>
+            
+            {/* Days Grid */}
+            <div className="space-y-1.5">
+              {days.map((day, dIdx) => (
+                <div key={day} className="grid grid-cols-[100px_repeat(24,1fr)] items-center group gap-1">
+                  <button 
+                    type="button"
+                    onClick={() => toggleDayAvailability(dIdx)}
+                    className="text-xs font-bold text-left text-foreground hover:text-primary transition-colors flex flex-col"
+                  >
+                    <span>{day}</span>
+                    <span className="text-[8px] text-muted-foreground font-normal opacity-0 group-hover:opacity-100 transition-opacity">Seleccionar todo</span>
+                  </button>
+                  <div className="col-start-2 col-span-24 grid grid-cols-24 gap-1">
+                    {hours.map(h => {
+                      const isSelected = formData.matrix[(dIdx * 24) + h];
+                      return (
+                        <button
+                          key={h}
+                          type="button"
+                          onClick={() => toggleAvailability(dIdx, h)}
+                          className={`h-7 rounded-[4px] border border-border/10 transition-all duration-200 ${
+                            isSelected 
+                              ? "bg-primary shadow-[0_0_10px_rgba(var(--primary),0.3)]" 
+                              : "bg-background hover:bg-primary/20"
+                          }`}
+                          title={`${day} ${h}:00`}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        
+        <div className="mt-4 flex flex-wrap items-center gap-6 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <div className="size-3 bg-primary rounded-sm shadow-sm" />
+            <span>Horas Disponibles</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="size-3 bg-background border border-border/50 rounded-sm" />
+            <span>Horas No Disponibles</span>
+          </div>
+          <p className="italic text-primary/80">Tip: Haz clic en el nombre del día para marcar las 24 horas rápidamente.</p>
+        </div>
       </div>
     </div>
   )

@@ -93,7 +93,7 @@ export default function ProfessionalsPage() {
     return data
       .filter((p: any) => !!p.verificado || p.estado_id === 3 || p.estado === 'aprobado')
       .map((p: any) => ({
-        id: p.usuario_id,
+        id: p.id,
         name: p.usuario?.nombre || "Usuario",
         specialty: p.especialidad?.nombre || p.profesion?.nombre || "Profesional",
         location: p.ciudad ? `${p.ciudad.nombre}, ${p.ciudad.provincia?.nombre || ""}` : "Ecuador",
