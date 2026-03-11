@@ -4,13 +4,14 @@ import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { CheckCircle2, ChevronLeft, ChevronRight, Home, Upload, Eye, EyeOff } from "lucide-react"
+import { CheckCircle2, ChevronLeft, ChevronRight, Home, Upload, Eye, EyeOff, PartyPopper, Loader2 } from "lucide-react"
 import { Check, X } from "lucide-react" // Declared the Check variable
 import { authApi, profesionalApi, catalogosApi, saveToken, usuarioApi } from "@/lib/api"
 
 
 import LocationMap from "@/components/shared/location-map"
 import { getAddressFromCoordinates, getCoordinatesFromAddress } from "@/lib/geocoding"
+import { useToast } from "@/hooks/use-toast"
 
 const workModes = ["Presencial", "Virtual", "Ambas modalidades"]
 
@@ -42,6 +43,7 @@ interface FormData {
   tags: string
   lat?: number
   lng?: number
+  services: string[]
 }
 
 interface CatalogItem {
@@ -59,6 +61,7 @@ interface FormTouched {
 }
 
 export default function ProfessionalForm() {
+  const { toast } = useToast()
   const searchParams = useSearchParams()
   const plan = searchParams.get("plan") // Get plan from URL
 
@@ -91,6 +94,7 @@ export default function ProfessionalForm() {
     tags: "",
     lat: undefined,
     lng: undefined,
+    services: [],
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [touched, setTouched] = useState<FormTouched>({})
@@ -99,8 +103,11 @@ export default function ProfessionalForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [tagInput, setTagInput] = useState("")
+  const [serviceInput, setServiceInput] = useState("") // New state for service input
+  const [isLoading, setIsLoading] = useState(false)
   const isAddressManuallyEdited = useRef(false)
   const emailInputRef = useRef<HTMLInputElement>(null)
+  const cedulaInputRef = useRef<HTMLInputElement>(null)
 
   // Catalogs State
   const [professions, setProfessions] = useState<CatalogItem[]>([])
@@ -496,6 +503,7 @@ export default function ProfessionalForm() {
 
   const handleSubmit = async () => {
     if (validateStep()) {
+      setIsLoading(true)
       try {
         console.log("[v0] Starting form submission with backend integration")
 
@@ -577,17 +585,31 @@ export default function ProfessionalForm() {
           { file: formData.license, type: "licencia" },
         ]
 
-        await Promise.all(
-          otherDocs
+        await Promise.all([
+          ...otherDocs
             .filter(d => d.file)
             .map(d => profesionalApi.subirDocumento(d.type, d.file as File, token).catch(err => {
               console.error(`Error uploading ${d.type}:`, err)
             }))
-        )
+        ])
 
         console.log("[v0] Verification documents processed")
+
+        // Step 5: Process Services if provided
+        if (formData.services.length > 0) {
+          console.log("[v0] Creating professional services:", formData.services)
+          const { serviciosApi } = await import("@/lib/api")
+          await Promise.allSettled(
+            formData.services.map(service => 
+              serviciosApi.crear({ descripcion: service }, token)
+            )
+          )
+        }
+
+        setIsLoading(false)
         setShowSuccessModal(true)
       } catch (error: any) {
+        setIsLoading(false)
         console.error("[v0] Registration error:", error)
         
         const errorMsg = error.message ? error.message.toLowerCase() : ""
@@ -609,8 +631,30 @@ export default function ProfessionalForm() {
               emailInputRef.current.focus()
             }
           }, 500) // 500ms to allow the slide animation to finish
+        } else if (errorMsg.includes("cedula") || errorMsg.includes("cédula")) {
+          // Specific handler for duplicate ID (cedula)
+          setErrors(prev => ({ 
+            ...prev, 
+            cedula: "Ya tienes una cuenta registrada con tu cédula, si quieres ofrecer otros servicios puedes crear otro perfil profesional si inicias sesión" 
+          }))
+          setTouched(prev => ({ ...prev, cedula: true }))
+          
+          // Move back to Step 1
+          setSlideDirection("left")
+          setCurrentStep(0)
+          
+          // Focus ID input
+          setTimeout(() => {
+            if (cedulaInputRef.current) {
+              cedulaInputRef.current.focus()
+            }
+          }, 500)
         } else {
-          alert(`Error al registrar: ${error.message || "Error desconocido"}`)
+          toast({
+            variant: "destructive",
+            title: "Error al registrar",
+            description: error.message || "Ocurrió un error inesperado al crear tu perfil.",
+          })
         }
       }
     }
@@ -635,6 +679,7 @@ export default function ProfessionalForm() {
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-2">Cédula *</label>
           <input
+            ref={cedulaInputRef}
             type="text"
             name="cedula"
             value={formData.cedula}
@@ -644,7 +689,7 @@ export default function ProfessionalForm() {
             inputMode="numeric"
             className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("cedula")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
           />
-          {errors.cedula && touched.cedula && <p className="text-red-400 text-sm mt-1">{errors.cedula}</p>}
+          {errors.cedula && touched.cedula && <p className="text-red-400 text-sm mt-1 leading-tight">{errors.cedula}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-2">Teléfono de Contacto *</label>
@@ -876,6 +921,64 @@ export default function ProfessionalForm() {
         />
         <p className="text-xs text-muted-foreground mt-1">{formData.description.length}/80 caracteres</p>
         {errors.description && touched.description && <p className="text-red-400 text-sm mt-1">{errors.description}</p>}
+      </div>
+
+      <div className="pt-4 border-t border-border">
+        <label className="block text-lg font-bold text-foreground mb-4">Servicios Ofrecidos (Opcional)</label>
+        <p className="text-sm text-muted-foreground mb-4">
+          Añade los servicios específicos que ofreces a tus clientes.
+        </p>
+        <div className="flex gap-2 mb-4">
+          <input
+            type="text"
+            value={serviceInput}
+            onChange={(e) => setServiceInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault()
+                const val = serviceInput.trim()
+                if (val && !formData.services.includes(val)) {
+                  setFormData(prev => ({ ...prev, services: [...prev.services, val] }))
+                  setServiceInput("")
+                }
+              }
+            }}
+            placeholder="Ej: Asesoría Legal Corporativa"
+            className="flex-1 px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              const val = serviceInput.trim()
+              if (val && !formData.services.includes(val)) {
+                setFormData(prev => ({ ...prev, services: [...prev.services, val] }))
+                setServiceInput("")
+              }
+            }}
+            className="px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors shrink-0"
+          >
+            Añadir
+          </button>
+        </div>
+        
+        {formData.services.length > 0 ? (
+          <ul className="space-y-2">
+            {formData.services.map((service, index) => (
+              <li key={index} className="flex items-center justify-between p-3 bg-secondary/20 rounded-lg border border-border">
+                <span className="text-foreground">{service}</span>
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, services: prev.services.filter((_, i) => i !== index) }))}
+                  className="text-muted-foreground hover:text-red-500 transition-colors p-1"
+                >
+                  <X size={18} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground italic text-center py-4">No has añadido ningún servicio aún.</p>
+        )}
       </div>
     </div>
   )
@@ -1287,10 +1390,20 @@ export default function ProfessionalForm() {
           {currentStep === steps.length - 1 ? (
             <button
               onClick={handleSubmit}
-              className="font-varela flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground rounded-full font-semibold hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl hover:shadow-primary/20"
+              disabled={isLoading}
+              className="font-varela flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground rounded-full font-semibold hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl hover:shadow-primary/20 disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              <Check size={18} />
-              Crear Perfil
+              {isLoading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Procesando...
+                </>
+              ) : (
+                <>
+                  <Check size={18} />
+                  Crear Perfil
+                </>
+              )}
             </button>
           ) : (
             <button
@@ -1411,17 +1524,25 @@ export default function ProfessionalForm() {
                   <p className="font-arimo text-muted-foreground">
                     Tu cuenta ha sido creada exitosamente.
                   </p>
-                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <p className="text-blue-700 dark:text-blue-300 font-medium mb-1">
-                      ¡Un paso más!
+                  <div className="bg-gradient-to-br from-primary/10 to-primary/5 p-6 rounded-2xl border border-primary/20 shadow-inner overflow-hidden relative text-left">
+                    <div className="absolute -top-4 -right-4 opacity-10 rotate-12">
+                      <PartyPopper className="size-24" />
+                    </div>
+                    <h4 className="font-oswald text-xl font-bold text-primary mb-2 flex items-center gap-2">
+                      ¡Excelente primer paso! <PartyPopper className="size-5 text-primary animate-bounce" />
+                    </h4>
+                    <p className="text-sm text-foreground leading-relaxed">
+                      ¡Estamos muy emocionados de tenerte con nosotros! Tu perfil ha sido recibido con éxito y ya está en manos de nuestro equipo de revisión. 
                     </p>
-                    <p className="text-sm text-blue-600 dark:text-blue-400">
-                      Hemos enviado un enlace a tu correo electrónico. Por favor, revísalo y haz clic en el enlace para <b>activar tu cuenta</b>.
+                    <div className="mt-4 p-3 bg-card/50 rounded-lg border border-primary/10">
+                      <p className="text-sm font-medium text-primary">
+                        🚀 Te enviaremos un correo electrónico apenas tu perfil sea aprobado para que empieces a conectar con clientes.
+                      </p>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-4 text-center italic">
+                      ¡Gracias por ser parte de Profesionales.EC!
                     </p>
                   </div>
-                  <p className="font-arimo text-xs text-muted-foreground">
-                    Tu perfil profesional será revisado por nuestro equipo una vez que verifiques tu correo.
-                  </p>
                 </div>
               )}
 
@@ -1432,6 +1553,34 @@ export default function ProfessionalForm() {
                 <Home className="size-5" />
                 Volver al Inicio
               </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full Screen Loading Overlay */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-md flex items-center justify-center z-[100] animate-in fade-in duration-300">
+          <div className="text-center">
+            <div className="relative mb-6">
+              <div className="size-24 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="size-12 bg-primary/10 rounded-full animate-pulse flex items-center justify-center">
+                  <Upload className="size-6 text-primary" />
+                </div>
+              </div>
+            </div>
+            <h3 className="font-oswald text-2xl font-bold text-foreground mb-2 animate-pulse">
+              Creando tu Perfil Profesional
+            </h3>
+            <p className="font-arimo text-muted-foreground max-w-xs mx-auto">
+              Estamos procesando tus documentos y configurando tu espacio. ¡Casi terminamos!
+            </p>
+            
+            <div className="mt-8 flex justify-center gap-1">
+              <div className="size-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
+              <div className="size-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
+              <div className="size-2 bg-primary rounded-full animate-bounce" />
             </div>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { WhatsAppFloat } from "@/components/whatsapp-float"
 import PageLoader from "@/components/page-loader"
+import { Toaster } from "@/components/ui/toaster"
 
 const oswald = Oswald({ subsets: ["latin"], variable: "--font-oswald" })
 const arimo = Arimo({ subsets: ["latin"], variable: "--font-arimo" })
@@ -26,6 +27,7 @@ export default function RootLayout({
       <body className={`${oswald.variable} ${arimo.variable} ${varelaRound.variable} font-body antialiased`}>
         <PageLoader />
         {children}
+        <Toaster />
         <WhatsAppFloat />
         <Analytics />
       </body>
