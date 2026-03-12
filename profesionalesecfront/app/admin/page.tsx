@@ -48,9 +48,9 @@ import {
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
-import { adminApi, catalogosApi, ponenciasApi, profesionalApi, articulosApi, API_URL, ponentesApi, type Articulo } from "@/lib/api"
+import { formatUrl, cn } from "@/lib/utils"
+import { adminApi, catalogosApi, ponenciasApi, profesionalApi, articulosApi, API_URL, ponentesApi, revistaApi, type Articulo } from "@/lib/api"
 import ArticleFormModal from "@/components/article-form-modal"
 import dynamic from "next/dynamic"
 const LocationMap = dynamic(() => import("@/components/shared/location-map"), { ssr: false })
@@ -67,6 +67,15 @@ type Ponencia = {
   cupo: number
   profesion_id?: number
   estado: "borrador" | "publicada" | "finalizada"
+  imagen_banner?: string
+  video_url?: string
+  galeria_fotos?: string[] | string
+  es_destacado?: boolean
+  direccion?: string
+  latitud?: number
+  longitud?: number
+  provincia_id?: number
+  ciudad_id?: number
 }
 
 type PerfilPendiente = {
@@ -93,9 +102,20 @@ type Plan = {
   activo: boolean
 }
 
+type Revista = {
+  id: number
+  titulo: string
+  descripcion: string
+  portada_url: string
+  pdf_url: string
+  fecha_publicacion: string
+  edicion: string
+  activo: boolean
+}
+
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState("conversatorios")
   const { toast } = useToast()
+  const [activeTab, setActiveTab] = useState("conversatorios")
 
   const [ponencias, setPonencias] = useState<Ponencia[]>([])
   const [perfilesPendientes, setPerfilesPendientes] = useState<PerfilPendiente[]>([])
@@ -129,100 +149,118 @@ export default function AdminDashboard() {
   const [isExternalSpeaker, setIsExternalSpeaker] = useState(false)
   const [externalSpeakerName, setExternalSpeakerName] = useState("")
 
-  useEffect(() => {
-    const formatUrl = (path: string | null | undefined) => {
-      if (!path) return null;
-      if (path.startsWith('http')) return path;
-      const baseUrl = API_URL.replace('/api', '');
-      return `${baseUrl}/${path.startsWith('/') ? path.slice(1) : path}`;
-    };
+  // Inscritos Management
+  const [selectedInscritosPonencia, setSelectedInscritosPonencia] = useState<any>(null)
+  const [isInscritosDialogOpen, setIsInscritosDialogOpen] = useState(false)
+  const [inscritosList, setInscritosList] = useState<any[]>([])
+  const [loadingInscritos, setLoadingInscritos] = useState(false)
+  const [generatingCertificates, setGeneratingCertificates] = useState(false)
 
-    const loadData = async () => {
-      const token = localStorage.getItem("auth_token")
-      if (!token) return
+  // Revistas Management
+  const [revistas, setRevistas] = useState<Revista[]>([])
+  const [loadingRevistas, setLoadingRevistas] = useState(false)
+  const [isRevistaDialogOpen, setIsRevistaDialogOpen] = useState(false)
+  const [revistaForm, setRevistaForm] = useState<Partial<Revista>>({
+    titulo: "",
+    descripcion: "",
+    portada_url: "",
+    pdf_url: "",
+    fecha_publicacion: new Date().toISOString().split("T")[0],
+    edicion: "",
+    activo: true
+  })
+  const resetRevistaForm = () => {
+    setRevistaForm({
+      titulo: "",
+      descripcion: "",
+      portada_url: "",
+      pdf_url: "",
+      fecha_publicacion: new Date().toISOString().split("T")[0],
+      edicion: "",
+      activo: true
+    })
+  }
 
-      // Load professions catalog
-      try {
-        const profs = await catalogosApi.obtenerProfesiones()
-        setProfesiones(Array.isArray(profs) ? profs : [])
-        const provs = await catalogosApi.obtenerProvincias()
-        setProvincias(Array.isArray(provs) ? provs : [])
-      } catch (e) {
-        console.warn("Could not load professions catalog:", e)
-      }
+  const loadData = async () => {
+    const token = localStorage.getItem("auth_token")
+    if (!token) return
 
-      try {
-        const stats = await adminApi.getStats(token)
-        console.log("Stats received in Admin Page:", stats); // DEBUG
-        setPonencias(stats.ponencias)
-
-        // Map backend data to frontend structure
-        const mappedProfiles = stats.profesionales.map((p: any) => {
-          // Backend states: 1=borrador, 2=pendiente, 3=aprobado, 4=rechazado
-          const getEstado = (estadoId: number): "aprobado" | "rechazado" | "pendiente" => {
-            switch (estadoId) {
-              case 3: return "aprobado";
-              case 4: return "rechazado";
-              default: return "pendiente";
-            }
-          };
-          const estado = getEstado(p.estado_id);
-
-          return {
-            id: p.usuario_id,
-            verificado: p.verificado,
-            estado,
-            nombre: p.usuario?.nombre || "Sin nombre",
-            correo: p.usuario?.correo || "",
-            telefono: p.telefono || p.usuario?.telefono || "No disponible (API)",
-            cedula: p.cedula || p.usuario?.cedula || p.usuario?.identificacion || p.usuario?.dni || p.usuario?.nro_identificacion || p.usuario?.cedula_identidad || "No disponible (API)",
-            profesion: p.profesion ? p.profesion.nombre : "Sin profesión",
-            especialidad: p.especialidad ? p.especialidad.nombre : "Sin especialidad",
-            ciudad: p.ciudad ? p.ciudad.nombre : "",
-            provincia: p.ciudad?.provincia ? p.ciudad.provincia.nombre : "",
-            tarifa: p.tarifa ? `$${p.tarifa}` : (p.tarifa_hora ? `$${p.tarifa_hora}` : "No definida"),
-            fecha_registro: p.usuario?.creado_en || new Date().toISOString(),
-            descripcion: p.descripcion || "Sin descripción",
-            documentos: p.documentos || [],
-            foto_url: formatUrl(p.foto_url || p.usuario?.foto_url || p.usuario?.foto || p.usuario?.avatar || p.usuario?.imagen_url),
-            direccion_texto: (p.calle_principal || p.direccion?.calle_principal)
-              ? `${p.calle_principal || p.direccion?.calle_principal} ${(p.referencia || p.direccion?.referencia) ? `(${p.referencia || p.direccion?.referencia})` : ""}`
-              : "No registrada",
-            link_maps: (p.lat && p.lng) || (p.latitud && p.longitud)
-              ? `https://www.google.com/maps?q=${p.lat || p.latitud},${p.lng || p.longitud}`
-              : p.direccion?.link_maps || null,
-            perfil_estado: { estado },
-          };
-        })
-        setPerfilesPendientes(mappedProfiles)
-
-        setPlanes(stats.planes)
-      } catch (error) {
-        console.error("Error loading admin data:", error)
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar los datos del panel.",
-          variant: "destructive",
-        })
-      }
-
-      // Load articles (use admin endpoint to see all states)
-      try {
-        const articlesData = await articulosApi.listarTodos(token)
-        setAdminArticulos(Array.isArray(articlesData) ? articlesData : [])
-      } catch (error: any) {
-        // Handle 404 specifically or generic error
-        if (error.message?.includes("404")) {
-          console.warn("Admin articles route not found, falling back to public list");
-        } else {
-          console.error("Error loading articles:", error);
-        }
-
-        // Fallback to public list if admin route not yet implemented/available
-        const publicArticles = await articulosApi.listarPublicados().catch(() => [])
-        setAdminArticulos(Array.isArray(publicArticles) ? publicArticles : [])
-      }
+    // Load professions catalog
+    try {
+      const profs = await catalogosApi.obtenerProfesiones()
+      setProfesiones(Array.isArray(profs) ? profs : [])
+      const provs = await catalogosApi.obtenerProvincias()
+      setProvincias(Array.isArray(provs) ? provs : [])
+    } catch (e) {
+      console.warn("Could not load professions catalog:", e)
     }
+
+    try {
+      const stats = await adminApi.getStats(token)
+      setPonencias(stats.ponencias)
+
+      // Map backend data to frontend structure
+      const mappedProfiles = stats.profesionales.map((p: any) => {
+        const getEstado = (estadoId: number): "aprobado" | "rechazado" | "pendiente" => {
+          switch (estadoId) {
+            case 3: return "aprobado";
+            case 4: return "rechazado";
+            default: return "pendiente";
+          }
+        };
+        const estado = getEstado(p.estado_id);
+
+        return {
+          id: p.usuario_id,
+          verificado: p.verificado,
+          estado,
+          nombre: p.usuario?.nombre || "Sin nombre",
+          correo: p.usuario?.correo || "",
+          telefono: p.telefono || p.usuario?.telefono || "No disponible (API)",
+          cedula: p.cedula || p.usuario?.cedula || p.usuario?.identificacion || p.usuario?.dni || p.usuario?.nro_identificacion || p.usuario?.cedula_identidad || "No disponible (API)",
+          profesion: p.profesion ? p.profesion.nombre : "Sin profesión",
+          especialidad: p.especialidad ? p.especialidad.nombre : "Sin especialidad",
+          ciudad: p.ciudad ? p.ciudad.nombre : "",
+          provincia: p.ciudad?.provincia ? p.ciudad.provincia.nombre : "",
+          tarifa: p.tarifa ? `$${p.tarifa}` : (p.tarifa_hora ? `$${p.tarifa_hora}` : "No definida"),
+          fecha_registro: p.usuario?.creado_en || new Date().toISOString(),
+          descripcion: p.descripcion || "Sin descripción",
+          documentos: p.documentos || [],
+          foto_url: formatUrl(p.foto_url || p.usuario?.foto_url || p.usuario?.foto || p.usuario?.avatar || p.usuario?.imagen_url),
+          direccion_texto: (p.calle_principal || p.direccion?.calle_principal)
+            ? `${p.calle_principal || p.direccion?.calle_principal} ${(p.referencia || p.direccion?.referencia) ? `(${p.referencia || p.direccion?.referencia})` : ""}`
+            : "No registrada",
+          link_maps: (p.lat && p.lng) || (p.latitud && p.longitud)
+            ? `https://www.google.com/maps?q=${p.lat || p.latitud},${p.lng || p.longitud}`
+            : p.direccion?.link_maps || null,
+          perfil_estado: { estado },
+        };
+      })
+      setPerfilesPendientes(mappedProfiles)
+      setPlanes(stats.planes)
+      
+      const revistasRes = await revistaApi.listarTodas(token)
+      setRevistas(revistasRes.revistas || [])
+    } catch (error) {
+      console.error("Error loading admin data:", error)
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los datos del panel.",
+        variant: "destructive",
+      })
+    }
+
+    // Load articles
+    try {
+      const articlesData = await articulosApi.listarTodos(token)
+      setAdminArticulos(Array.isArray(articlesData) ? articlesData : [])
+    } catch (error: any) {
+      const publicArticles = await articulosApi.listarPublicados().catch(() => [])
+      setAdminArticulos(Array.isArray(publicArticles) ? publicArticles : [])
+    }
+  }
+
+  useEffect(() => {
     loadData()
   }, [])
 
@@ -285,6 +323,10 @@ export default function AdminDashboard() {
     direccion: "",
     latitud: undefined as number | undefined,
     longitud: undefined as number | undefined,
+    imagen_banner: "",
+    video_url: "",
+    galeria_fotos: [] as string[],
+    es_destacado: false,
   })
 
   const [planForm, setPlanForm] = useState({
@@ -434,6 +476,10 @@ export default function AdminDashboard() {
       direccion: "",
       latitud: undefined,
       longitud: undefined,
+      imagen_banner: "",
+      video_url: "",
+      galeria_fotos: [],
+      es_destacado: false,
     })
   }
 
@@ -498,6 +544,72 @@ export default function AdminDashboard() {
     }
   }
 
+  const loadInscritos = async (ponenciaId: number) => {
+    setLoadingInscritos(true)
+    try {
+      const token = localStorage.getItem("auth_token")
+      if (!token) return
+      const res = await ponenciasApi.listarInscritos(ponenciaId, token)
+      setInscritosList(res.inscripciones || [])
+    } catch (e) {
+      console.error("Error loading inscritos:", e)
+      toast({ title: "Error", description: "No se pudieron cargar los inscritos.", variant: "destructive" })
+    } finally {
+      setLoadingInscritos(false)
+    }
+  }
+
+  const handleGenerarCertificados = async (ponenciaId: number) => {
+    if (!confirm("¿Generar certificados masivos? Se enviará un correo a todos los asistentes.")) return
+    
+    setGeneratingCertificates(true)
+    try {
+      const token = localStorage.getItem("auth_token")
+      if (!token) return
+      await ponenciasApi.generarCertificadosMasivo(ponenciaId, token)
+      toast({ 
+        title: "Proceso Iniciado", 
+        description: "La generación de certificados ha comenzado. Los usuarios los recibirán por correo." 
+      })
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message || "No se pudo iniciar el proceso.", variant: "destructive" })
+    } finally {
+      setGeneratingCertificates(false)
+    }
+  }
+
+  const handleSaveRevista = async () => {
+    const token = localStorage.getItem("auth_token")
+    if (!token) return
+    try {
+      if (editingItem) {
+        await revistaApi.actualizar(editingItem.id, revistaForm, token)
+        toast({ title: "Revista Actualizada", description: "Los cambios han sido guardados." })
+      } else {
+        await revistaApi.crear(revistaForm, token)
+        toast({ title: "Revista Creada", description: "La nueva edición ha sido publicada." })
+      }
+      setIsRevistaDialogOpen(false)
+      loadData()
+      setEditingItem(null)
+    } catch (e) {
+      toast({ title: "Error", description: "No se pudo guardar la revista.", variant: "destructive" })
+    }
+  }
+
+  const handleEliminarRevista = async (id: number) => {
+    if (!confirm("¿Estás seguro de eliminar esta revista?")) return
+    const token = localStorage.getItem("auth_token")
+    if (!token) return
+    try {
+      await revistaApi.eliminar(id, token)
+      toast({ title: "Revista Eliminada", description: "El registro ha sido borrado." })
+      loadData()
+    } catch (e) {
+      toast({ title: "Error", description: "No se pudo eliminar la revista.", variant: "destructive" })
+    }
+  }
+
   const resetPlanForm = () => {
     setPlanForm({
       nombre: "",
@@ -511,17 +623,33 @@ export default function AdminDashboard() {
 
   const handleEditConversatorio = (ponencia: Ponencia) => {
     setEditingItem(ponencia)
+    
+    // Parse galeria_fotos if it's a string
+    let galeria: string[] = []
+    if (Array.isArray(ponencia.galeria_fotos)) {
+      galeria = ponencia.galeria_fotos
+    } else if (typeof ponencia.galeria_fotos === 'string' && ponencia.galeria_fotos) {
+      try {
+        galeria = JSON.parse(ponencia.galeria_fotos)
+      } catch (e) {
+        galeria = ponencia.galeria_fotos.split(',').map(s => s.trim())
+      }
+    }
+
     setConversatorioForm({
       ...ponencia,
-      // Ensure backend time strings (HH:mm:ss) are sliced to HH:mm for input[type="time"]
       hora_inicio: ponencia.hora_inicio ? ponencia.hora_inicio.slice(0, 5) : "09:00",
       hora_fin: ponencia.hora_fin ? ponencia.hora_fin.slice(0, 5) : "11:00",
-      profesion_id: ponencia.profesion_id || 0, // Ensure it has a value
-      provincia_id: (ponencia as any).provincia_id || 0,
-      ciudad_id: (ponencia as any).ciudad_id || 0,
-      direccion: (ponencia as any).direccion || "",
-      latitud: (ponencia as any).latitud,
-      longitud: (ponencia as any).longitud,
+      profesion_id: ponencia.profesion_id || 0,
+      provincia_id: ponencia.provincia_id || 0,
+      ciudad_id: ponencia.ciudad_id || 0,
+      direccion: ponencia.direccion || "",
+      latitud: ponencia.latitud,
+      longitud: ponencia.longitud,
+      imagen_banner: ponencia.imagen_banner || "",
+      video_url: ponencia.video_url || "",
+      galeria_fotos: galeria,
+      es_destacado: !!ponencia.es_destacado,
     } as any)
 
     // Load cities if province is selected
@@ -745,6 +873,9 @@ export default function AdminDashboard() {
               </TabsTrigger>
               <TabsTrigger value="articulos" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                 Artículos
+              </TabsTrigger>
+              <TabsTrigger value="revistas" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                Revistas
               </TabsTrigger>
             </TabsList>
 
@@ -978,7 +1109,71 @@ export default function AdminDashboard() {
                               </section>
                             </div>
 
-                            {/* SECCIÓN 3: UBICACIÓN GEOGRÁFICA - 100% WIDTH BELOW */}
+                            {/* SECCIÓN 3: MULTIMEDIA PREMIUM */}
+                            <div className="xl:col-span-12 p-8 lg:p-10 border-t border-slate-100 bg-slate-50/20">
+                              <section className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-indigo-600 rounded-2xl shadow-xl shadow-indigo-900/10">
+                                      <Globe className="h-6 w-6 text-white" />
+                                    </div>
+                                    <div>
+                                      <h3 className="text-2xl font-black text-slate-900 tracking-tight">Multimedia Premium</h3>
+                                      <p className="text-slate-500 text-sm">Contenido enriquecido y destacados</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center space-x-3 bg-white px-6 py-3 rounded-2xl border border-slate-100 shadow-sm">
+                                    <Checkbox 
+                                      id="es_destacado" 
+                                      checked={conversatorioForm.es_destacado} 
+                                      onCheckedChange={(checked) => setConversatorioForm({ ...conversatorioForm, es_destacado: !!checked })} 
+                                    />
+                                    <Label htmlFor="es_destacado" className="font-bold text-slate-700 cursor-pointer">Marcar como Destacado</Label>
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                  <div className="space-y-4">
+                                    <div className="space-y-2">
+                                      <Label htmlFor="imagen_banner" className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">URL Imagen Banner</Label>
+                                      <Input 
+                                        id="imagen_banner" 
+                                        placeholder="https://ejemplo.com/banner.jpg" 
+                                        value={conversatorioForm.imagen_banner} 
+                                        onChange={(e) => setConversatorioForm({ ...conversatorioForm, imagen_banner: e.target.value })}
+                                        className="h-12 bg-white border-slate-100 rounded-xl focus:ring-2 focus:ring-indigo-600"
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label htmlFor="video_url" className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">URL Video (YouTube)</Label>
+                                      <Input 
+                                        id="video_url" 
+                                        placeholder="https://youtube.com/watch?v=..." 
+                                        value={conversatorioForm.video_url} 
+                                        onChange={(e) => setConversatorioForm({ ...conversatorioForm, video_url: e.target.value })}
+                                        className="h-12 bg-white border-slate-100 rounded-xl focus:ring-2 focus:ring-indigo-600"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <Label htmlFor="galeria_fotos" className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Galería de Fotos (URLs separadas por comas)</Label>
+                                    <Textarea 
+                                      id="galeria_fotos" 
+                                      placeholder="https://img1.jpg, https://img2.jpg..." 
+                                      value={Array.isArray(conversatorioForm.galeria_fotos) ? conversatorioForm.galeria_fotos.join(", ") : ""} 
+                                      onChange={(e) => setConversatorioForm({ ...conversatorioForm, galeria_fotos: e.target.value.split(",").map(url => url.trim()).filter(url => url !== "") })}
+                                      className="bg-white border-slate-100 rounded-2xl min-h-[105px] focus:ring-2 focus:ring-indigo-600 p-4"
+                                    />
+                                    <p className="text-[10px] text-slate-400 italic font-medium pl-1">
+                                      💡 La galería permite mostrar múltiples perspectivas del evento.
+                                    </p>
+                                  </div>
+                                </div>
+                              </section>
+                            </div>
+
+                            {/* SECCIÓN 4: UBICACIÓN GEOGRÁFICA - 100% WIDTH BELOW */}
                             <div className="xl:col-span-12 p-8 lg:p-10 border-t border-slate-100 bg-white">
                               <section className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
                                 <div className="flex items-end justify-between">
@@ -1101,6 +1296,7 @@ export default function AdminDashboard() {
                             <TableHead className="text-gray-600">Fecha</TableHead>
                             <TableHead className="text-gray-600">Precio</TableHead>
                             <TableHead className="text-gray-600">Cupo</TableHead>
+                            <TableHead className="text-gray-600">Asistentes</TableHead>
                             <TableHead className="text-gray-600">Estado</TableHead>
                             <TableHead className="text-gray-600 text-right">Acciones</TableHead>
                           </TableRow>
@@ -1112,6 +1308,20 @@ export default function AdminDashboard() {
                               <TableCell>{format(ponencia.fecha_inicio, "dd/MM/yyyy")}</TableCell>
                               <TableCell>${Number(ponencia.precio || 0).toFixed(2)}</TableCell>
                               <TableCell>{ponencia.cupo}</TableCell>
+                              <TableCell>
+                                <Button 
+                                  variant="link" 
+                                  size="sm" 
+                                  className="p-0 h-auto font-bold text-blue-600"
+                                  onClick={() => {
+                                    setSelectedInscritosPonencia(ponencia)
+                                    loadInscritos(ponencia.id)
+                                    setIsInscritosDialogOpen(true)
+                                  }}
+                                >
+                                  Ver Inscritos
+                                </Button>
+                              </TableCell>
                               <TableCell>{getEstadoBadge(ponencia.estado)}</TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-2">
@@ -1256,6 +1466,94 @@ export default function AdminDashboard() {
                               </Button>
                             </div>
                           ))}
+                        </div>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                {/* Inscritos Management Dialog */}
+                <Dialog open={isInscritosDialogOpen} onOpenChange={setIsInscritosDialogOpen}>
+                  <DialogContent className="bg-white border-gray-200 max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-3xl">
+                    <DialogHeader className="px-8 py-6 border-b bg-gray-50/50">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="p-3 bg-blue-600 rounded-xl shadow-lg shadow-blue-200">
+                            <Users className="h-6 w-6 text-white" />
+                          </div>
+                          <div>
+                            <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
+                              Participantes Inscritos
+                            </DialogTitle>
+                            <DialogDescription className="text-gray-500">
+                              Gestiona la asistencia y certificados para: <span className="font-bold text-gray-700">{selectedInscritosPonencia?.titulo}</span>
+                            </DialogDescription>
+                          </div>
+                        </div>
+                        <Button
+                          disabled={generatingCertificates || inscritosList.length === 0}
+                          onClick={() => handleGenerarCertificados(selectedInscritosPonencia.id)}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200"
+                        >
+                          <FileText className="mr-2 h-4 w-4" />
+                          {generatingCertificates ? "Generando..." : "Generar Certificados Masivo"}
+                        </Button>
+                      </div>
+                    </DialogHeader>
+
+                    <div className="flex-1 overflow-y-auto p-8">
+                      {loadingInscritos ? (
+                        <div className="flex flex-col items-center justify-center py-20 gap-4 text-gray-400">
+                          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                          <p className="text-sm font-medium">Cargando lista de participantes...</p>
+                        </div>
+                      ) : inscritosList.length === 0 ? (
+                        <div className="text-center py-20 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                          <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                          <h3 className="text-lg font-bold text-gray-700">Sin inscritos aún</h3>
+                          <p className="text-gray-500 text-sm">Nadie se ha registrado para este evento todavía.</p>
+                        </div>
+                      ) : (
+                        <div className="border rounded-2xl overflow-hidden border-gray-100 shadow-sm">
+                          <Table>
+                            <TableHeader className="bg-gray-50">
+                              <TableRow>
+                                <TableHead className="font-bold">Nombre</TableHead>
+                                <TableHead className="font-bold">Cédula</TableHead>
+                                <TableHead className="font-bold">Contacto</TableHead>
+                                <TableHead className="font-bold text-center">Asistencia</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {inscritosList.map((insc) => (
+                                <TableRow key={insc.id} className="hover:bg-gray-50 transition-colors">
+                                  <TableCell className="font-medium text-gray-900">
+                                    {insc.usuario?.nombre || "Usuario no registrado"}
+                                  </TableCell>
+                                  <TableCell className="text-gray-600 font-mono text-xs">
+                                    {insc.cedula || insc.usuario?.cedula || "N/A"}
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="text-xs">
+                                      <p className="text-gray-900">{insc.correo || insc.usuario?.correo}</p>
+                                      <p className="text-gray-400">{insc.celular || insc.usuario?.telefono || "-"}</p>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    {insc.asistencia ? (
+                                      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+                                        <CheckCircle2 className="w-3 h-3 mr-1" /> Presente
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant="outline" className="text-gray-400 border-gray-200">
+                                        Falta
+                                      </Badge>
+                                    )}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
                         </div>
                       )}
                     </div>
@@ -1719,6 +2017,142 @@ export default function AdminDashboard() {
                     ))}
                   </div>
                 )}
+              </div>
+            </TabsContent>
+            <TabsContent value="revistas" className="space-y-4">
+              <div className="animate-in fade-in duration-300">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h2 className="text-2xl font-semibold mb-1">Gestión de Revistas</h2>
+                    <p className="text-sm text-gray-500">Publica y administra las ediciones digitales</p>
+                  </div>
+                  <Dialog open={isRevistaDialogOpen} onOpenChange={setIsRevistaDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-200 transition-all duration-300 hover:scale-105"
+                        onClick={() => {
+                          setEditingItem(null)
+                          setRevistaForm({
+                            titulo: "",
+                            descripcion: "",
+                            portada_url: "",
+                            pdf_url: "",
+                            fecha_publicacion: new Date().toISOString().split("T")[0],
+                            edicion: "",
+                            activo: true
+                          })
+                        }}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Nueva Revista
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-white border-gray-200 max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle className="text-xl">{editingItem ? "Editar" : "Publicar"} Revista</DialogTitle>
+                        <DialogDescription className="text-gray-500">
+                          {editingItem ? "Modifica" : "Completa"} los detalles de la edición digital.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="rev_titulo">Título</Label>
+                            <Input id="rev_titulo" value={revistaForm.titulo} onChange={e => setRevistaForm({...revistaForm, titulo: e.target.value})} />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="rev_edicion">Edición</Label>
+                            <Input id="rev_edicion" value={revistaForm.edicion} onChange={e => setRevistaForm({...revistaForm, edicion: e.target.value})} placeholder="Ej: Marzo 2024" />
+                          </div>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="rev_desc">Descripción</Label>
+                          <Textarea id="rev_desc" value={revistaForm.descripcion} onChange={e => setRevistaForm({...revistaForm, descripcion: e.target.value})} rows={3} />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="rev_portada">URL Portada</Label>
+                          <Input id="rev_portada" value={revistaForm.portada_url} onChange={e => setRevistaForm({...revistaForm, portada_url: e.target.value})} />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="rev_pdf">URL PDF</Label>
+                          <Input id="rev_pdf" value={revistaForm.pdf_url} onChange={e => setRevistaForm({...revistaForm, pdf_url: e.target.value})} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 items-end">
+                          <div className="grid gap-2">
+                            <Label htmlFor="rev_fecha">Fecha Publicación</Label>
+                            <Input id="rev_fecha" type="date" value={revistaForm.fecha_publicacion} onChange={e => setRevistaForm({...revistaForm, fecha_publicacion: e.target.value})} />
+                          </div>
+                          <div className="flex items-center space-x-2 pb-2">
+                            <Checkbox id="rev_activo" checked={revistaForm.activo} onCheckedChange={checked => setRevistaForm({...revistaForm, activo: !!checked})} />
+                            <Label htmlFor="rev_activo">Visible al público</Label>
+                          </div>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsRevistaDialogOpen(false)}>Cancelar</Button>
+                        <Button onClick={handleSaveRevista} className="bg-blue-600 text-white">Guardar</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                <Card className="bg-white border-gray-200">
+                  <Table>
+                    <TableHeader className="bg-gray-50/50">
+                      <TableRow>
+                        <TableHead className="w-[100px]">Portada</TableHead>
+                        <TableHead>Título / Edición</TableHead>
+                        <TableHead>Fecha</TableHead>
+                        <TableHead>Estado</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {revistas.map(revista => (
+                        <TableRow key={revista.id}>
+                          <TableCell>
+                            <div className="w-12 h-16 bg-slate-100 rounded border flex items-center justify-center overflow-hidden">
+                              {revista.portada_url ? <img src={revista.portada_url} className="w-full h-full object-cover" /> : <BookOpen className="h-6 w-6 text-slate-300" />}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium text-slate-900">{revista.titulo}</div>
+                            <div className="text-xs text-slate-500">{revista.edicion}</div>
+                          </TableCell>
+                          <TableCell className="text-sm text-slate-500">{revista.fecha_publicacion}</TableCell>
+                          <TableCell>
+                            {revista.activo ? (
+                              <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">Visible</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-gray-400">Oculto</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button variant="ghost" size="icon" onClick={() => {
+                                setEditingItem(revista)
+                                setRevistaForm(revista)
+                                setIsRevistaDialogOpen(true)
+                              }}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => handleEliminarRevista(revista.id)} className="text-red-500">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {revistas.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="h-40 text-center text-slate-400">
+                            No hay revistas registradas.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </Card>
               </div>
             </TabsContent>
           </Tabs>

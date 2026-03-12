@@ -11,7 +11,8 @@ import Link from "next/link"
 import LocationMap from "@/components/shared/location-map"
 import SpeakerCard from "@/components/speaker-card"
 import { motion, AnimatePresence } from "framer-motion"
-import { ChevronDown, Video, Play, FileText, Share2 } from "lucide-react"
+import { ChevronDown, Video, Play, FileText, Share2, ImageIcon, ChevronLeft, ChevronRight } from "lucide-react"
+import { formatUrl } from "@/lib/utils"
 
 export default function ConversatorioDetallePage() {
     const params = useParams()
@@ -29,21 +30,7 @@ export default function ConversatorioDetallePage() {
     const [ponentes, setPonentes] = useState<any[]>([])
     const [activeAccordion, setActiveAccordion] = useState<string | null>("day-1")
 
-    // Mock segments for past events/rich events until API supports it
-    const segments = [
-        {
-            id: "day-1",
-            title: "Día 1: Innovación y Tendencias",
-            video_url: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Placeholder
-            speakers: ponentes.slice(0, 2)
-        },
-        {
-            id: "day-2",
-            title: "Día 2: Talleres Prácticos y Casos de Éxito",
-            video_url: null,
-            speakers: ponentes.slice(2)
-        }
-    ]
+    const [activeGalleryIndex, setActiveGalleryIndex] = useState(0)
 
     useEffect(() => {
         const load = async () => {
@@ -60,16 +47,6 @@ export default function ConversatorioDetallePage() {
                     const publicPonentes = found.PonenciaPonentes || found.ponentes || []
                     if (publicPonentes.length > 0) {
                         setPonentes(publicPonentes)
-                    } else {
-                        // Prioridad 2: Cargar ponentes vía API administrativa solo si es necesario y hay token
-                        const token = localStorage.getItem("auth_token")
-                        if (token) {
-                            try {
-                                const ponentesData = await ponentesApi.listar(token)
-                                const allPonentes = Array.isArray(ponentesData) ? ponentesData : []
-                                setPonentes(allPonentes.filter((p: any) => p.ponencia_id === id))
-                            } catch { /* silencioso para usuarios no-admin */ }
-                        }
                     }
                 } else {
                     setError("No se encontró el conversatorio.")
@@ -266,70 +243,86 @@ export default function ConversatorioDetallePage() {
                                 </div>
                             </div>
 
-                            {/* DAILY SECTIONS (Refined Minimalism) */}
-                            {!isFuturo && (
-                                <div className="mb-12 space-y-3">
-                                    <h2 className="text-2xl font-black text-gray-900 mb-6 flex items-center gap-2">
-                                        <Video className="w-6 h-6 text-emerald-600" />
-                                        Memorias
+                            {/* MULTIMEDIA PREMIUM: Video y Galería */}
+                            {(ponencia.video_url || (ponencia.galeria_fotos && ponencia.galeria_fotos.length > 0)) && (
+                                <div className="mb-12 space-y-8">
+                                    <h2 className="text-2xl font-black text-gray-900 flex items-center gap-2">
+                                        <Globe className="w-6 h-6 text-emerald-600" />
+                                        Contenido Premium
                                     </h2>
-                                    
-                                    {segments.map((segment) => (
-                                        <div key={segment.id} className="border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-                                            <button 
-                                                onClick={() => setActiveAccordion(activeAccordion === segment.id ? null : segment.id)}
-                                                className="w-full flex items-center justify-between p-6 bg-white hover:bg-gray-50 transition-colors text-left"
-                                            >
-                                                <span className="text-base font-bold text-gray-800">{segment.title}</span>
-                                                <ChevronDown className={`w-5 h-5 text-gray-300 transition-transform duration-300 ${activeAccordion === segment.id ? 'rotate-180' : ''}`} />
-                                            </button>
-                                            
-                                            <AnimatePresence>
-                                                {activeAccordion === segment.id && (
-                                                    <motion.div
-                                                        initial={{ height: 0, opacity: 0 }}
-                                                        animate={{ height: "auto", opacity: 1 }}
-                                                        exit={{ height: 0, opacity: 0 }}
-                                                        className="overflow-hidden bg-white border-t border-gray-50"
-                                                    >
-                                                        <div className="p-6 space-y-6">
-                                                            {segment.video_url && (
-                                                                <div className="aspect-video relative rounded-xl overflow-hidden bg-black shadow-lg">
-                                                                    <iframe 
-                                                                        src={segment.video_url}
-                                                                        className="absolute inset-0 w-full h-full"
-                                                                        allowFullScreen
-                                                                    />
-                                                                </div>
-                                                            )}
-                                                            
-                                                            <div className="grid md:grid-cols-2 gap-4">
-                                                                {segment.speakers.length > 0 ? (
-                                                                    segment.speakers.map((p: any) => (
-                                                                        <SpeakerCard key={p.id} ponente={p} />
-                                                                    ))
-                                                                ) : (
-                                                                    <div className="md:col-span-2 p-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                                                                         <p className="text-gray-400 text-xs font-light">Contenido en proceso de carga...</p>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </motion.div>
-                                                )}
-                                            </AnimatePresence>
+
+                                    {/* Video Embed */}
+                                    {ponencia.video_url && (
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-2 text-sm font-bold text-gray-400 uppercase tracking-widest pl-1">
+                                                <Video className="w-4 h-4" /> Video del Evento
+                                            </div>
+                                            <div className="aspect-video relative rounded-3xl overflow-hidden bg-black shadow-2xl group">
+                                                <iframe 
+                                                    src={ponencia.video_url.includes('watch?v=') ? ponencia.video_url.replace('watch?v=', 'embed/') : ponencia.video_url}
+                                                    className="absolute inset-0 w-full h-full"
+                                                    allowFullScreen
+                                                />
+                                            </div>
                                         </div>
-                                    ))}
+                                    )}
+
+                                    {/* Photo Gallery */}
+                                    {ponencia.galeria_fotos && ponencia.galeria_fotos.length > 0 && (
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-2 text-sm font-bold text-gray-400 uppercase tracking-widest pl-1">
+                                                <ImageIcon className="w-4 h-4" /> Galería de Momentos
+                                            </div>
+                                            <div className="relative group rounded-[2.5rem] overflow-hidden bg-gray-100 aspect-video md:aspect-21/9 shadow-xl">
+                                                <AnimatePresence mode="wait">
+                                                    <motion.img 
+                                                        key={activeGalleryIndex}
+                                                        initial={{ opacity: 0, scale: 1.05 }}
+                                                        animate={{ opacity: 1, scale: 1 }}
+                                                        exit={{ opacity: 0, scale: 0.95 }}
+                                                        transition={{ duration: 0.5 }}
+                                                        src={formatUrl(ponencia.galeria_fotos[activeGalleryIndex]) || ""}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </AnimatePresence>
+                                                
+                                                {ponencia.galeria_fotos.length > 1 && (
+                                                    <>
+                                                        <button 
+                                                            onClick={() => setActiveGalleryIndex((prev) => (prev > 0 ? prev - 1 : ponencia.galeria_fotos.length - 1))}
+                                                            className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 backdrop-blur-md rounded-full text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-white/20"
+                                                        >
+                                                            <ChevronLeft className="w-6 h-6" />
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => setActiveGalleryIndex((prev) => (prev < ponencia.galeria_fotos.length - 1 ? prev + 1 : 0))}
+                                                            className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 backdrop-blur-md rounded-full text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-white/20"
+                                                        >
+                                                            <ChevronRight className="w-6 h-6" />
+                                                        </button>
+                                                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+                                                            {ponencia.galeria_fotos.map((_: any, idx: number) => (
+                                                                <button 
+                                                                    key={idx}
+                                                                    onClick={() => setActiveGalleryIndex(idx)}
+                                                                    className={`w-2 h-2 rounded-full transition-all ${idx === activeGalleryIndex ? 'bg-white w-6' : 'bg-white/40'}`}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
-                            {/* Speakers Section (Only for future events if not in segments) */}
-                            {isFuturo && (
-                                <div className="mb-12">
-                                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                                        <Users className="w-8 h-8 text-emerald-600" />
-                                        Quiénes Exponen
-                                    </h2>
+                            {/* Ponentes Section */}
+                            <div className="mb-12">
+                                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                                    <Users className="w-8 h-8 text-emerald-600" />
+                                    Ponentes Invitados
+                                </h2>
 
                                     {ponentes.length > 0 ? (
                                         <div className="grid sm:grid-cols-2 gap-4">
@@ -343,8 +336,8 @@ export default function ConversatorioDetallePage() {
                                         </div>
                                     )}
                                 </div>
-                             )}
-                                         {/* Inscription Form — Refined Minimalism */}
+
+                                {/* Inscription Form — Refined Minimalism */}
                              {isFuturo && ponencia.estado === "publicada" && (
                                  <div className="bg-gradient-to-br from-emerald-50 to-blue-50 border border-emerald-100 rounded-xl p-6 md:p-8">
                                      <h2 className="text-xl md:text-2xl font-black text-gray-900 mb-2">Inscríbete</h2>

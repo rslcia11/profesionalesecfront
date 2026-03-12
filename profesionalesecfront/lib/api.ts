@@ -159,6 +159,10 @@ export interface Ponencia {
   direccion?: string
   latitud?: number
   longitud?: number
+  imagen_banner?: string
+  video_url?: string
+  galeria_fotos?: string[] | any
+  es_destacado?: boolean
 }
 
 export interface Publicidad {
@@ -173,6 +177,17 @@ export interface Publicidad {
   fecha_fin: string
   imagen_url?: string
   estado: string
+}
+
+export interface Revista {
+  id: number
+  titulo: string
+  descripcion: string
+  portada_url?: string
+  pdf_url: string
+  fecha_publicacion: string
+  edicion?: string
+  activo: boolean
 }
 
 export interface ApiResponse {
@@ -546,6 +561,33 @@ export const ponenciasApi = {
   },
   async obtener(id: number) {
     return fetchApi(`/ponencias/${id}`);
+  },
+  async listarInscritos(id: number, token: string) {
+    return fetchApi(`/ponencias/${id}/inscritos`, { headers: authHeader(token) });
+  },
+  async estadoCupos(id: number) {
+    return fetchApi(`/ponencias/${id}/estado-cupos`);
+  },
+  async generarCertificadosMasivo(id: number, token: string) {
+    return fetchApi(`/ponencias/${id}/generar-certificados-masivo`, {
+      method: "POST",
+      headers: authHeader(token),
+    });
+  }
+}
+
+// Revistas API
+export const revistaApi = {
+  async listarPublicadas() { return fetchApi("/revistas"); },
+  async listarTodas(token: string) { return fetchApi("/revistas/todas", { headers: authHeader(token) }); },
+  async crear(data: Partial<Revista>, token: string) {
+    return fetchApi("/revistas", { method: "POST", headers: authHeader(token), body: JSON.stringify(data) });
+  },
+  async actualizar(id: number, data: Partial<Revista>, token: string) {
+    return fetchApi(`/revistas/${id}`, { method: "PUT", headers: authHeader(token), body: JSON.stringify(data) });
+  },
+  async eliminar(id: number, token: string) {
+    return fetchApi(`/revistas/${id}`, { method: "DELETE", headers: authHeader(token) });
   }
 }
 
@@ -662,14 +704,19 @@ export const adminApi = {
   },
 
   async updatePonencia(id: number, data: any, token: string) {
-    if (data.estado === 'publicada') {
-      return this.publishPonencia(id, token);
-    }
-    return fetchApi(`/ponencias/${id}`, {
+    // 1. Update general fields
+    const updateRes = await fetchApi(`/ponencias/${id}`, {
       method: "PUT",
       headers: authHeader(token),
       body: JSON.stringify(data)
     });
+
+    // 2. If the user wants to publish, call the separate publish endpoint
+    if (data.estado === 'publicada') {
+      await this.publishPonencia(id, token);
+    }
+    
+    return updateRes;
   },
 
   async deletePonencia(id: number, token: string) {
