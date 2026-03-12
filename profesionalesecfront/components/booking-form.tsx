@@ -10,9 +10,10 @@ interface BookingFormProps {
         name: string
         specialty?: string
     }
+    schedule?: boolean[] | null
 }
 
-export default function BookingForm({ professional }: BookingFormProps) {
+export default function BookingForm({ professional, schedule }: BookingFormProps) {
     const [formData, setFormData] = useState({
         nombres_completos: "",
         correo: "",
@@ -24,6 +25,51 @@ export default function BookingForm({ professional }: BookingFormProps) {
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [availabilityWarning, setAvailabilityWarning] = useState<string | null>(null)
+
+    // Real-time validation
+    const validateAvailability = (fecha: string, hora: string) => {
+        if (!schedule || !fecha || !hora) {
+            setAvailabilityWarning(null)
+            return
+        }
+
+        try {
+            // Get day of week (0-6, where 0 is Sunday)
+            // Note: date input is YYYY-MM-DD. We use UTC to avoid timezone shifts for the check.
+            const dateObj = new Date(fecha + "T12:00:00Z");
+            const dayOfWeek = dateObj.getUTCDay(); // 0: Sun, 1: Mon... 6: Sat
+            
+            // Map to our matrix (0: Mon, 6: Sun)
+            const matrixDayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+            
+            // Get hour (0-23)
+            const hour = parseInt(hora.split(":")[0], 10);
+            
+            const matrixIndex = (matrixDayIndex * 24) + hour;
+            const isAvailable = schedule[matrixIndex];
+
+            if (!isAvailable) {
+                setAvailabilityWarning("El profesional no tiene disponibilidad configurada para esta hora. Puedes intentar agendar, pero es posible que la cita sea rechazada.");
+            } else {
+                setAvailabilityWarning(null)
+            }
+        } catch (err) {
+            setAvailabilityWarning(null)
+        }
+    }
+
+    const handleFieldChange = (field: string, value: string) => {
+        const newFormData = { ...formData, [field]: value }
+        setFormData(newFormData)
+        
+        if (field === "fecha_cita" || field === "hora_cita") {
+            validateAvailability(
+                field === "fecha_cita" ? value : formData.fecha_cita,
+                field === "hora_cita" ? value : formData.hora_cita
+            )
+        }
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -89,7 +135,7 @@ export default function BookingForm({ professional }: BookingFormProps) {
                     type="text"
                     required
                     value={formData.nombres_completos}
-                    onChange={(e) => setFormData({ ...formData, nombres_completos: e.target.value })}
+                    onChange={(e) => handleFieldChange("nombres_completos", e.target.value)}
                     className="w-full border-b border-gray-300 py-2 focus:border-black focus:outline-none bg-transparent"
                     placeholder="Tu nombre completo"
                 />
@@ -103,7 +149,7 @@ export default function BookingForm({ professional }: BookingFormProps) {
                         type="tel"
                         required
                         value={formData.telefono}
-                        onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                        onChange={(e) => handleFieldChange("telefono", e.target.value)}
                         className="w-full border-b border-gray-300 py-2 focus:border-black focus:outline-none bg-transparent"
                         placeholder="099..."
                         maxLength={10}
@@ -116,7 +162,7 @@ export default function BookingForm({ professional }: BookingFormProps) {
                         type="email"
                         required
                         value={formData.correo}
-                        onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
+                        onChange={(e) => handleFieldChange("correo", e.target.value)}
                         className="w-full border-b border-gray-300 py-2 focus:border-black focus:outline-none bg-transparent"
                         placeholder="tu@email.com"
                     />
@@ -131,7 +177,7 @@ export default function BookingForm({ professional }: BookingFormProps) {
                         type="date"
                         required
                         value={formData.fecha_cita}
-                        onChange={(e) => setFormData({ ...formData, fecha_cita: e.target.value })}
+                        onChange={(e) => handleFieldChange("fecha_cita", e.target.value)}
                         className="w-full border-b border-gray-300 py-2 focus:border-black focus:outline-none bg-transparent text-gray-600"
                     />
                 </div>
@@ -141,7 +187,7 @@ export default function BookingForm({ professional }: BookingFormProps) {
                         type="time"
                         required
                         value={formData.hora_cita}
-                        onChange={(e) => setFormData({ ...formData, hora_cita: e.target.value })}
+                        onChange={(e) => handleFieldChange("hora_cita", e.target.value)}
                         className="w-full border-b border-gray-300 py-2 focus:border-black focus:outline-none bg-transparent text-gray-600"
                     />
                 </div>
@@ -152,11 +198,18 @@ export default function BookingForm({ professional }: BookingFormProps) {
                 <input
                     type="text"
                     value={formData.comentario}
-                    onChange={(e) => setFormData({ ...formData, comentario: e.target.value })}
+                    onChange={(e) => handleFieldChange("comentario", e.target.value)}
                     className="w-full border border-gray-200 rounded p-4 h-32 align-top focus:border-black focus:outline-none resize-none"
                     placeholder="¿En qué podemos ayudarte?"
                 />
             </div>
+
+            {availabilityWarning && (
+                <div className="p-3 bg-amber-50 text-amber-700 rounded text-xs border border-amber-200 flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
+                    <Clock className="w-4 h-4 mt-0.5 shrink-0" />
+                    <p>{availabilityWarning}</p>
+                </div>
+            )}
 
             {/* Botón */}
             <button

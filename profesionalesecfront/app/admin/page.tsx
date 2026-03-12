@@ -169,7 +169,8 @@ export default function AdminDashboard() {
           const estado = getEstado(p.estado_id);
 
           return {
-            id: p.usuario_id,
+            id: p.id,
+            usuario_id: p.usuario_id,
             verificado: p.verificado,
             estado,
             nombre: p.usuario?.nombre || "Sin nombre",

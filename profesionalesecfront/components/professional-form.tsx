@@ -7,6 +7,7 @@ import Link from "next/link"
 import { CheckCircle2, ChevronLeft, ChevronRight, Home, Upload, Eye, EyeOff, PartyPopper, Loader2 } from "lucide-react"
 import { Check, X } from "lucide-react" // Declared the Check variable
 import { authApi, profesionalApi, catalogosApi, saveToken, usuarioApi, horariosApi } from "@/lib/api"
+import ScheduleGrid from "@/components/schedule-grid"
 
 
 import LocationMap from "@/components/shared/location-map"
@@ -98,7 +99,14 @@ export default function ProfessionalForm() {
     lat: undefined,
     lng: undefined,
     services: [],
-    matrix: Array(168).fill(false),
+    matrix: (() => {
+      const m = Array(168).fill(false);
+      for (let d = 0; d < 5; d++) {
+        for (let h = 8; h < 13; h++) m[d * 24 + h] = true;
+        for (let h = 15; h < 18; h++) m[d * 24 + h] = true;
+      }
+      return m;
+    })(),
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [touched, setTouched] = useState<FormTouched>({})
@@ -112,25 +120,6 @@ export default function ProfessionalForm() {
   const isAddressManuallyEdited = useRef(false)
   const emailInputRef = useRef<HTMLInputElement>(null)
   const cedulaInputRef = useRef<HTMLInputElement>(null)
-
-  const toggleAvailability = (dayIndex: number, hour: number) => {
-    const index = (dayIndex * 24) + hour
-    const newMatrix = [...formData.matrix]
-    newMatrix[index] = !newMatrix[index]
-    setFormData((prev) => ({ ...prev, matrix: newMatrix }))
-  }
-
-  const toggleDayAvailability = (dayIndex: number) => {
-    const startIndex = dayIndex * 24
-    const newMatrix = [...formData.matrix]
-    const allSelected = newMatrix.slice(startIndex, startIndex + 24).every(v => v)
-    
-    for (let h = 0; h < 24; h++) {
-      newMatrix[startIndex + h] = !allSelected
-    }
-    setFormData((prev) => ({ ...prev, matrix: newMatrix }))
-  }
-
   // Catalogs State
   const [professions, setProfessions] = useState<CatalogItem[]>([])
   const [specialties, setSpecialties] = useState<CatalogItem[]>([])
@@ -544,6 +533,7 @@ export default function ProfessionalForm() {
         const token = authResponse.token
 
         if (!token) throw new Error("No se recibió el token de autenticación")
+        saveToken(token) // Save token for consistency with future calls
         console.log("[v0] User registered successfully")
 
         // Step 2: Create professional profile FIRST (Independent of photo/docs in new architecture)
@@ -1012,75 +1002,58 @@ export default function ProfessionalForm() {
         )}
       </div>
 
-      {/* availability Selection Grid */}
-      <div className="pt-8 border-t border-border">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <label className="block text-lg font-bold text-foreground">Tu Disponibilidad Horaria</label>
-            <p className="text-sm text-muted-foreground">Selecciona las horas en las que estarás disponible para recibir citas.</p>
-          </div>
+      {/* Disponibilidad Horaria Section: Vertical Calendar View (Moved from Step 5) */}
+      <div className="space-y-6 pt-8 border-t border-border">
+        <div>
+          <h3 className="font-oswald text-xl font-bold text-foreground">Configura tu Horario</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Marca las horas en las que estarás disponible para recibir citas.
+          </p>
         </div>
-        
-        <div className="overflow-x-auto pb-4 custom-scrollbar bg-card/30 p-4 rounded-xl border border-border/50">
-          <div className="min-w-[850px]">
-            {/* Hours Header */}
-            <div className="grid grid-cols-[100px_repeat(24,1fr)] mb-4 sticky top-0 bg-transparent z-10">
-              <div className="text-[10px] font-bold text-muted-foreground uppercase flex items-center">Día / Hora</div>
-              {hours.map(h => (
-                <div key={h} className="text-[9px] text-center font-bold text-muted-foreground">
-                  {h.toString().padStart(2, '0')}
-                </div>
-              ))}
-            </div>
-            
-            {/* Days Grid */}
-            <div className="space-y-1.5">
-              {days.map((day, dIdx) => (
-                <div key={day} className="grid grid-cols-[100px_repeat(24,1fr)] items-center group gap-1">
-                  <button 
-                    type="button"
-                    onClick={() => toggleDayAvailability(dIdx)}
-                    className="text-xs font-bold text-left text-foreground hover:text-primary transition-colors flex flex-col"
-                  >
-                    <span>{day}</span>
-                    <span className="text-[8px] text-muted-foreground font-normal opacity-0 group-hover:opacity-100 transition-opacity">Seleccionar todo</span>
-                  </button>
-                  <div className="col-start-2 col-span-24 grid grid-cols-24 gap-1">
-                    {hours.map(h => {
-                      const isSelected = formData.matrix[(dIdx * 24) + h];
-                      return (
-                        <button
-                          key={h}
-                          type="button"
-                          onClick={() => toggleAvailability(dIdx, h)}
-                          className={`h-7 rounded-[4px] border border-border/10 transition-all duration-200 ${
-                            isSelected 
-                              ? "bg-primary shadow-[0_0_10px_rgba(var(--primary),0.3)]" 
-                              : "bg-background hover:bg-primary/20"
-                          }`}
-                          title={`${day} ${h}:00`}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+
+        <div className="flex flex-wrap gap-2 mb-4">
+          <button
+            type="button"
+            onClick={() => setFormData(prev => ({ ...prev, matrix: Array(168).fill(true) }))}
+            className="text-xs px-3 py-1.5 bg-primary/10 text-primary rounded-full font-medium hover:bg-primary/20 transition-colors"
+          >
+            Disponible Siempre
+          </button>
+          <button
+            type="button"
+            onClick={() => setFormData(prev => ({ ...prev, matrix: Array(168).fill(false) }))}
+            className="text-xs px-3 py-1.5 bg-muted text-muted-foreground rounded-full font-medium hover:bg-muted/80 transition-colors"
+          >
+            Limpiar Todo
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const newMatrix = Array(168).fill(false);
+              for (let d = 0; d < 5; d++) {
+                // Mañana: 8am a 1pm (8, 9, 10, 11, 12)
+                for (let h = 8; h < 13; h++) {
+                  newMatrix[d * 24 + h] = true;
+                }
+                // Tarde: 3pm a 6pm (15, 16, 17)
+                for (let h = 15; h < 18; h++) {
+                  newMatrix[d * 24 + h] = true;
+                }
+              }
+              setFormData(prev => ({ ...prev, matrix: newMatrix }));
+            }}
+            className="text-xs px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-full font-medium hover:bg-indigo-100 transition-colors"
+          >
+            Lunes a Viernes (8am - 1pm y 3pm - 6pm)
+          </button>
         </div>
-        
-        <div className="mt-4 flex flex-wrap items-center gap-6 text-xs text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <div className="size-3 bg-primary rounded-sm shadow-sm" />
-            <span>Horas Disponibles</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="size-3 bg-background border border-border/50 rounded-sm" />
-            <span>Horas No Disponibles</span>
-          </div>
-          <p className="italic text-primary/80">Tip: Haz clic en el nombre del día para marcar las 24 horas rápidamente.</p>
-        </div>
+
+        <ScheduleGrid 
+          matrix={formData.matrix} 
+          onChange={(newMatrix) => setFormData(prev => ({ ...prev, matrix: newMatrix }))} 
+        />
       </div>
+
     </div>
   )
 
@@ -1299,48 +1272,60 @@ export default function ProfessionalForm() {
 
   const renderPreferences = () => (
     <div className="space-y-6">
-      <h2 className="font-oswald text-2xl font-bold text-foreground mb-8">Preferencias y Privacidad</h2>
-      <div className="space-y-4">
-        <label className="flex items-center gap-3 p-4 border border-border rounded-lg hover:bg-primary/5 transition-colors cursor-pointer">
-          <input
-            type="checkbox"
-            name="showPhone"
-            checked={formData.showPhone}
-            onChange={handleInputChange}
-            className="w-4 h-4 rounded border-border bg-card cursor-pointer"
-          />
-          <div>
-            <p className="font-medium text-foreground">Mostrar teléfono en perfil público</p>
-            <p className="text-sm text-muted-foreground">Los clientes podrán contactarte directamente</p>
-          </div>
-        </label>
-        <label className="flex items-center gap-3 p-4 border border-border rounded-lg hover:bg-primary/5 transition-colors cursor-pointer">
-          <input
-            type="checkbox"
-            name="showEmail"
-            checked={formData.showEmail}
-            onChange={handleInputChange}
-            className="w-4 h-4 rounded border-border bg-card cursor-pointer"
-          />
-          <div>
-            <p className="font-medium text-foreground">Mostrar correo en perfil público</p>
-            <p className="text-sm text-muted-foreground">Tu correo será visible para otros usuarios</p>
-          </div>
-        </label>
-      </div>
       <div>
-        <label className="block text-sm font-medium text-muted-foreground mb-2">
-          Palabras Clave (Tags) * <span className="text-red-500 font-normal text-xs ml-1">(Las usamos para que te encuentren más fácilmente en el buscador)</span>
-          <br />
-          <span className="text-gray-500 font-normal text-xs ml-1">Te recomendamos usar palabras clave relacionadas con tu especialidad, servicios y experiencia.</span>
+        <h2 className="font-oswald text-2xl font-bold text-foreground mb-4">Preferencias Finales</h2>
+        <p className="text-muted-foreground">Configura los últimos detalles para tu perfil profesional.</p>
+      </div>
+
+      <div className="space-y-6 pt-8 border-t border-border">
+        <div>
+          <h3 className="font-oswald text-xl font-bold text-foreground">Privacidad y Contacto</h3>
+          <p className="text-sm text-muted-foreground mt-1">Controla qué información es visible en tu perfil público.</p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <label className="flex items-center gap-3 p-4 bg-card border border-border rounded-xl hover:bg-secondary/5 transition-all cursor-pointer group shadow-sm">
+            <input
+              type="checkbox"
+              name="showPhone"
+              checked={formData.showPhone}
+              onChange={handleInputChange}
+              className="size-5 rounded border-border bg-card text-primary focus:ring-primary/50 cursor-pointer"
+            />
+            <div>
+              <p className="font-bold text-sm text-foreground group-hover:text-primary transition-colors">Mostrar teléfono</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">Visible para clientes interesados</p>
+            </div>
+          </label>
+
+          <label className="flex items-center gap-3 p-4 bg-card border border-border rounded-xl hover:bg-secondary/5 transition-all cursor-pointer group shadow-sm">
+            <input
+              type="checkbox"
+              name="showEmail"
+              checked={formData.showEmail}
+              onChange={handleInputChange}
+              className="size-5 rounded border-border bg-card text-primary focus:ring-primary/50 cursor-pointer"
+            />
+            <div>
+              <p className="font-bold text-sm text-foreground group-hover:text-primary transition-colors">Mostrar correo</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">Visible para contacto directo</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div className="pt-8 border-t border-border">
+        <label className="block text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+          <span>Palabras Clave (Tags)</span>
+          <span className="text-xs font-normal text-muted-foreground">(Pro Tip  ;) Usa palabras clave para que tu perfil sea encontrado por los clientes)</span>
         </label>
         
-        <div className={`w-full min-h-[50px] px-3 py-2 bg-card border ${errors.tags ? "border-red-400" : "border-border"} rounded-lg text-foreground focus-within:ring-2 focus-within:ring-primary flex flex-wrap gap-2 items-center`}>
+        <div className={`w-full min-h-[50px] px-3 py-2 bg-card border ${errors.tags ? "border-red-400" : "border-border/60"} rounded-xl text-foreground focus-within:ring-2 focus-within:ring-green-500/30 flex flex-wrap gap-2 items-center transition-all shadow-sm`}>
           {formData.tags.split(',').filter(Boolean).map((tag, index) => (
-            <span key={index} className="flex items-center gap-1.5 bg-green-100/60 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+            <span key={index} className="flex items-center gap-1.5 bg-green-500/10 text-green-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-green-500/20 shadow-sm group">
               <button
                 type="button"
-                className="hover:bg-green-200/50 rounded-full p-0.5 transition-colors focus:outline-none"
+                className="hover:bg-green-500/20 rounded-full p-0.5 transition-colors focus:outline-none"
                 onClick={() => {
                   const updatedTags = formData.tags.split(',').filter(Boolean).filter((_, i) => i !== index).join(',');
                   setFormData(prev => ({ ...prev, tags: updatedTags }));
@@ -1348,9 +1333,9 @@ export default function ProfessionalForm() {
                   validateField("tags", updatedTags)
                 }}
               >
-                <X size={14} className="text-green-700" />
+                <X size={14} className="group-hover:scale-110 transition-transform" />
               </button>
-              <span>{tag}</span>
+              <span className="tracking-wide"> {tag} </span>
             </span>
           ))}
 
@@ -1365,7 +1350,6 @@ export default function ProfessionalForm() {
               if (e.key === ' ' || e.key === 'Enter') {
                 e.preventDefault();
                 const newTag = tagInput.trim();
-                // Avoid empty tags or duplicates
                 if (newTag) {
                   const currentList = formData.tags.split(',').filter(Boolean);
                   if (!currentList.includes(newTag)) {
@@ -1378,7 +1362,6 @@ export default function ProfessionalForm() {
                   setTagInput("");
                 }
               } else if (e.key === 'Backspace' && tagInput === '') {
-                // Feature to remove last tag automatically if backspace on empty input
                 e.preventDefault();
                 const currentList = formData.tags.split(',').filter(Boolean);
                 if (currentList.length > 0) {
@@ -1390,15 +1373,16 @@ export default function ProfessionalForm() {
                 }
               }
             }}
-            placeholder="Escribe una palabra y presiona espacio"
-            className="flex-1 min-w-[120px] bg-transparent focus:outline-none placeholder:text-muted-foreground/50 text-foreground"
+            placeholder="Escribe y presiona espacio"
+            className="flex-1 min-w-[150px] bg-transparent focus:outline-none placeholder:text-muted-foreground/40 text-foreground text-sm"
           />
         </div>
-        {errors.tags && touched.tags && <p className="text-red-400 text-sm mt-1">{errors.tags}</p>}
-        <p className="text-xs text-muted-foreground mt-2">Usa espacio para agregar una nueva etiqueta</p>
+        {errors.tags && touched.tags && <p className="text-red-400 text-xs mt-1 font-medium">{errors.tags}</p>}
+        <p className="text-[10px] text-muted-foreground mt-2 uppercase tracking-tight font-bold opacity-60">Sugerencia: Usa términos como "Certificado", "A domicilio", "Atención rápida".</p>
       </div>
     </div>
   )
+
 
   return (
     <div className="min-h-screen bg-background py-12 px-4">
