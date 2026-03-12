@@ -6,10 +6,11 @@ import Footer from "@/components/footer"
 import { Calendar, MapPin, Users, Award, MessageSquare, DollarSign, ArrowRight, BookOpen, Clock } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ponenciasApi } from "@/lib/api"
+import { ponenciasApi, revistaApi } from "@/lib/api"
 import CountdownTimer from "@/components/countdown-timer"
 import MagazineCard from "@/components/magazine-card"
 import { motion } from "framer-motion"
+import { formatUrl } from "@/lib/utils"
 
 export default function ConversatoriosPage() {
   const [selectedRole, setSelectedRole] = useState<"ponente" | "asistente" | "patrocinador" | null>(null)
@@ -17,25 +18,7 @@ export default function ConversatoriosPage() {
   const [realizados, setRealizados] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   
-  // Mock magazines until API is ready
-  const magazines = [
-    {
-      id: 1,
-      titulo: "Innovación y Sostenibilidad en la Práctica Profesional",
-      descripcion: "Explora los avances más recientes en ética profesional y nuevas tecnologías aplicadas.",
-      pdf_url: "#",
-      fecha_publicacion: "2026-01-15",
-      edicion: "03"
-    },
-    {
-      id: 2,
-      titulo: "El Futuro del Trabajo: Un Enfoque Multidisciplinario",
-      descripcion: "Compendio de investigaciones sobre teletrabajo y salud mental.",
-      pdf_url: "#",
-      fecha_publicacion: "2025-11-20",
-      edicion: "02"
-    }
-  ]
+  const [revistas, setRevistas] = useState<any[]>([])
 
   useEffect(() => {
     const loadData = async () => {
@@ -58,6 +41,9 @@ export default function ConversatoriosPage() {
           setProximos(prox)
           setRealizados(real)
         }
+
+        const magazinesRes = await revistaApi.listarPublicadas()
+        setRevistas(magazinesRes.revistas || [])
       } catch (error) {
         console.error("Error loading ponencias:", error)
       } finally {
@@ -219,7 +205,7 @@ export default function ConversatoriosPage() {
                   <div className="aspect-video relative bg-black flex items-center justify-center overflow-hidden">
                     <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent z-10" />
                     <img 
-                       src="/images/event-placeholder.jpg" 
+                       src={formatUrl(evento.imagen_banner) || "/images/event-placeholder.jpg"} 
                        alt={evento.titulo}
                        className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700"
                     />
@@ -286,10 +272,14 @@ export default function ConversatoriosPage() {
                      </Button>
                   </div>
                   
-                  <div className="lg:col-span-3 grid grid-cols-2 gap-4">
-                     {magazines.map((mag) => (
+                  <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                     {revistas.length > 0 ? revistas.slice(0, 2).map((mag) => (
                         <MagazineCard key={mag.id} magazine={mag} />
-                     ))}
+                     )) : (
+                        <div className="col-span-full p-8 text-center bg-white/5 rounded-2xl border border-dashed border-white/10">
+                           <p className="text-gray-500 text-xs italic font-light">Cargando ediciones recientes...</p>
+                        </div>
+                     )}
                   </div>
                </div>
             </div>

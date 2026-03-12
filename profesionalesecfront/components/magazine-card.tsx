@@ -2,6 +2,7 @@
 
 import { BookOpen, ExternalLink, Download } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { formatUrl } from "@/lib/utils"
 
 interface MagazineCardProps {
   magazine: {
@@ -22,7 +23,7 @@ export default function MagazineCard({ magazine }: MagazineCardProps) {
       <div className="aspect-3/4 overflow-hidden bg-gray-100 relative">
         {magazine.portada_url ? (
           <img
-            src={magazine.portada_url}
+            src={formatUrl(magazine.portada_url) || "/placeholder.jpg"}
             alt={magazine.titulo}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
           />
@@ -39,7 +40,7 @@ export default function MagazineCard({ magazine }: MagazineCardProps) {
         {/* Overlay on hover */}
         <div className="absolute inset-0 bg-emerald-600/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4">
            <button 
-             onClick={() => window.open(magazine.pdf_url, '_blank')}
+             onClick={() => window.open(formatUrl(magazine.pdf_url) || "#", '_blank')}
              className="p-3 bg-white rounded-full text-emerald-600 hover:scale-110 transition-transform"
            >
               <ExternalLink className="w-6 h-6" />
