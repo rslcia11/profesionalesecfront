@@ -859,10 +859,16 @@ export const horariosApi = {
   },
 
   async actualizar(data: { perfilId: number; matriz: boolean[] }, token: string) {
+    if (!data.matriz || data.matriz.length !== 168) {
+      throw new Error(`La matriz de horario debe tener exactamente 168 elementos (7x24). Recibidos: ${data.matriz?.length || 0}`);
+    }
     return fetchApi(`/horarios/actualizar`, {
       method: "POST",
       headers: authHeader(token),
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        perfilId: Number(data.perfilId),
+        matriz: data.matriz
+      }),
     });
   },
 

@@ -210,45 +210,44 @@ export default function AdminDashboard() {
         };
         const estado = getEstado(p.estado_id);
 
-        return {
-          id: p.usuario_id,
-          verificado: p.verificado,
-          estado,
-          nombre: p.usuario?.nombre || "Sin nombre",
-          correo: p.usuario?.correo || "",
-          telefono: p.telefono || p.usuario?.telefono || "No disponible (API)",
-          cedula: p.cedula || p.usuario?.cedula || p.usuario?.identificacion || p.usuario?.dni || p.usuario?.nro_identificacion || p.usuario?.cedula_identidad || "No disponible (API)",
-          profesion: p.profesion ? p.profesion.nombre : "Sin profesión",
-          especialidad: p.especialidad ? p.especialidad.nombre : "Sin especialidad",
-          ciudad: p.ciudad ? p.ciudad.nombre : "",
-          provincia: p.ciudad?.provincia ? p.ciudad.provincia.nombre : "",
-          tarifa: p.tarifa ? `$${p.tarifa}` : (p.tarifa_hora ? `$${p.tarifa_hora}` : "No definida"),
-          fecha_registro: p.usuario?.creado_en || new Date().toISOString(),
-          descripcion: p.descripcion || "Sin descripción",
-          documentos: p.documentos || [],
-          foto_url: formatUrl(p.foto_url || p.usuario?.foto_url || p.usuario?.foto || p.usuario?.avatar || p.usuario?.imagen_url),
-          direccion_texto: (p.calle_principal || p.direccion?.calle_principal)
-            ? `${p.calle_principal || p.direccion?.calle_principal} ${(p.referencia || p.direccion?.referencia) ? `(${p.referencia || p.direccion?.referencia})` : ""}`
-            : "No registrada",
-          link_maps: (p.lat && p.lng) || (p.latitud && p.longitud)
-            ? `https://www.google.com/maps?q=${p.lat || p.latitud},${p.lng || p.longitud}`
-            : p.direccion?.link_maps || null,
-          perfil_estado: { estado },
-        };
-      })
-      setPerfilesPendientes(mappedProfiles)
-      setPlanes(stats.planes)
-      
-      const revistasRes = await revistaApi.listarTodas(token)
-      setRevistas(revistasRes.revistas || [])
-    } catch (error) {
-      console.error("Error loading admin data:", error)
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los datos del panel.",
-        variant: "destructive",
-      })
-    }
+          return {
+            id: p.id,
+            usuario_id: p.usuario_id,
+            verificado: p.verificado,
+            estado,
+            nombre: p.usuario?.nombre || "Sin nombre",
+            correo: p.usuario?.correo || "",
+            telefono: p.telefono || p.usuario?.telefono || "No disponible (API)",
+            cedula: p.cedula || p.usuario?.cedula || p.usuario?.identificacion || p.usuario?.dni || p.usuario?.nro_identificacion || p.usuario?.cedula_identidad || "No disponible (API)",
+            profesion: p.profesion ? p.profesion.nombre : "Sin profesión",
+            especialidad: p.especialidad ? p.especialidad.nombre : "Sin especialidad",
+            ciudad: p.ciudad ? p.ciudad.nombre : "",
+            provincia: p.ciudad?.provincia ? p.ciudad.provincia.nombre : "",
+            tarifa: p.tarifa ? `$${p.tarifa}` : (p.tarifa_hora ? `$${p.tarifa_hora}` : "No definida"),
+            fecha_registro: p.usuario?.creado_en || new Date().toISOString(),
+            descripcion: p.descripcion || "Sin descripción",
+            documentos: p.documentos || [],
+            foto_url: formatUrl(p.foto_url || p.usuario?.foto_url || p.usuario?.foto || p.usuario?.avatar || p.usuario?.imagen_url),
+            direccion_texto: (p.calle_principal || p.direccion?.calle_principal)
+              ? `${p.calle_principal || p.direccion?.calle_principal} ${(p.referencia || p.direccion?.referencia) ? `(${p.referencia || p.direccion?.referencia})` : ""}`
+              : "No registrada",
+            link_maps: (p.lat && p.lng) || (p.latitud && p.longitud)
+              ? `https://www.google.com/maps?q=${p.lat || p.latitud},${p.lng || p.longitud}`
+              : p.direccion?.link_maps || null,
+            perfil_estado: { estado },
+          };
+        })
+        setPerfilesPendientes(mappedProfiles)
+
+        setPlanes(stats.planes)
+      } catch (error) {
+        console.error("Error loading admin data:", error)
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los datos del panel.",
+          variant: "destructive",
+        })
+      }
 
     // Load articles
     try {

@@ -2,22 +2,20 @@
 
 import { useEffect, useState } from "react"
 import { profesionalApi, horariosApi } from "@/lib/api"
-import { MapPin, Phone, Mail, Facebook, Instagram, Twitter } from "lucide-react"
+import { MapPin, Phone, Mail, Facebook, Instagram, Twitter, Check } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import BookingForm from "@/components/booking-form"
 import LocationMap from "@/components/shared/location-map"
+import ScheduleGrid from "@/components/schedule-grid"
 
 export default function ProfessionalProfile() {
     const params = useParams()
     const [professional, setProfessional] = useState<any>(null)
     const [schedule, setSchedule] = useState<boolean[] | null>(null)
     const [loading, setLoading] = useState(true)
-
-    const days = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
-    const hours = Array.from({ length: 24 }, (_, i) => i)
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -138,17 +136,16 @@ export default function ProfessionalProfile() {
                 </div>
 
                 {/* MIDDLE SECTION: Form, Bio & Contact */}
-                <div className="flex flex-col md:flex-row gap-16 mb-20 border-t border-gray-100 pt-16">
-
-                    {/* LEFT: Agenda Form */}
+                <div className="flex flex-col md:flex-row gap-16 mb-20 border-t border-gray-100 pt-16">                    {/* LEFT: Agenda Form */}
                     <div className="w-full md:w-1/2">
                         <h3 className="text-xl font-bold uppercase text-gray-800 mb-8 border-b pb-4">AGENDA UNA CITA</h3>
                         <BookingForm
                             professional={{
-                                id: professional.usuario_id,
+                                id: professional.id, // Fixed: use perfil_id instead of usuario_id
                                 name: name,
                                 specialty: specialty
                             }}
+                            schedule={schedule}
                         />
                     </div>
 
@@ -183,53 +180,14 @@ export default function ProfessionalProfile() {
                         {schedule && (
                             <div className="mt-12">
                                 <h3 className="text-xl font-bold uppercase text-gray-800 mb-6 border-b pb-4">DISPONIBILIDAD HORARIA</h3>
-                                <div className="space-y-4">
-                                    <div className="overflow-x-auto pb-4 custom-scrollbar">
-                                        <div className="min-w-[700px]">
-                                            <div className="grid grid-cols-[80px_repeat(24,1fr)] mb-3">
-                                                <div className="text-[10px] font-bold text-gray-400 uppercase">H</div>
-                                                {hours.map(h => (
-                                                    <div key={h} className="text-[9px] text-center font-bold text-gray-400">
-                                                        {h.toString().padStart(2, '0')}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            <div className="space-y-1">
-                                                {days.map((day, dIdx) => (
-                                                    <div key={day} className="grid grid-cols-[80px_repeat(24,1fr)] items-center gap-1">
-                                                        <div className="text-[11px] font-bold text-gray-700">{day}</div>
-                                                        <div className="col-start-2 col-span-24 grid grid-cols-24 gap-1">
-                                                            {hours.map(h => {
-                                                                const available = schedule[(dIdx * 24) + h];
-                                                                return (
-                                                                    <div
-                                                                        key={h}
-                                                                        className={`h-5 rounded-sm border border-gray-50 ${
-                                                                            available ? "bg-black" : "bg-gray-100"
-                                                                        }`}
-                                                                        title={`${day} ${h}:00 - ${available ? 'Disponible' : 'Cerrado'}`}
-                                                                    />
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-4 text-[10px] text-gray-500 font-medium">
-                                        <div className="flex items-center gap-1.5">
-                                            <div className="w-3 h-3 bg-black rounded-sm" />
-                                            <span>Disponible</span>
-                                        </div>
-                                        <div className="flex items-center gap-1.5">
-                                            <div className="w-3 h-3 bg-gray-100 rounded-sm" />
-                                            <span>No disponible</span>
-                                        </div>
-                                    </div>
-                                </div>
+                                <ScheduleGrid 
+                                    matrix={schedule} 
+                                    readOnly={true} 
+                                />
                             </div>
                         )}
+
+
 
                         {/* Contact Info (Moved here since Map is gone) */}
                         {/* Ubicación y Mapa */}

@@ -25,7 +25,7 @@ import {
   Plus,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { citasApi, usuarioApi, articulosApi, type Articulo } from "@/lib/api"
+import { citasApi, usuarioApi, articulosApi, profesionalApi, type Articulo } from "@/lib/api"
 import ArticleFormModal from "@/components/article-form-modal"
 import ServicesManager from "@/components/services-manager"
 import { format } from "date-fns"
@@ -41,6 +41,7 @@ export default function ProfesionalDashboard() {
   const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false)
   const [selectedCita, setSelectedCita] = useState<any>(null)
   const [user, setUser] = useState<any>(null)
+  const [perfil, setPerfil] = useState<any>(null)
 
   // Articles state
   const [articulos, setArticulos] = useState<Articulo[]>([])
@@ -58,12 +59,17 @@ export default function ProfesionalDashboard() {
     try {
       setLoading(true)
       // Run promises in parallel for better performance
-      const [citasData, userData] = await Promise.all([
+      const [citasData, userData, perfilData] = await Promise.all([
         citasApi.listar(token),
-        usuarioApi.obtenerMiPerfil(token).catch(() => null)
+        usuarioApi.obtenerMiPerfil(token).catch(() => null),
+        profesionalApi.obtenerMiPerfil(token).catch(() => null)
       ])
 
       setUser(userData)
+      
+      // Handle Multi-Profile: selecting the first profile as active for the dashboard
+      const activePerfil = Array.isArray(perfilData) ? perfilData[0] : (perfilData?.perfil || perfilData);
+      setPerfil(activePerfil)
 
       // Map backend data to frontend structure because backend returns raw IDs and missing relations
       const mappedCitas = (Array.isArray(citasData) ? citasData : []).map((c: any) => ({
@@ -469,9 +475,17 @@ export default function ProfesionalDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Tab: Servicios */}
           <TabsContent value="servicios" className="space-y-6">
-            <ServicesManager />
+            {perfil ? (
+              <ServicesManager perfilId={perfil.id} />
+            ) : (
+              <Card className="bg-white border-gray-200">
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
+                  <p className="text-gray-500">Cargando perfil profesional...</p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
 

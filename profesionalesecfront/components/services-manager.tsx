@@ -23,7 +23,11 @@ interface Servicio {
     descripcion: string
 }
 
-export default function ServicesManager() {
+interface ServicesManagerProps {
+    perfilId: number
+}
+
+export default function ServicesManager({ perfilId }: ServicesManagerProps) {
     const [servicios, setServicios] = useState<Servicio[]>([])
     const [loading, setLoading] = useState(true)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -36,11 +40,11 @@ export default function ServicesManager() {
 
     const loadServicios = useCallback(async () => {
         const token = localStorage.getItem("auth_token")
-        if (!token) return
+        if (!token || !perfilId) return
 
         try {
             setLoading(true)
-            const data = await serviciosApi.listarMios(token)
+            const data = await serviciosApi.listarMios(perfilId, token)
             setServicios(Array.isArray(data) ? data : [])
         } catch (error) {
             console.error("Error loading services:", error)
@@ -73,7 +77,7 @@ export default function ServicesManager() {
                 await serviciosApi.actualizar(editingService.servicio_id, formData, token)
                 toast({ title: "Servicio actualizado", description: "Tu servicio ha sido actualizado." })
             } else {
-                await serviciosApi.crear(formData, token)
+                await serviciosApi.crear({ ...formData, perfilId }, token)
                 toast({ title: "Servicio creado", description: "Nuevo servicio agregado a tu perfil." })
             }
             setIsDialogOpen(false)
