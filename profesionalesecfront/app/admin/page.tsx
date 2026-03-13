@@ -1,4 +1,5 @@
 "use client"
+import { useRouter } from "next/navigation"
 
 import { useState, useEffect, useMemo } from "react"
 import Header from "@/components/header"
@@ -50,16 +51,18 @@ import {
   Instagram,
   Linkedin,
   Twitter,
-  Music
+  Music,
+  Upload
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { useToast } from "@/hooks/use-toast"
 import { formatUrl, cn } from "@/lib/utils"
-import { adminApi, catalogosApi, ponenciasApi, profesionalApi, articulosApi, API_URL, ponentesApi, revistaApi, type Articulo } from "@/lib/api"
-import ArticleFormModal from "@/components/article-form-modal"
+import { adminApi, catalogosApi, ponenciasApi, profesionalApi, articulosApi, API_URL, ponentesApi, revistaApi, multimediaApi, type Articulo } from "@/lib/api"
 import dynamic from "next/dynamic"
 const LocationMap = dynamic(() => import("@/components/shared/location-map"), { ssr: false })
+import { useAnimatedConfirm, AnimatedConfirm } from "@/components/shared/animated-confirm"
+import ArticleFormModal from "@/components/article-form-modal"
 
 type Ponencia = {
   id: number
@@ -120,7 +123,10 @@ type Revista = {
 }
 
 export default function AdminDashboard() {
+  const router = useRouter()
   const { toast } = useToast()
+  const { confirm: animatedConfirm, isOpen: isConfirmOpen, options: confirmOptions, handleConfirm: onConfirm, handleCancel: onCancel } = useAnimatedConfirm()
+
   const [activeTab, setActiveTab] = useState("conversatorios")
 
   const [ponencias, setPonencias] = useState<Ponencia[]>([])
@@ -271,7 +277,7 @@ export default function AdminDashboard() {
   }, [])
 
   // Dialog states
-  const [isConversatorioDialogOpen, setIsConversatorioDialogOpen] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const [isPlanDialogOpen, setIsPlanDialogOpen] = useState(false)
   const [isProfileDetailsOpen, setIsProfileDetailsOpen] = useState(false) // Nuevo estado para detalles
   const [selectedProfile, setSelectedProfile] = useState<any>(null) // Nuevo estado para perfil seleccionado
@@ -313,28 +319,6 @@ export default function AdminDashboard() {
     return result
   }, [perfilesPendientes, filterStatus])
 
-  const [conversatorioForm, setConversatorioForm] = useState({
-    titulo: "",
-    descripcion: "",
-    fecha_inicio: new Date(),
-    hora_inicio: "09:00",
-    fecha_fin: new Date(),
-    hora_fin: "11:00",
-    precio: 0,
-    cupo: 0,
-    profesion_id: 0,
-    estado: "borrador" as "borrador" | "publicada" | "finalizada",
-    provincia_id: 0,
-    ciudad_id: 0,
-    direccion: "",
-    latitud: undefined as number | undefined,
-    longitud: undefined as number | undefined,
-    imagen_banner: "",
-    video_url: "",
-    galeria_fotos: [] as string[],
-    es_destacado: false,
-  })
-
   const [planForm, setPlanForm] = useState({
     nombre: "",
     descripcion: "",
@@ -343,27 +327,6 @@ export default function AdminDashboard() {
     duracion_dias: 30,
     activo: true,
   })
-
-  // Location helpers for Conversatorio Form
-  const handleLocationChange = (lat: number, lng: number) => {
-    setConversatorioForm((prev) => ({ ...prev, latitud: lat, longitud: lng }))
-  }
-
-  const handleProvinciaChange = async (provinciaId: string) => {
-    const id = Number(provinciaId)
-    setConversatorioForm((prev) => ({ ...prev, provincia_id: id, ciudad_id: 0 }))
-    setCiudades([])
-    if (id) {
-      try {
-        const res = await catalogosApi.obtenerCiudades(id)
-        // Filter logic similar to ProfessionalForm
-        const filtered = Array.isArray(res) ? res.filter((c: any) => c.provincia_id === id || (c.provincia && c.provincia.id === id)) : []
-        setCiudades(filtered)
-      } catch (error) {
-        console.error("Error loading cities:", error)
-      }
-    }
-  }
 
   const aprobarPerfil = async (id: number) => {
     setProcessingProfiles((prev) => ({ ...prev, [id]: "approving" }))
@@ -414,39 +377,6 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleSaveConversatorio = async () => {
-    if (!conversatorioForm.titulo || !conversatorioForm.descripcion) {
-      toast({ title: "Error", description: "Completa campos obligatorios", variant: "destructive" })
-      return
-    }
-
-    const token = localStorage.getItem("auth_token")
-    if (!token) return
-
-    try {
-      if (editingItem) {
-        await adminApi.updatePonencia(editingItem.id, conversatorioForm, token)
-        setPonencias(
-          ponencias.map((p) => (p.id === editingItem.id ? { ...conversatorioForm, id: editingItem.id } : p)),
-        )
-        toast({ title: "Conversatorio Actualizado", description: "Actualización exitosa" })
-      } else {
-        const res = await adminApi.createPonencia({ ...conversatorioForm, profesion_id: conversatorioForm.profesion_id || 1 }, token)
-        setPonencias([...ponencias, res.ponencia])
-        toast({ title: "Conversatorio Creado", description: "Creación exitosa" })
-      }
-      setIsConversatorioDialogOpen(false)
-      setEditingItem(null)
-      resetConversatorioForm()
-    } catch (e: any) {
-      toast({
-        title: editingItem ? "Error al actualizar" : "Error al crear",
-        description: e.message || "Error desconocido",
-        variant: "destructive"
-      })
-    }
-  }
-
   const handleSavePlan = async () => {
     if (!planForm.nombre) return
 
@@ -469,30 +399,6 @@ export default function AdminDashboard() {
     } catch (e) {
       toast({ title: "Error", description: "Error al guardar plan", variant: "destructive" })
     }
-  }
-
-  const resetConversatorioForm = () => {
-    setConversatorioForm({
-      titulo: "",
-      descripcion: "",
-      fecha_inicio: new Date(),
-      hora_inicio: "09:00",
-      fecha_fin: new Date(),
-      hora_fin: "11:00",
-      precio: 0,
-      cupo: 0,
-      profesion_id: 0,
-      estado: "borrador",
-      provincia_id: 0,
-      ciudad_id: 0,
-      direccion: "",
-      latitud: undefined,
-      longitud: undefined,
-      imagen_banner: "",
-      video_url: "",
-      galeria_fotos: [],
-      es_destacado: false,
-    })
   }
 
   // ---- Ponentes Management ----
@@ -572,7 +478,13 @@ export default function AdminDashboard() {
   }
 
   const handleGenerarCertificados = async (ponenciaId: number) => {
-    if (!confirm("¿Generar certificados masivos? Se enviará un correo a todos los asistentes.")) return
+    const ok = await animatedConfirm({
+      title: "Generar Certificados",
+      message: "¿Generar certificados masivos? Se enviará un correo a todos los asistentes.",
+      confirmText: "Generar",
+      variant: "info"
+    })
+    if (!ok) return
     
     setGeneratingCertificates(true)
     try {
@@ -610,7 +522,13 @@ export default function AdminDashboard() {
   }
 
   const handleEliminarRevista = async (id: number) => {
-    if (!confirm("¿Estás seguro de eliminar esta revista?")) return
+    const ok = await animatedConfirm({
+      title: "Eliminar Revista",
+      message: "¿Estás seguro de eliminar esta revista? Esta acción no se puede deshacer.",
+      confirmText: "Eliminar",
+      variant: "danger"
+    })
+    if (!ok) return
     const token = localStorage.getItem("auth_token")
     if (!token) return
     try {
@@ -633,55 +551,31 @@ export default function AdminDashboard() {
     })
   }
 
-  const handleEditConversatorio = (ponencia: Ponencia) => {
-    setEditingItem(ponencia)
-    
-    // Parse galeria_fotos if it's a string
-    let galeria: string[] = []
-    if (Array.isArray(ponencia.galeria_fotos)) {
-      galeria = ponencia.galeria_fotos
-    } else if (typeof ponencia.galeria_fotos === 'string' && ponencia.galeria_fotos) {
-      try {
-        galeria = JSON.parse(ponencia.galeria_fotos)
-      } catch (e) {
-        galeria = ponencia.galeria_fotos.split(',').map(s => s.trim())
-      }
-    }
-
-    setConversatorioForm({
-      ...ponencia,
-      hora_inicio: ponencia.hora_inicio ? ponencia.hora_inicio.slice(0, 5) : "09:00",
-      hora_fin: ponencia.hora_fin ? ponencia.hora_fin.slice(0, 5) : "11:00",
-      profesion_id: ponencia.profesion_id || 0,
-      provincia_id: ponencia.provincia_id || 0,
-      ciudad_id: ponencia.ciudad_id || 0,
-      direccion: ponencia.direccion || "",
-      latitud: ponencia.latitud,
-      longitud: ponencia.longitud,
-      imagen_banner: ponencia.imagen_banner || "",
-      video_url: ponencia.video_url || "",
-      galeria_fotos: galeria,
-      es_destacado: !!ponencia.es_destacado,
-    } as any)
-
-    // Load cities if province is selected
-    if ((ponencia as any).provincia_id) {
-      catalogosApi.obtenerCiudades((ponencia as any).provincia_id).then(res => {
-        setCiudades(Array.isArray(res) ? res : [])
-      })
-    }
-
-    setIsConversatorioDialogOpen(true)
-  }
-
   const handleEditPlan = (plan: Plan) => {
     setEditingItem(plan)
     setPlanForm(plan as any)
     setIsPlanDialogOpen(true)
   }
 
+  const handlePublicarPonencia = async (id: number) => {
+    try {
+      const token = localStorage.getItem("auth_token") || ""
+      await ponenciasApi.publicar(id, token)
+      toast({ title: "Publicado", description: "El conversatorio ahora es visible para el público." })
+      loadData()
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" })
+    }
+  }
+
   const handleDeleteConversatorio = async (id: number) => {
-    if (!confirm("Confirmar eliminación")) return
+    const ok = await animatedConfirm({
+      title: "Eliminar Conversatorio",
+      message: "¿Estás seguro de eliminar este evento? Esta acción es permanente.",
+      confirmText: "Eliminar",
+      variant: "danger"
+    })
+    if (!ok) return
     const token = localStorage.getItem("auth_token")
     if (!token) return
 
@@ -695,7 +589,13 @@ export default function AdminDashboard() {
   }
 
   const handleDeletePlan = async (id: number) => {
-    if (!confirm("Confirmar eliminación")) return
+    const ok = await animatedConfirm({
+      title: "Eliminar Plan",
+      message: "¿Estás seguro de eliminar este plan de suscripción?",
+      confirmText: "Eliminar",
+      variant: "danger"
+    })
+    if (!ok) return
     const token = localStorage.getItem("auth_token")
     if (!token) return
 
@@ -773,9 +673,15 @@ export default function AdminDashboard() {
   }
 
   const handleArchivarArticulo = async (id: number) => {
+    const ok = await animatedConfirm({
+      title: "Archivar Artículo",
+      message: "¿Estás seguro de archivar este artículo? Ya no será visible en la web.",
+      confirmText: "Archivar",
+      variant: "warning"
+    })
+    if (!ok) return
     const token = localStorage.getItem("auth_token")
     if (!token) return
-    if (!confirm("¿Estás seguro de archivar este artículo?")) return
     try {
       await articulosApi.archivar(id, token)
       toast({ title: "Artículo archivado", description: "El artículo ha sido archivado." })
@@ -924,403 +830,13 @@ export default function AdminDashboard() {
                     <h2 className="text-2xl font-semibold mb-1">Gestión de Conversatorios</h2>
                     <p className="text-sm text-gray-500">Crea, edita y administra tus eventos educativos</p>
                   </div>
-                  <Dialog open={isConversatorioDialogOpen} onOpenChange={setIsConversatorioDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button
-                        className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-200 transition-all duration-300 hover:scale-105"
-                        onClick={() => {
-                          setEditingItem(null)
-                          resetConversatorioForm()
-                        }}
-                      >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Nuevo Conversatorio
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-white border-gray-100 max-w-[92vw] lg:max-w-6xl max-h-[96vh] w-full flex flex-col p-0 overflow-hidden rounded-[2.5rem] shadow-[0_32px_128px_-16px_rgba(0,0,0,0.15)] ring-1 ring-slate-900/5">
-                      <DialogHeader className="px-8 py-6 border-b bg-slate-50/80 backdrop-blur-sm">
-                        <div className="flex items-center gap-4">
-                          <div className="p-3 bg-blue-600 rounded-xl shadow-lg shadow-blue-200">
-                            <Plus className="h-7 w-7 text-white" />
-                          </div>
-                          <div>
-                            <DialogTitle className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                              {editingItem ? "Editar" : "Crear Nuevo"} Conversatorio
-                            </DialogTitle>
-                            <DialogDescription className="text-slate-500 text-lg">
-                              {editingItem ? "Refina los detalles del evento" : "Configura un nuevo espacio de aprendizaje para la comunidad"}.
-                            </DialogDescription>
-                          </div>
-                        </div>
-                      </DialogHeader>
-
-                      <div className="flex-1 overflow-y-auto p-0 bg-[#FDFDFD]">
-                        <div className="w-full">
-                          <div className="grid grid-cols-1 xl:grid-cols-12 gap-0">
-                            {/* COLUMNA PRINCIPAL DE DATOS (7/12) */}
-                            <div className="xl:col-span-7 p-8 lg:p-10 space-y-8 border-r border-slate-50">
-                              {/* SECCIÓN 1: IDENTIDAD DEL EVENTO */}
-                              <section className="space-y-8 animate-in fade-in slide-in-from-left-4 duration-700">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-blue-600/10 rounded-2xl">
-                                      <BookOpen className="h-6 w-6 text-blue-600" />
-                                    </div>
-                                    <div>
-                                      <h3 className="text-2xl font-black text-slate-900 tracking-tight">Esencia del Evento</h3>
-                                      <p className="text-slate-500 text-sm">Define la temática y el público objetivo</p>
-                                    </div>
-                                  </div>
-                                  {getEstadoBadge(conversatorioForm.estado)}
-                                </div>
-
-                                <div className="grid grid-cols-1 gap-8">
-                                  <div className="space-y-3">
-                                    <Label htmlFor="titulo" className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">
-                                      Título Descriptivo
-                                    </Label>
-                                    <Input
-                                      id="titulo"
-                                      placeholder="Ej: Masterclass de Gestión de Proyectos"
-                                      value={conversatorioForm.titulo}
-                                      onChange={(e) => setConversatorioForm({ ...conversatorioForm, titulo: e.target.value })}
-                                      className="h-16 text-2xl font-black focus:ring-0 focus:border-blue-600 transition-all border-none bg-slate-50/50 rounded-2xl shadow-inner px-6"
-                                    />
-                                  </div>
-
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-3">
-                                      <Label htmlFor="profesion" className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">
-                                        Público Objetivo
-                                      </Label>
-                                      <Select
-                                        value={conversatorioForm.profesion_id ? conversatorioForm.profesion_id.toString() : ""}
-                                        onValueChange={(value: string) =>
-                                          setConversatorioForm({ ...conversatorioForm, profesion_id: Number(value) })
-                                        }
-                                      >
-                                        <SelectTrigger className="h-14 focus:ring-4 focus:ring-blue-600/5 transition-all border-slate-100 rounded-2xl bg-white shadow-sm font-bold text-slate-700 px-6">
-                                          <SelectValue placeholder="Seleccionar profesión" />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-white border-slate-100 rounded-2xl shadow-2xl">
-                                          {profesiones.map((prof: any) => (
-                                            <SelectItem key={prof.id} value={prof.id.toString()} className="focus:bg-blue-50 py-3">
-                                              {prof.nombre}
-                                            </SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-
-                                    <div className="space-y-3">
-                                      <Label className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Estado de Publicación</Label>
-                                      <Select
-                                        value={conversatorioForm.estado}
-                                        onValueChange={(value: any) =>
-                                          setConversatorioForm({ ...conversatorioForm, estado: value })
-                                        }
-                                      >
-                                        <SelectTrigger className={`h-14 border-none rounded-2xl font-black shadow-lg shadow-blue-900/5 transition-all px-6 ${conversatorioForm.estado === 'publicada' ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'
-                                          }`}>
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-white border-slate-100 rounded-2xl overflow-hidden">
-                                          <SelectItem value="borrador" className="focus:bg-slate-50 italic py-3">📌 Borrador Interno</SelectItem>
-                                          <SelectItem value="publicada" className="focus:bg-blue-50 text-blue-600 font-black py-3">🚀 Publicar Globalmente</SelectItem>
-                                          <SelectItem value="finalizada" className="focus:bg-red-50 text-red-600 py-3">🔒 Cerrar Evento</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                  </div>
-
-                                  <div className="space-y-3">
-                                    <Label htmlFor="descripcion" className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">
-                                      Descripción y Agenda
-                                    </Label>
-                                    <Textarea
-                                      id="descripcion"
-                                      placeholder="Describe los módulos, ponentes y beneficios..."
-                                      value={conversatorioForm.descripcion}
-                                      onChange={(e) =>
-                                        setConversatorioForm({ ...conversatorioForm, descripcion: e.target.value })
-                                      }
-                                      className="focus:ring-0 focus:border-blue-600 transition-all border-none bg-slate-50/50 rounded-[2rem] min-h-[200px] text-lg leading-relaxed shadow-inner p-8"
-                                    />
-                                  </div>
-                                </div>
-                              </section>
-                            </div>
-
-                            {/* COLUMNA LATERAL DE LOGÍSTICA (5/12) */}
-                            <div className="xl:col-span-5 bg-slate-50/30 p-8 lg:p-10 space-y-8">
-                              {/* SECCIÓN 2: LOGÍSTICA Y COSTOS */}
-                              <section className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-700 delay-100">
-                                <div className="flex items-center gap-4">
-                                  <div className="p-3 bg-emerald-600/10 rounded-2xl">
-                                    <Clock className="h-6 w-6 text-emerald-600" />
-                                  </div>
-                                  <div>
-                                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">Logística</h3>
-                                    <p className="text-slate-500 text-sm">Cronograma y disponibilidad</p>
-                                  </div>
-                                </div>
-
-                                <div className="space-y-8">
-                                  {/* Rango de Fechas en una fila elegante */}
-                                  <div className="bg-white p-2 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
-                                    <div className="flex-1 p-6 space-y-4">
-                                      <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                                        <CalendarIcon className="h-4 w-4 text-blue-500" /> Comienzo
-                                      </Label>
-                                      <div className="space-y-3">
-                                        <Popover>
-                                          <PopoverTrigger asChild>
-                                            <Button variant="ghost" className="h-auto p-0 text-xl font-black text-slate-800 hover:bg-transparent justify-start w-full">
-                                              {conversatorioForm.fecha_inicio ? format(conversatorioForm.fecha_inicio, "EEE, dd MMM", { locale: es }) : "Elegir fecha"}
-                                            </Button>
-                                          </PopoverTrigger>
-                                          <PopoverContent className="w-auto p-0 bg-white border-slate-100 rounded-3xl shadow-2xl">
-                                            <Calendar mode="single" selected={conversatorioForm.fecha_inicio} onSelect={(date) => date && setConversatorioForm({ ...conversatorioForm, fecha_inicio: date })} initialFocus />
-                                          </PopoverContent>
-                                        </Popover>
-                                        <Input type="time" value={conversatorioForm.hora_inicio} onChange={(e) => setConversatorioForm({ ...conversatorioForm, hora_inicio: e.target.value })} className="h-10 border-none bg-slate-100/50 rounded-xl font-bold text-center w-32 ml-auto" />
-                                      </div>
-                                    </div>
-                                    <div className="flex-1 p-6 space-y-4">
-                                      <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                                        <Clock className="h-4 w-4 text-orange-500" /> Conclusión
-                                      </Label>
-                                      <div className="space-y-3">
-                                        <Popover>
-                                          <PopoverTrigger asChild>
-                                            <Button variant="ghost" className="h-auto p-0 text-xl font-black text-slate-800 hover:bg-transparent justify-start w-full">
-                                              {conversatorioForm.fecha_fin ? format(conversatorioForm.fecha_fin, "EEE, dd MMM", { locale: es }) : "Elegir fecha"}
-                                            </Button>
-                                          </PopoverTrigger>
-                                          <PopoverContent className="w-auto p-0 bg-white border-slate-100 rounded-3xl shadow-2xl">
-                                            <Calendar mode="single" selected={conversatorioForm.fecha_fin} onSelect={(date) => date && setConversatorioForm({ ...conversatorioForm, fecha_fin: date })} initialFocus />
-                                          </PopoverContent>
-                                        </Popover>
-                                        <Input type="time" value={conversatorioForm.hora_fin} onChange={(e) => setConversatorioForm({ ...conversatorioForm, hora_fin: e.target.value })} className="h-10 border-none bg-slate-100/50 rounded-xl font-bold text-center w-32 ml-auto" />
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-4 bg-white p-8 rounded-[2rem] shadow-lg shadow-emerald-900/5 border border-slate-100 relative overflow-hidden group">
-                                      <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full -mr-12 -mt-12 transition-all group-hover:bg-emerald-500/10"></div>
-                                      <Label htmlFor="precio" className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                                        <DollarSign className="h-4 w-4 text-emerald-500" /> Inversión
-                                      </Label>
-                                      <div className="flex items-baseline gap-1">
-                                        <span className="text-2xl font-bold text-slate-300">$</span>
-                                        <Input
-                                          id="precio"
-                                          type="number"
-                                          step="0.01"
-                                          value={conversatorioForm.precio === 0 ? "" : conversatorioForm.precio}
-                                          onChange={(e) => setConversatorioForm({ ...conversatorioForm, precio: e.target.value === "" ? 0 : Number(e.target.value) })}
-                                          className="h-auto p-0 border-none text-4xl font-black text-slate-900 focus-visible:ring-0 bg-transparent w-full"
-                                        />
-                                      </div>
-                                    </div>
-
-                                    <div className="space-y-4 bg-white p-8 rounded-[2rem] shadow-lg shadow-blue-900/5 border border-slate-100 relative overflow-hidden group">
-                                      <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full -mr-12 -mt-12 transition-all group-hover:bg-blue-500/10"></div>
-                                      <Label htmlFor="cupo" className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                                        <Users className="h-4 w-4 text-blue-500" /> Capacidad
-                                      </Label>
-                                      <div className="flex items-baseline gap-2">
-                                        <Input
-                                          id="cupo"
-                                          type="number"
-                                          value={conversatorioForm.cupo === 0 ? "" : conversatorioForm.cupo}
-                                          onChange={(e) => setConversatorioForm({ ...conversatorioForm, cupo: e.target.value === "" ? 0 : Number(e.target.value) })}
-                                          className="h-auto p-0 border-none text-4xl font-black text-slate-900 focus-visible:ring-0 bg-transparent w-full"
-                                        />
-                                        <span className="text-lg font-bold text-slate-300 uppercase">Pax</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </section>
-                            </div>
-
-                            {/* SECCIÓN 3: MULTIMEDIA PREMIUM */}
-                            <div className="xl:col-span-12 p-8 lg:p-10 border-t border-slate-100 bg-slate-50/20">
-                              <section className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-indigo-600 rounded-2xl shadow-xl shadow-indigo-900/10">
-                                      <Globe className="h-6 w-6 text-white" />
-                                    </div>
-                                    <div>
-                                      <h3 className="text-2xl font-black text-slate-900 tracking-tight">Multimedia Premium</h3>
-                                      <p className="text-slate-500 text-sm">Contenido enriquecido y destacados</p>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center space-x-3 bg-white px-6 py-3 rounded-2xl border border-slate-100 shadow-sm">
-                                    <Checkbox 
-                                      id="es_destacado" 
-                                      checked={conversatorioForm.es_destacado} 
-                                      onCheckedChange={(checked) => setConversatorioForm({ ...conversatorioForm, es_destacado: !!checked })} 
-                                    />
-                                    <Label htmlFor="es_destacado" className="font-bold text-slate-700 cursor-pointer">Marcar como Destacado</Label>
-                                  </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                  <div className="space-y-4">
-                                    <div className="space-y-2">
-                                      <Label htmlFor="imagen_banner" className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">URL Imagen Banner</Label>
-                                      <Input 
-                                        id="imagen_banner" 
-                                        placeholder="https://ejemplo.com/banner.jpg" 
-                                        value={conversatorioForm.imagen_banner} 
-                                        onChange={(e) => setConversatorioForm({ ...conversatorioForm, imagen_banner: e.target.value })}
-                                        className="h-12 bg-white border-slate-100 rounded-xl focus:ring-2 focus:ring-indigo-600"
-                                      />
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label htmlFor="video_url" className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">URL Video (YouTube)</Label>
-                                      <Input 
-                                        id="video_url" 
-                                        placeholder="https://youtube.com/watch?v=..." 
-                                        value={conversatorioForm.video_url} 
-                                        onChange={(e) => setConversatorioForm({ ...conversatorioForm, video_url: e.target.value })}
-                                        className="h-12 bg-white border-slate-100 rounded-xl focus:ring-2 focus:ring-indigo-600"
-                                      />
-                                    </div>
-                                  </div>
-
-                                  <div className="space-y-2">
-                                    <Label htmlFor="galeria_fotos" className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Galería de Fotos (URLs separadas por comas)</Label>
-                                    <Textarea 
-                                      id="galeria_fotos" 
-                                      placeholder="https://img1.jpg, https://img2.jpg..." 
-                                      value={Array.isArray(conversatorioForm.galeria_fotos) ? conversatorioForm.galeria_fotos.join(", ") : ""} 
-                                      onChange={(e) => setConversatorioForm({ ...conversatorioForm, galeria_fotos: e.target.value.split(",").map(url => url.trim()).filter(url => url !== "") })}
-                                      className="bg-white border-slate-100 rounded-2xl min-h-[105px] focus:ring-2 focus:ring-indigo-600 p-4"
-                                    />
-                                    <p className="text-[10px] text-slate-400 italic font-medium pl-1">
-                                      💡 La galería permite mostrar múltiples perspectivas del evento.
-                                    </p>
-                                  </div>
-                                </div>
-                              </section>
-                            </div>
-
-                            {/* SECCIÓN 4: UBICACIÓN GEOGRÁFICA - 100% WIDTH BELOW */}
-                            <div className="xl:col-span-12 p-8 lg:p-10 border-t border-slate-100 bg-white">
-                              <section className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
-                                <div className="flex items-end justify-between">
-                                  <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-slate-900 rounded-2xl shadow-xl shadow-slate-900/20">
-                                      <MapPin className="h-6 w-6 text-white" />
-                                    </div>
-                                    <div>
-                                      <h3 className="text-2xl font-black text-slate-900 tracking-tight">Geolocalización</h3>
-                                      <p className="text-slate-500 text-sm">Precisión física para tus asistentes</p>
-                                    </div>
-                                  </div>
-
-                                  <div className="flex gap-4">
-                                    <div className="space-y-2">
-                                      <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Provincia</Label>
-                                      <Select
-                                        value={conversatorioForm.provincia_id ? conversatorioForm.provincia_id.toString() : ""}
-                                        onValueChange={(val) => handleProvinciaChange(val)}
-                                      >
-                                        <SelectTrigger className="h-12 bg-slate-50 border-none text-slate-900 font-bold focus:ring-2 focus:ring-blue-600 rounded-xl w-48 transition-all">
-                                          <SelectValue placeholder="Elegir..." />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-white border-slate-100 rounded-xl shadow-2xl">
-                                          {provincias.map((prov: any) => (
-                                            <SelectItem key={prov.id} value={prov.id.toString()}>{prov.nombre}</SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Ciudad</Label>
-                                      <Select
-                                        value={conversatorioForm.ciudad_id ? conversatorioForm.ciudad_id.toString() : ""}
-                                        onValueChange={(val) => setConversatorioForm(prev => ({ ...prev, ciudad_id: Number(val) }))}
-                                        disabled={!conversatorioForm.provincia_id}
-                                      >
-                                        <SelectTrigger className="h-12 bg-slate-50 border-none text-slate-900 font-bold focus:ring-2 focus:ring-blue-600 rounded-xl w-48 transition-all disabled:opacity-30">
-                                          <SelectValue placeholder="Elegir..." />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-white border-slate-100 rounded-xl shadow-2xl">
-                                          {ciudades.map((ciudad: any) => (
-                                            <SelectItem key={ciudad.id} value={ciudad.id.toString()}>{ciudad.nombre}</SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                  <div className="lg:col-span-2 relative group/map rounded-[3rem] overflow-hidden border-8 border-slate-50 shadow-xl bg-white h-[550px]">
-                                    <LocationMap
-                                      lat={conversatorioForm.latitud}
-                                      lng={conversatorioForm.longitud}
-                                      onChange={handleLocationChange}
-                                    />
-                                  </div>
-
-                                  <div className="space-y-6 flex flex-col justify-center">
-                                    <div className="bg-slate-50/50 p-8 rounded-[2.5rem] border border-slate-100 space-y-6">
-                                      <Label htmlFor="direccion" className="text-xl font-black text-slate-800 flex items-center gap-2">
-                                        <MapPin className="h-5 w-5 text-blue-600" /> Dirección Exacta
-                                      </Label>
-                                      <Textarea
-                                        id="direccion"
-                                        placeholder="Ej: Frente al centro comercial, junto a la torre bancaria..."
-                                        value={conversatorioForm.direccion || ""}
-                                        onChange={(e) => setConversatorioForm({ ...conversatorioForm, direccion: e.target.value })}
-                                        className="bg-white border-slate-100 focus:ring-0 focus:border-blue-600 rounded-3xl min-h-[140px] text-lg p-6 shadow-inner leading-relaxed placeholder:text-slate-300"
-                                        rows={3}
-                                      />
-                                      <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50 text-xs text-blue-600 font-bold leading-relaxed">
-                                        💡 Una dirección clara reduce el margen de error y mejora la experiencia de llegada del profesional.
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </section>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <DialogFooter className="px-8 py-6 border-t bg-slate-50 flex items-center justify-between">
-                        <p className="text-xs text-slate-400 hidden sm:flex items-center gap-2 italic font-medium">
-                          <Info className="h-4 w-4" /> Los eventos publicados son visibles en la agenda pública de Profesionales.EC
-                        </p>
-                        <div className="flex gap-3">
-                          <Button
-                            variant="outline"
-                            onClick={() => {
-                              setIsConversatorioDialogOpen(false)
-                              setEditingItem(null)
-                              resetConversatorioForm()
-                            }}
-                            className="border-gray-300 hover:bg-white transition-colors"
-                          >
-                            Cancelar
-                          </Button>
-                          <Button
-                            onClick={handleSaveConversatorio}
-                            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md shadow-blue-200 transition-all active:scale-95"
-                          >
-                            {editingItem ? "Guardar Cambios" : "Publicar Conversatorio"}
-                          </Button>
-                        </div>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                  <Button
+                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-200 transition-all duration-300 hover:scale-105"
+                    onClick={() => router.push("/admin/conversatorios/nuevo")}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Nuevo Conversatorio
+                  </Button>
                 </div>
 
                 <Card className="bg-white border-gray-200">
@@ -1371,6 +887,17 @@ export default function AdminDashboard() {
                                   >
                                     <Eye className="h-4 w-4" />
                                   </Button>
+                                  {ponencia.estado === "borrador" && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handlePublicarPonencia(ponencia.id)}
+                                      className="hover:bg-blue-500/20 hover:text-blue-600 transition-colors"
+                                      title="Publicar Ahora"
+                                    >
+                                      <Globe className="h-4 w-4" />
+                                    </Button>
+                                  )}
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -1386,7 +913,7 @@ export default function AdminDashboard() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => handleEditConversatorio(ponencia)}
+                                    onClick={() => router.push(`/admin/conversatorios/editar/${ponencia.id}`)}
                                     className="hover:bg-blue-500/20 hover:text-blue-600 transition-colors"
                                   >
                                     <Edit className="h-4 w-4" />
@@ -2677,9 +2204,16 @@ export default function AdminDashboard() {
           />
 
         </div>
-      </main >
+      </main>
+
+      <AnimatedConfirm
+        isOpen={isConfirmOpen}
+        options={confirmOptions}
+        onConfirm={onConfirm}
+        onCancel={onCancel}
+      />
 
       <Footer />
-    </div >
+    </div>
   )
 }

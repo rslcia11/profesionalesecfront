@@ -150,12 +150,15 @@ export interface Ponencia {
   hora_inicio?: string
   fecha_fin: string
   hora_fin?: string
+  subtitulo?: string
   profesion_id: number
   precio: number
   cupo: number
   estado: string
   provincia_id?: number
   ciudad_id?: number
+  ciudad?: { id: number; nombre: string }
+  provincia?: { id: number; nombre: string }
   direccion?: string
   latitud?: number
   longitud?: number
@@ -163,6 +166,35 @@ export interface Ponencia {
   video_url?: string
   galeria_fotos?: string[] | any
   es_destacado?: boolean
+  url_revista_general?: string
+  foto_revista_general?: string
+  resumen_formato?: string
+  dias?: PonenciaDia[]
+}
+
+export interface PonenciaDia {
+  id?: number
+  ponencia_id?: number
+  fecha: string
+  orden: number
+  titulo_dia?: string
+  hora_inicio?: string
+  hora_fin?: string
+  ponentes?: PonenciaPonente[]
+}
+
+export interface PonenciaPonente {
+  id?: number
+  ponencia_id?: number
+  dia_id?: number
+  usuario_id?: number
+  nombre_ponente?: string
+  profesion?: string
+  tema_charla?: string
+  foto_revista_url?: string
+  url_revista_personal?: string
+  orden: number
+  usuario?: { id: number; nombre: string; foto_url?: string }
 }
 
 export interface Publicidad {
@@ -232,10 +264,11 @@ async function fetchApi(endpoint: string, options: RequestInit = {}): Promise<an
   }
 
   if (!res.ok) {
-    throw new Error(data.message || data.error || data.mensaje || "Error en la petición");
+    throw new Error(data.error?.message || data.message || data.error || data.mensaje || "Error en la petición");
   }
 
-  return data;
+  // Golden Rule #6: API Contract Support { data, error, meta }
+  return data.data !== undefined ? data.data : data;
 }
 
 function authHeader(token: string) {
@@ -559,7 +592,7 @@ export const ponenciasApi = {
   async listarTodas(token: string) {
     return fetchApi("/ponencias/todas", { headers: authHeader(token) });
   },
-  async obtener(id: number) {
+  async obtener(id: string | number) {
     return fetchApi(`/ponencias/${id}`);
   },
   async listarInscritos(id: number, token: string) {
@@ -573,7 +606,14 @@ export const ponenciasApi = {
       method: "POST",
       headers: authHeader(token),
     });
-  }
+  },
+  async actualizar(id: number, data: Partial<Ponencia>, token: string) {
+    return fetchApi(`/ponencias/${id}`, {
+      method: "PUT",
+      headers: authHeader(token),
+      body: JSON.stringify(data)
+    });
+  },
 }
 
 // Revistas API
@@ -786,6 +826,28 @@ export const usuarioApi = {
   async obtenerMiPerfil(token: string) { return fetchApi("/usuarios/perfil", { headers: authHeader(token) }); },
   async actualizarPerfil(data: any, token: string) {
     return fetchApi("/usuarios/perfil", { method: "PUT", headers: authHeader(token), body: JSON.stringify(data) });
+  }
+}
+
+// Multimedia API
+export const multimediaApi = {
+  async subir(archivo: File, folder = "conversatorios", token: string): Promise<{ url: string, public_id: string, format: string }> {
+    const formData = new FormData()
+    formData.append("archivo", archivo)
+    formData.append("folder", folder)
+
+    const res = await fetch(`${API_URL}/multimedia/upload`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error || err.message || "Error al subir archivo");
+    }
+    const data = await res.json();
+    return data.data;
   }
 }
 

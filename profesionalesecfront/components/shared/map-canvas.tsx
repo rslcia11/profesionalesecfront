@@ -61,6 +61,11 @@ function LocationMarker({ position, onChange, readonly, address }: { position: {
 
 export default function MapCanvas({ lat, lng, readonly = false, address, onChange }: LocationMapProps) {
     const [position, setPosition] = useState<{ lat: number; lng: number } | null>(null)
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     useEffect(() => {
         if (lat && lng) {
@@ -68,9 +73,12 @@ export default function MapCanvas({ lat, lng, readonly = false, address, onChang
         }
     }, [lat, lng])
 
+    if (!mounted) return <div className="h-[400px] w-full bg-slate-50 animate-pulse rounded-lg" />
+
     return (
         <div className="h-[400px] w-full rounded-lg overflow-hidden border border-gray-200 shadow-sm relative z-0">
             <MapContainer
+                key="conversatorio-map-instance"
                 center={position || DEFAULT_CENTER}
                 zoom={position ? 15 : DEFAULT_ZOOM}
                 scrollWheelZoom={!readonly}

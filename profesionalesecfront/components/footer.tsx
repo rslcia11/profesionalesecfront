@@ -26,7 +26,7 @@ export default function Footer() {
   const conversatorioFAQs = [
     {
       question: "¿Conversatorios?",
-      answer: "Eventos educativos para networking y aprendizaje.",
+      answer: "Eventos exclusivos de aprendizaje y networking."
     },
     {
       question: "¿Inscripción?",

@@ -11,14 +11,14 @@ interface LocationMapProps {
     onChange?: (lat: number, lng: number) => void
 }
 
-export default function LocationMap(props: LocationMapProps) {
-    const MapCanvas = useMemo(() => dynamic(
-        () => import("./map-canvas"),
-        {
-            loading: () => <div className="h-[400px] w-full bg-gray-100 animate-pulse rounded-lg flex items-center justify-center text-gray-400 text-sm">Cargando mapa...</div>,
-            ssr: false
-        }
-    ), [])
+const MapCanvas = dynamic(
+    () => import("./map-canvas"),
+    {
+        loading: () => <div className="h-[400px] w-full bg-gray-100 animate-pulse rounded-lg flex items-center justify-center text-gray-400 text-sm">Cargando mapa...</div>,
+        ssr: false
+    }
+)
 
+export default function LocationMap(props: LocationMapProps) {
     return <MapCanvas {...props} />
 }
