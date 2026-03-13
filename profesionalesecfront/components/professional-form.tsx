@@ -139,6 +139,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
   const [specialties, setSpecialties] = useState<CatalogItem[]>([])
   const [provinces, setProvinces] = useState<CatalogItem[]>([])
   const [cities, setCities] = useState<CatalogItem[]>([])
+  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null)
 
   // Load initial catalogs and existing user data if needed
   useEffect(() => {
@@ -385,6 +386,19 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
     setFormData({ ...formData, [name]: file })
     setTouched(prev => ({ ...prev, [name]: true }))
     validateField(name, file)
+
+    // Handle preview for profile image
+    if (name === "profileImage") {
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setProfileImagePreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setProfileImagePreview(null);
+      }
+    }
   }
 
   const handleLocationChange = async (lat: number, lng: number) => {
@@ -840,31 +854,58 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
           </div>
         </div>
       )}
-      <div>
-        <label className="block text-sm font-medium text-muted-foreground mb-2">Foto de Perfil *</label>
-        <input
-          id="profileImage"
-          type="file"
-          accept="image/png, image/jpeg, image/jpg, image/webp"
-          onChange={(e) => handleFileChange("profileImage", e.target.files?.[0] || null)}
-          className="hidden"
-        />
-        <label
-          htmlFor="profileImage"
-          className={`flex items-center justify-center w-full h-32 border-2 border-dashed ${errors.profileImage ? "border-red-400" : formData.profileImage ? "border-green-500 bg-green-500/10" : "border-border"} rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group`}
-        >
-          <div className="flex flex-col items-center justify-center">
-            {formData.profileImage ? (
-              <CheckCircle2 className="size-8 text-green-500 mb-2 group-hover:scale-110 transition-transform" />
+
+      {/* Profile Image moved back to bottom but with circular preview */}
+      <div className="flex flex-col items-center mt-8 py-6 border-t border-gray-100">
+        <label className="block text-sm font-bold text-gray-700 mb-6 uppercase tracking-wider">Foto de Perfil *</label>
+        <div className="relative group">
+          <input
+            id="profileImage"
+            type="file"
+            accept="image/png, image/jpeg, image/jpg, image/webp"
+            onChange={(e) => handleFileChange("profileImage", e.target.files?.[0] || null)}
+            className="hidden"
+          />
+          <label
+            htmlFor="profileImage"
+            className={`flex flex-col items-center justify-center size-48 rounded-full border-4 border-dashed transition-all duration-300 cursor-pointer overflow-hidden ${
+              errors.profileImage 
+                ? "border-red-400 bg-red-50" 
+                : profileImagePreview 
+                  ? "border-primary shadow-xl" 
+                  : "border-gray-300 hover:border-primary hover:bg-gray-50 bg-white"
+            }`}
+          >
+            {profileImagePreview ? (
+              <img src={profileImagePreview} alt="Preview" className="w-full h-full object-cover" />
             ) : (
-              <Upload className="size-8 text-primary mb-2 group-hover:scale-110 transition-transform" />
+              <div className="flex flex-col items-center text-center p-4">
+                <Upload className="size-10 text-gray-400 group-hover:text-primary transition-colors mb-2" />
+                <span className="text-xs font-medium text-gray-500 group-hover:text-primary">Click para subir</span>
+              </div>
             )}
-            <p className={`text-sm ${formData.profileImage ? "text-green-600 font-medium" : "text-muted-foreground"}`}>
-              {formData.profileImage ? formData.profileImage.name : "Sube tu foto de perfil"}
-            </p>
-          </div>
-        </label>
-        {errors.profileImage && <p className="text-red-400 text-sm mt-1">{errors.profileImage}</p>}
+            
+            {/* Overlay on hover */}
+            <div className={`absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ${profileImagePreview ? "visible" : "invisible"}`}>
+              <Upload className="size-8 text-white" />
+            </div>
+          </label>
+          
+          {profileImagePreview && (
+            <button 
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                handleFileChange("profileImage", null);
+              }}
+              className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg hover:bg-red-600 transition-colors"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+        {errors.profileImage && <p className="text-red-400 text-sm mt-3 font-medium animate-pulse">{errors.profileImage}</p>}
+        <p className="text-[10px] text-gray-400 mt-4 text-center max-w-[200px]">Recomendado: Imagen cuadrada, formato JPG o PNG. Máx 5MB.</p>
       </div>
     </div>
   )

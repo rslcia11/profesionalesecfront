@@ -5,6 +5,7 @@ import Header from "@/components/header"
 import Footer from "@/components/footer"
 import Link from "next/link"
 import { articulosApi, type Articulo } from "@/lib/api"
+import { formatUrl } from "@/lib/utils"
 import { BookOpen, Calendar, User, ArrowRight, Clock, Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { format } from "date-fns"
@@ -122,7 +123,7 @@ export default function ArticulosPage() {
                                     <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary/5 to-accent/5">
                                         {articulo.imagen_url ? (
                                             <img
-                                                src={articulo.imagen_url}
+                                                src={formatUrl(articulo.imagen_url) || ""}
                                                 alt={articulo.titulo}
                                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                             />
@@ -164,7 +165,7 @@ export default function ArticulosPage() {
                                                 <div className="flex items-center gap-3">
                                                     {articulo.autor?.foto_url ? (
                                                         <img
-                                                            src={articulo.autor.foto_url}
+                                                            src={formatUrl(articulo.autor.foto_url) || ""}
                                                             alt={articulo.autor.nombre}
                                                             className="w-8 h-8 rounded-full object-cover"
                                                         />

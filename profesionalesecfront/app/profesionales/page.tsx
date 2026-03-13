@@ -9,6 +9,7 @@ import { profesionalApi } from "@/lib/api"
 import Link from "next/link"
 import { useEffect } from "react"
 import BookingModal from "@/components/booking-modal"
+import { formatUrl } from "@/lib/utils"
 
 export default function ProfessionalsPage() {
   const [filters, setFilters] = useState<FilterState>({
@@ -97,7 +98,7 @@ export default function ProfessionalsPage() {
         name: p.usuario?.nombre || "Usuario",
         specialty: p.especialidad?.nombre || p.profesion?.nombre || "Profesional",
         location: p.ciudad ? `${p.ciudad.nombre}, ${p.ciudad.provincia?.nombre || ""}` : "Ecuador",
-        image: p.usuario?.foto_url || "/placeholder.svg",
+        image: formatUrl(p.usuario?.foto_url) || "/placeholder.svg",
         price: `$${p.tarifa_hora || p.tarifa || 0}`,
         unit: "hora",
         experience: "Experiencia verificada",

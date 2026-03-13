@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { profesionalApi } from "@/lib/api"
+import { formatUrl } from "@/lib/utils"
 import { Star, MapPin, Briefcase, Award, ArrowRight } from "lucide-react"
 
 interface Professional {
@@ -123,7 +124,7 @@ export default function ProfessionalsCategoryList({
                         >
                             <div className="relative h-64 overflow-hidden">
                                 <img
-                                    src={pro.usuario.foto_url || "/placeholder.svg"}
+                                    src={formatUrl(pro.usuario.foto_url) || "/placeholder.svg"}
                                     alt={pro.usuario.nombre}
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                 />

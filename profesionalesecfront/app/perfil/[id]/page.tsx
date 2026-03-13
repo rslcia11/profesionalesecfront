@@ -10,6 +10,7 @@ import Footer from "@/components/footer"
 import BookingForm from "@/components/booking-form"
 import LocationMap from "@/components/shared/location-map"
 import ScheduleGrid from "@/components/schedule-grid"
+import { formatUrl } from "@/lib/utils"
 
 export default function ProfessionalProfile() {
     const params = useParams()
@@ -77,7 +78,7 @@ export default function ProfessionalProfile() {
     const subTitle = especialidad?.nombre ? `${title} Especializada en ${especialidad.nombre}` : title
     const specialty = especialidad?.nombre || ""
     const bio = descripcion || "Profesional verificado con amplia experiencia en su campo."
-    const image = usuario?.foto_url || "/placeholder.svg"
+    const image = formatUrl(usuario?.foto_url) || "/placeholder.svg"
     const price = tarifa ? `$${tarifa}` : "A convenir"
     const locationName = ciudad?.nombre || "Ecuador"
     const phone = usuario?.telefono || ""

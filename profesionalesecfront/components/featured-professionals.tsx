@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Star, MapPin, Briefcase, Award } from "lucide-react"
 import Link from "next/link"
 import { profesionalApi } from "@/lib/api"
+import { formatUrl } from "@/lib/utils"
 
 interface Professional {
   id: number
@@ -90,7 +91,7 @@ export default function FeaturedProfessionals() {
               {/* Image */}
               <div className="relative overflow-hidden">
                 <img
-                  src={pro.usuario.foto_url || "/placeholder.svg"}
+                  src={formatUrl(pro.usuario.foto_url) || "/placeholder.svg"}
                   alt={pro.usuario.nombre}
                   className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
                 />

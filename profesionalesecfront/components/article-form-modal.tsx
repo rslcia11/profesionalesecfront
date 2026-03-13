@@ -84,6 +84,11 @@ export default function ArticleFormModal({
                 formData.append("archivo_pdf", pdfFile)
             }
 
+            // Forzar estado archivado para nuevos artículos (moderación)
+            if (!isEditing) {
+                formData.append("estado", "archivado")
+            }
+
             // onSubmit handles FormData now (as per updated api/dashboard logic)
             // @ts-ignore - We updated parent signature but TS might complain until full compilation
             await onSubmit(formData)
@@ -117,7 +122,7 @@ export default function ArticleFormModal({
                     <DialogDescription>
                         {isEditing
                             ? "Modifica los campos que desees actualizar."
-                            : "Comparte tu conocimiento con la comunidad. Los artículos se publican inmediatamente."}
+                            : "Comparte tu conocimiento con la comunidad. Tu artículo será revisado por un administrador antes de ser publicado."}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -247,7 +252,7 @@ export default function ArticleFormModal({
                         </Button>
                         <Button type="submit" disabled={submitting}>
                             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {isEditing ? "Actualizar" : "Publicar artículo"}
+                            {isEditing ? "Actualizar" : "Enviar para revisión"}
                         </Button>
                     </div>
                 </form>

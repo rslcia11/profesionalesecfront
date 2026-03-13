@@ -180,7 +180,7 @@ export default function ProfesionalDashboard() {
     const token = localStorage.getItem("auth_token")
     if (!token) return
     await articulosApi.crear(data, token)
-    toast({ title: "Artículo publicado", description: "Tu artículo ha sido publicado exitosamente." })
+    toast({ title: "Artículo enviado", description: "Tu artículo ha sido enviado para revisión." })
     loadArticulos()
   }
 
@@ -618,7 +618,7 @@ export default function ProfesionalDashboard() {
                     </div>
                     <h3 className="text-lg font-semibold text-gray-700 mb-2">Aún no tienes artículos</h3>
                     <p className="text-gray-500 max-w-md mb-4">
-                      Comparte tu conocimiento con la comunidad. Los artículos se publican en la sección de educación.
+                      Comparte tu conocimiento con la comunidad. Los artículos serán revisados por un administrador antes de su publicación.
                     </p>
                     <Button
                       onClick={() => {
@@ -643,10 +643,10 @@ export default function ProfesionalDashboard() {
                           <div className="flex items-center gap-2 mb-1">
                             <h4 className="font-semibold text-gray-900 truncate">{articulo.titulo}</h4>
                             <Badge
-                              variant={articulo.estado === "publicado" ? "default" : articulo.estado === "archivado" ? "destructive" : "secondary"}
-                              className="text-xs shrink-0"
+                              variant={articulo.estado === "publicado" ? "default" : articulo.estado === "archivado" ? "secondary" : "secondary"}
+                              className={`text-xs shrink-0 ${articulo.estado === "archivado" ? "bg-yellow-500 hover:bg-yellow-600 text-white border-none" : ""}`}
                             >
-                              {articulo.estado}
+                              {articulo.estado === "archivado" ? "En revisión" : articulo.estado}
                             </Badge>
                           </div>
                           {articulo.resumen && (

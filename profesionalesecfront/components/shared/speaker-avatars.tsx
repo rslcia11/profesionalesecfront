@@ -1,6 +1,7 @@
 import React from "react"
 import Image from "next/image"
 import { SPACING } from "@/constants"
+import { formatUrl } from "@/lib/utils"
 
 interface SpeakerAvatarsProps {
   speakers: {
@@ -30,7 +31,7 @@ export const SpeakerAvatars: React.FC<SpeakerAvatarsProps> = ({ speakers, size =
           >
             {speaker.foto_url ? (
               <Image 
-                src={speaker.foto_url} 
+                src={formatUrl(speaker.foto_url) || ""} 
                 alt={speaker.nombre} 
                 width={size} 
                 height={size} 

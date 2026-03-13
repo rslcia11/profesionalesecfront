@@ -1,6 +1,7 @@
 "use client"
 
 import { User } from "lucide-react"
+import { formatUrl } from "@/lib/utils"
 
 interface SpeakerCardProps {
   ponente: any
@@ -16,7 +17,7 @@ export default function SpeakerCard({ ponente }: SpeakerCardProps) {
       <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xl border border-emerald-200 overflow-hidden">
         {ponente.Usuario?.foto_url ? (
           <img 
-            src={ponente.Usuario.foto_url} 
+            src={formatUrl(ponente.Usuario.foto_url) || ""} 
             alt={nombre} 
             className="w-full h-full object-cover"
             onError={(e) => {
