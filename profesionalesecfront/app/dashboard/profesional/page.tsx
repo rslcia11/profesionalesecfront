@@ -7,6 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import RescheduleModal from "@/components/reschedule-modal"
 import {
   Calendar,
@@ -28,6 +35,8 @@ import { useToast } from "@/hooks/use-toast"
 import { citasApi, usuarioApi, articulosApi, profesionalApi, type Articulo } from "@/lib/api"
 import ArticleFormModal from "@/components/article-form-modal"
 import ServicesManager from "@/components/services-manager"
+import ScheduleManager from "@/components/schedule-manager"
+import SocialMediaManager from "@/components/social-media-manager"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
@@ -41,7 +50,9 @@ export default function ProfesionalDashboard() {
   const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false)
   const [selectedCita, setSelectedCita] = useState<any>(null)
   const [user, setUser] = useState<any>(null)
+  const [perfiles, setPerfiles] = useState<any[]>([])
   const [perfil, setPerfil] = useState<any>(null)
+  const [rawCitas, setRawCitas] = useState<any[]>([])
 
   // Articles state
   const [articulos, setArticulos] = useState<Articulo[]>([])
@@ -67,36 +78,40 @@ export default function ProfesionalDashboard() {
 
       setUser(userData)
       
-      // Handle Multi-Profile: selecting the first profile as active for the dashboard
-      const activePerfil = Array.isArray(perfilData) ? perfilData[0] : (perfilData?.perfil || perfilData);
-      setPerfil(activePerfil)
+      // Handle Multi-Profile
+      const profilesArray = Array.isArray(perfilData) ? perfilData : (perfilData?.perfil ? [perfilData.perfil] : (perfilData ? [perfilData] : []));
+      setPerfiles(profilesArray)
+      
+      if (profilesArray.length > 0 && !perfil) {
+        setPerfil(profilesArray[0])
+      } else if (profilesArray.length > 0 && perfil) {
+        // Keep selected profile if it still exists
+        const currentlySelected = profilesArray.find(p => p.id === perfil.id);
+        if (currentlySelected) setPerfil(currentlySelected);
+      }
 
-      // Map backend data to frontend structure because backend returns raw IDs and missing relations
+      // Map backend data to frontend structure
       const mappedCitas = (Array.isArray(citasData) ? citasData : []).map((c: any) => ({
         ...c,
-        // Construct proper date object from separate fields with safety checks
         fecha_hora: (function () {
           if (!c.fecha_cita || !c.hora_cita) return null;
-          // Ensure string format YYYY-MM-DD
           const fechaStr = typeof c.fecha_cita === 'string' ? c.fecha_cita : new Date(c.fecha_cita).toISOString().split('T')[0];
-          const horaStr = c.hora_cita.toString(); // Ensure string
+          const horaStr = c.hora_cita.toString();
           return `${fechaStr}T${horaStr}`;
         })(),
-        // Map estado_id to string for UI logic
         estado: c.estado_id === 1 ? "pendiente" : c.estado_id === 2 ? "confirmada" : c.estado_id === 3 ? "completada" : "cancelada",
-        // Map available name fields to what UI expects
         usuario: c.usuario || { nombre: c.alias || c.nombres_completos || "Cliente sin nombre" },
-        // Map contact details and description
         descripcion: c.comentario || c.descripcion || "Sin motivo especificado",
         telefono: c.telefono || c.usuario?.telefono || "No disp.",
         correo: c.correo || c.usuario?.correo || "No disp."
       }))
-      // Filter out invalid ones if strictly necessary, or keep and show "Fecha inválida"
-      setCitas(mappedCitas.sort((a: any, b: any) => {
+      
+      setRawCitas(mappedCitas.sort((a: any, b: any) => {
         const timeA = a.fecha_hora ? new Date(a.fecha_hora).getTime() : 0;
         const timeB = b.fecha_hora ? new Date(b.fecha_hora).getTime() : 0;
         return timeB - timeA;
       }))
+
     } catch (error) {
       console.error("Error loading professional dashboard:", error)
       toast({
@@ -112,6 +127,16 @@ export default function ProfesionalDashboard() {
   useEffect(() => {
     loadData()
   }, [loadData])
+
+  // Filter citations by selected profile
+  useEffect(() => {
+    if (perfil) {
+      const filtered = rawCitas.filter(c => c.perfil_id === perfil.id || c.perfil?.id === perfil.id);
+      setCitas(filtered);
+    } else {
+      setCitas(rawCitas);
+    }
+  }, [rawCitas, perfil])
 
   // Actions
   const handleEstadoCita = async (id: number, nuevoEstado: number) => {
@@ -207,12 +232,50 @@ export default function ProfesionalDashboard() {
       <main className="container mx-auto px-4 py-8 mt-20">
         {/* Header del Dashboard */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-            Dashboard Profesional
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Hola, <span className="font-semibold text-gray-800">{user?.nombre || "Profesional"}</span>
-          </p>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row md:items-center gap-4">
+              <div>
+                <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                  Dashboard Profesional
+                </h1>
+                <p className="text-gray-600 text-lg">
+                  Hola, <span className="font-semibold text-gray-800">{user?.nombre || "Profesional"}</span>
+                </p>
+              </div>
+
+              {perfiles.length > 1 && (
+                <div className="flex flex-col gap-1 min-w-[200px]">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">Cambiar Perfil</span>
+                  <Select
+                    value={perfil?.id?.toString()}
+                    onValueChange={(value) => {
+                      const selected = perfiles.find(p => p.id.toString() === value);
+                      if (selected) setPerfil(selected);
+                    }}
+                  >
+                    <SelectTrigger className="bg-white border-blue-100 focus:ring-blue-500">
+                      <SelectValue placeholder="Selecciona un perfil" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {perfiles.map((p) => (
+                        <SelectItem key={p.id} value={p.id.toString()}>
+                          {p.profesion?.nombre || "Perfil"} - {p.ciudad?.nombre || "Ubicación"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 gap-2 w-fit"
+              onClick={() => window.location.href = "/dashboard/profesional/crear-perfil"}
+            >
+              <Plus className="h-4 w-4" />
+              Crear Nuevo Perfil
+            </Button>
+          </div>
         </div>
 
         {/* Estadísticas Generales */}
@@ -278,6 +341,18 @@ export default function ProfesionalDashboard() {
                 className="rounded-lg px-6 py-2 text-sm font-medium transition-all data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md"
               >
                 Servicios
+              </TabsTrigger>
+              <TabsTrigger
+                value="horario"
+                className="rounded-lg px-6 py-2 text-sm font-medium transition-all data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md"
+              >
+                Horario
+              </TabsTrigger>
+              <TabsTrigger
+                value="redes"
+                className="rounded-lg px-6 py-2 text-sm font-medium transition-all data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md"
+              >
+                Redes Sociales
               </TabsTrigger>
             </TabsList>
           </div>
@@ -478,6 +553,32 @@ export default function ProfesionalDashboard() {
           <TabsContent value="servicios" className="space-y-6">
             {perfil ? (
               <ServicesManager perfilId={perfil.id} />
+            ) : (
+              <Card className="bg-white border-gray-200">
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
+                  <p className="text-gray-500">Cargando perfil profesional...</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="horario" className="space-y-6">
+            {perfil ? (
+              <ScheduleManager perfilId={perfil.id} />
+            ) : (
+              <Card className="bg-white border-gray-200">
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
+                  <p className="text-gray-500">Cargando perfil profesional...</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="redes" className="space-y-6">
+            {perfil ? (
+              <SocialMediaManager perfil={perfil} onUpdate={loadData} />
             ) : (
               <Card className="bg-white border-gray-200">
                 <CardContent className="flex flex-col items-center justify-center py-12 text-center">

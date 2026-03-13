@@ -8,17 +8,33 @@ import { usePathname } from "next/navigation"
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [userRole, setUserRole] = useState<string | null>(null)
   const pathname = usePathname()
 
   useEffect(() => {
     const token = localStorage.getItem("auth_token")
     setIsLoggedIn(!!token)
+
+    if (token) {
+      try {
+        const parts = token.split(".")
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1]))
+          setUserRole(payload.rol)
+        }
+      } catch (e) {
+        console.error("Error decoding token in Header:", e)
+      }
+    } else {
+      setUserRole(null)
+    }
   }, [])
 
   const handleLogout = () => {
     localStorage.removeItem("auth_token")
     localStorage.removeItem("user_data")
     setIsLoggedIn(false)
+    setUserRole(null)
     window.location.href = "/"
   }
 
@@ -33,6 +49,17 @@ export default function Header() {
     { label: "Profesionales", href: "/profesionales" },
     { label: "Educación", href: "/conversatorios" },
   ]
+
+  const getRoleLink = () => {
+    if (["superadmin", "moderador"].includes(userRole || "")) {
+      return { label: "Panel Admin", href: "/admin" }
+    } else if (userRole === "profesional") {
+      return { label: "Mi Dashboard", href: "/dashboard/profesional" }
+    }
+    return null
+  }
+
+  const roleLink = getRoleLink()
 
   return (
     <header className="fixed top-0 w-full z-50">
@@ -50,26 +77,40 @@ export default function Header() {
             </Link>
 
             {/* Desktop Navigation - CENTERED ABSOLUTELY */}
-            {!isLoggedIn && (
-              <nav className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center space-x-6">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`relative px-2 py-1 text-sm font-medium transition-all duration-300 group ${isActive(link.href) ? "text-white" : "text-white/60 hover:text-white"
+            <nav className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center space-x-6">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`relative px-2 py-1 text-sm font-medium transition-all duration-300 group ${isActive(link.href) ? "text-white" : "text-white/60 hover:text-white"
+                    }`}
+                >
+                  {link.label}
+                  <span
+                    className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-300 ${isActive(link.href)
+                      ? "scale-x-100 opacity-100"
+                      : "scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-50"
                       }`}
-                  >
-                    {link.label}
-                    <span
-                      className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-300 ${isActive(link.href)
-                        ? "scale-x-100 opacity-100"
-                        : "scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-50"
-                        }`}
-                    />
-                  </Link>
-                ))}
-              </nav>
-            )}
+                  />
+                </Link>
+              ))}
+
+              {isLoggedIn && roleLink && (
+                <Link
+                  href={roleLink.href}
+                  className={`relative px-2 py-1 text-sm font-medium transition-all duration-300 group ${isActive(roleLink.href) ? "text-emerald-400" : "text-emerald-400/70 hover:text-emerald-400"
+                    }`}
+                >
+                  {roleLink.label}
+                  <span
+                    className={`absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-400 transition-all duration-300 ${isActive(roleLink.href)
+                      ? "scale-x-100 opacity-100"
+                      : "scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-50"
+                      }`}
+                  />
+                </Link>
+              )}
+            </nav>
 
             {/* Auth Buttons - Z-index to stay above centered nav */}
             <div className="flex items-center gap-3 z-10">
@@ -121,20 +162,35 @@ export default function Header() {
               onClick={() => setIsMenuOpen(false)}
             >
               <div className="flex flex-col space-y-2 pt-4">
+                {/* Persistent Links */}
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`text-sm font-medium px-4 py-3 rounded-lg transition-all duration-300 ${isActive(link.href)
+                      ? "text-white bg-white/10"
+                      : "text-white/60 hover:text-white hover:bg-white/5"
+                      }`}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+
+                {/* Role Specific link for mobile */}
+                {isLoggedIn && roleLink && (
+                  <Link
+                    href={roleLink.href}
+                    className={`text-sm font-medium px-4 py-3 rounded-lg transition-all duration-300 ${isActive(roleLink.href)
+                      ? "text-emerald-400 bg-emerald-400/10"
+                      : "text-emerald-400/60 hover:text-emerald-400 hover:bg-emerald-400/5"
+                      }`}
+                  >
+                    {roleLink.label}
+                  </Link>
+                )}
+
                 {!isLoggedIn ? (
                   <>
-                    {navLinks.map((link) => (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        className={`text-sm font-medium px-4 py-3 rounded-lg transition-all duration-300 ${isActive(link.href)
-                          ? "text-white bg-white/10"
-                          : "text-white/60 hover:text-white hover:bg-white/5"
-                          }`}
-                      >
-                        {link.label}
-                      </Link>
-                    ))}
                     <Link
                       href="/login"
                       className="text-sm font-medium px-4 py-3 rounded-lg transition-all duration-300 text-white/80 hover:text-white hover:bg-white/5 flex items-center gap-2"

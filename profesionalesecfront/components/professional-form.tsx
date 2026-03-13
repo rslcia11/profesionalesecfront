@@ -4,7 +4,7 @@ import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { CheckCircle2, ChevronLeft, ChevronRight, Home, Upload, Eye, EyeOff, PartyPopper, Loader2 } from "lucide-react"
+import { CheckCircle2, ChevronLeft, ChevronRight, Home, Upload, Eye, EyeOff, PartyPopper, Loader2, Facebook, Instagram, Linkedin, Twitter, Music } from "lucide-react"
 import { Check, X } from "lucide-react" // Declared the Check variable
 import { authApi, profesionalApi, catalogosApi, saveToken, usuarioApi, horariosApi } from "@/lib/api"
 import ScheduleGrid from "@/components/schedule-grid"
@@ -48,6 +48,11 @@ interface FormData {
   lng?: number
   services: string[]
   matrix: boolean[]
+  facebook_url: string
+  instagram_url: string
+  tiktok_url: string
+  linkedin_url: string
+  x_url: string
 }
 
 interface CatalogItem {
@@ -64,7 +69,11 @@ interface FormTouched {
   [key: string]: boolean
 }
 
-export default function ProfessionalForm() {
+interface ProfessionalFormProps {
+  isAdditionalProfile?: boolean
+}
+
+export default function ProfessionalForm({ isAdditionalProfile = false }: ProfessionalFormProps) {
   const { toast } = useToast()
   const searchParams = useSearchParams()
   const plan = searchParams.get("plan") // Get plan from URL
@@ -107,6 +116,11 @@ export default function ProfessionalForm() {
       }
       return m;
     })(),
+    facebook_url: "",
+    instagram_url: "",
+    tiktok_url: "",
+    linkedin_url: "",
+    x_url: "",
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [touched, setTouched] = useState<FormTouched>({})
@@ -126,9 +140,9 @@ export default function ProfessionalForm() {
   const [provinces, setProvinces] = useState<CatalogItem[]>([])
   const [cities, setCities] = useState<CatalogItem[]>([])
 
-  // Load initial catalogs
+  // Load initial catalogs and existing user data if needed
   useEffect(() => {
-    const loadCatalogs = async () => {
+    const loadInitialData = async () => {
       try {
         const [profRes, provRes] = await Promise.all([
           catalogosApi.obtenerProfesiones(),
@@ -136,12 +150,32 @@ export default function ProfessionalForm() {
         ])
         setProfessions(profRes || [])
         setProvinces(provRes || [])
+
+        if (isAdditionalProfile) {
+          const token = localStorage.getItem("auth_token")
+          if (token) {
+            const userData = await usuarioApi.obtenerMiPerfil(token)
+            if (userData) {
+              setFormData(prev => ({
+                ...prev,
+                fullName: userData.nombre || "",
+                email: userData.correo || "",
+                phone: userData.telefono || "",
+                cedula: userData.cedula || "",
+                // Set passwords to something dummy to pass validation if needed,
+                // but we will skip these fields in the UI
+                password: "ExistingUser1!",
+                confirmPassword: "ExistingUser1!",
+              }))
+            }
+          }
+        }
       } catch (error) {
-        console.error("Error loading catalogs:", error)
+        console.error("Error loading initial data:", error)
       }
     }
-    loadCatalogs()
-  }, [])
+    loadInitialData()
+  }, [isAdditionalProfile])
 
   // Prompt for location on step 2
   useEffect(() => {
@@ -208,7 +242,7 @@ export default function ProfessionalForm() {
 
   const steps = [
 
-    { title: "Datos Personales", description: "Información básica" },
+    { title: isAdditionalProfile ? "Imagen de Perfil" : "Datos Personales", description: isAdditionalProfile ? "Sube tu foto" : "Información básica" },
     { title: "Información Profesional", description: "Tu experiencia" },
     { title: "Ubicación", description: "Dónde trabajas" },
     { title: "Documentos", description: "Verifica tu identidad" },
@@ -469,7 +503,11 @@ export default function ProfessionalForm() {
     const currentFieldsToValidate: string[] = []
     switch (currentStep) {
       case 0:
-        currentFieldsToValidate.push("fullName", "cedula", "email", "password", "confirmPassword", "phone", "profileImage")
+        if (isAdditionalProfile) {
+          currentFieldsToValidate.push("profileImage")
+        } else {
+          currentFieldsToValidate.push("fullName", "cedula", "email", "password", "confirmPassword", "phone", "profileImage")
+        }
         break
       case 1:
         currentFieldsToValidate.push("profession", "specialty", "description", "yearsExperience", "workMode")
@@ -516,25 +554,30 @@ export default function ProfessionalForm() {
     if (validateStep()) {
       setIsLoading(true)
       try {
-        console.log("[v0] Starting form submission with backend integration")
+        let token = localStorage.getItem("auth_token")
 
-        // Step 1: Register user with auth API
-        const registerData = {
-          nombre: formData.fullName,
-          correo: formData.email,
-          contrasena: formData.password,
-          cedula: formData.cedula,
-          telefono: formData.phone,
-          rol_id: 2, // Always 2 for professionals
+        if (!isAdditionalProfile) {
+          // Step 1: Register user with auth API
+          const registerData = {
+            nombre: formData.fullName,
+            correo: formData.email,
+            contrasena: formData.password,
+            cedula: formData.cedula,
+            telefono: formData.phone,
+            rol_id: 2, // Always 2 for professionals
+          }
+
+          console.log("[v0] Registering user:", registerData)
+          const authResponse = await authApi.register(registerData)
+          token = authResponse.token || null
+
+          if (!token) throw new Error("No se recibió el token de autenticación")
+          saveToken(token) // Save token for consistency with future calls
+          console.log("[v0] User registered successfully")
+        } else {
+          if (!token) throw new Error("No se encontró una sesión activa")
+          console.log("[v0] Using existing token for additional profile")
         }
-
-        console.log("[v0] Registering user:", registerData)
-        const authResponse = await authApi.register(registerData)
-        const token = authResponse.token
-
-        if (!token) throw new Error("No se recibió el token de autenticación")
-        saveToken(token) // Save token for consistency with future calls
-        console.log("[v0] User registered successfully")
 
         // Step 2: Create professional profile FIRST (Independent of photo/docs in new architecture)
         const perfilData: any = {
@@ -552,6 +595,11 @@ export default function ProfessionalForm() {
           longitud: formData.lng, // Required for Direccion creation in backend
           tarifa: formData.rate ? parseFloat(formData.rate) : 0,
           tarifa_hora: formData.rate ? parseFloat(formData.rate) : 0,
+          facebook_url: formData.facebook_url,
+          instagram_url: formData.instagram_url,
+          tiktok_url: formData.tiktok_url,
+          linkedin_url: formData.linkedin_url,
+          x_url: formData.x_url,
         }
 
         console.log("[v0] Creating professional profile:", perfilData)
@@ -578,17 +626,19 @@ export default function ProfessionalForm() {
           }
         }
 
-        // Step 4: Sync user record in 'usuarios' table
-        try {
-          const userUpdateData = {
-            nombre: formData.fullName,
-            telefono: formData.phone,
-            cedula: formData.cedula,
-            foto_url: finalFotoUrl
+        // Step 4: Sync user record in 'usuarios' table (only for new users)
+        if (!isAdditionalProfile) {
+          try {
+            const userUpdateData = {
+              nombre: formData.fullName,
+              telefono: formData.phone,
+              cedula: formData.cedula,
+              foto_url: finalFotoUrl
+            }
+            await usuarioApi.actualizarPerfil(userUpdateData, token)
+          } catch (updateError) {
+            console.warn("[v0] Could not update user record:", updateError)
           }
-          await usuarioApi.actualizarPerfil(userUpdateData, token)
-        } catch (updateError) {
-          console.warn("[v0] Could not update user record:", updateError)
         }
 
         // Step 5: Save Availability Schedule using perfilId
@@ -683,109 +733,113 @@ export default function ProfessionalForm() {
 
   const renderPersonalInfo = () => (
     <div className="space-y-6">
-      <h2 className="font-oswald text-2xl font-bold text-foreground mb-8">Información Personal</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-2">Nombre Completo *</label>
-          <input
-            type="text"
-            name="fullName"
-            value={formData.fullName}
-            onChange={handleInputChange}
-            onBlur={handleBlur}
-            className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("fullName")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
-          />
-          {errors.fullName && touched.fullName && <p className="text-red-400 text-sm mt-1">{errors.fullName}</p>}
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-2">Cédula *</label>
-          <input
-            ref={cedulaInputRef}
-            type="text"
-            name="cedula"
-            value={formData.cedula}
-            onChange={handleInputChange}
-            onBlur={handleBlur}
-            pattern="\d*"
-            inputMode="numeric"
-            className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("cedula")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
-          />
-          {errors.cedula && touched.cedula && <p className="text-red-400 text-sm mt-1 leading-tight">{errors.cedula}</p>}
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-2">Teléfono de Contacto *</label>
-          <input
-            type="tel"
-            name="phone"
-            value={formData.phone}
-            onChange={handleInputChange}
-            onBlur={handleBlur}
-            pattern="\d*"
-            inputMode="numeric"
-            className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("phone")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
-          />
-          {errors.phone && touched.phone && <p className="text-red-400 text-sm mt-1">{errors.phone}</p>}
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-2">Correo Electrónico *</label>
-          <input
-            ref={emailInputRef}
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleInputChange}
-            onBlur={handleBlur}
-            className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("email")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
-          />
-          {errors.email && touched.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
-        </div>
-        <div className="flex flex-col">
-          <label className="block text-sm font-medium text-muted-foreground mb-2">
-            Contraseña (mínimo 8 caracteres, mayúscula, minúscula y especial) *
-          </label>
-          <div className="relative mt-auto">
+      <h2 className="font-oswald text-2xl font-bold text-foreground mb-8">
+        {isAdditionalProfile ? "Imagen de Perfil" : "Información Personal"}
+      </h2>
+      {!isAdditionalProfile && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">Nombre Completo *</label>
             <input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              value={formData.password}
+              type="text"
+              name="fullName"
+              value={formData.fullName}
               onChange={handleInputChange}
               onBlur={handleBlur}
-              className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("password")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary pr-10`}
+              className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("fullName")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
+            {errors.fullName && touched.fullName && <p className="text-red-400 text-sm mt-1">{errors.fullName}</p>}
           </div>
-          {errors.password && touched.password && <p className="text-red-400 text-sm mt-1">{errors.password}</p>}
-        </div>
-        <div className="flex flex-col">
-          <label className="block text-sm font-medium text-muted-foreground mb-2">
-            Confirmar Contraseña *
-          </label>
-          <div className="relative mt-auto">
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">Cédula *</label>
             <input
-              type={showConfirmPassword ? "text" : "password"}
-              name="confirmPassword"
-              value={formData.confirmPassword}
+              ref={cedulaInputRef}
+              type="text"
+              name="cedula"
+              value={formData.cedula}
               onChange={handleInputChange}
               onBlur={handleBlur}
-              className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("confirmPassword")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary pr-10`}
+              pattern="\d*"
+              inputMode="numeric"
+              className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("cedula")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
             />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
+            {errors.cedula && touched.cedula && <p className="text-red-400 text-sm mt-1 leading-tight">{errors.cedula}</p>}
           </div>
-          {errors.confirmPassword && touched.confirmPassword && <p className="text-red-400 text-sm mt-1">{errors.confirmPassword}</p>}
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">Teléfono de Contacto *</label>
+            <input
+              type="tel"
+              name="phone"
+              value={formData.phone}
+              onChange={handleInputChange}
+              onBlur={handleBlur}
+              pattern="\d*"
+              inputMode="numeric"
+              className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("phone")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
+            />
+            {errors.phone && touched.phone && <p className="text-red-400 text-sm mt-1">{errors.phone}</p>}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">Correo Electrónico *</label>
+            <input
+              ref={emailInputRef}
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              onBlur={handleBlur}
+              className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("email")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
+            />
+            {errors.email && touched.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
+          </div>
+          <div className="flex flex-col">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              Contraseña (mínimo 8 caracteres, mayúscula, minúscula y especial) *
+            </label>
+            <div className="relative mt-auto">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                onBlur={handleBlur}
+                className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("password")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary pr-10`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+            {errors.password && touched.password && <p className="text-red-400 text-sm mt-1">{errors.password}</p>}
+          </div>
+          <div className="flex flex-col">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              Confirmar Contraseña *
+            </label>
+            <div className="relative mt-auto">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                onBlur={handleBlur}
+                className={`w-full px-4 py-3 bg-card border ${getInputBorderColor("confirmPassword")} rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary pr-10`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+            {errors.confirmPassword && touched.confirmPassword && <p className="text-red-400 text-sm mt-1">{errors.confirmPassword}</p>}
+          </div>
         </div>
-      </div>
+      )}
       <div>
         <label className="block text-sm font-medium text-muted-foreground mb-2">Foto de Perfil *</label>
         <input
@@ -1311,6 +1365,90 @@ export default function ProfessionalForm() {
               <p className="text-[10px] text-muted-foreground leading-tight">Visible para contacto directo</p>
             </div>
           </label>
+        </div>
+      </div>
+
+      <div className="space-y-6 pt-8 border-t border-border">
+        <div>
+          <h3 className="font-oswald text-xl font-bold text-foreground">Redes Sociales</h3>
+          <p className="text-sm text-muted-foreground mt-1">Aumenta tu visibilidad añadiendo los enlaces a tus perfiles profesionales.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Facebook className="size-4 text-blue-600" /> Facebook
+            </label>
+            <input
+              type="url"
+              name="facebook_url"
+              value={formData.facebook_url}
+              onChange={handleInputChange}
+              onBlur={handleBlur}
+              placeholder="https://facebook.com/usuario"
+              className={`w-full px-4 py-2.5 bg-card border ${getInputBorderColor("facebook_url")} rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30`}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Instagram className="size-4 text-pink-600" /> Instagram
+            </label>
+            <input
+              type="url"
+              name="instagram_url"
+              value={formData.instagram_url}
+              onChange={handleInputChange}
+              onBlur={handleBlur}
+              placeholder="https://instagram.com/usuario"
+              className={`w-full px-4 py-2.5 bg-card border ${getInputBorderColor("instagram_url")} rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30`}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <div className="size-4 flex items-center justify-center font-bold text-[10px] border border-foreground rounded-sm leading-none">X</div> Twitter / X
+            </label>
+            <input
+              type="url"
+              name="x_url"
+              value={formData.x_url}
+              onChange={handleInputChange}
+              onBlur={handleBlur}
+              placeholder="https://x.com/usuario"
+              className={`w-full px-4 py-2.5 bg-card border ${getInputBorderColor("x_url")} rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30`}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Linkedin className="size-4 text-blue-700" /> LinkedIn
+            </label>
+            <input
+              type="url"
+              name="linkedin_url"
+              value={formData.linkedin_url}
+              onChange={handleInputChange}
+              onBlur={handleBlur}
+              placeholder="https://linkedin.com/in/usuario"
+              className={`w-full px-4 py-2.5 bg-card border ${getInputBorderColor("linkedin_url")} rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30`}
+            />
+          </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Music className="size-4 text-gray-900" /> TikTok
+            </label>
+            <input
+              type="url"
+              name="tiktok_url"
+              value={formData.tiktok_url}
+              onChange={handleInputChange}
+              onBlur={handleBlur}
+              placeholder="https://tiktok.com/@usuario"
+              className={`w-full px-4 py-2.5 bg-card border ${getInputBorderColor("tiktok_url")} rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30`}
+            />
+          </div>
         </div>
       </div>
 

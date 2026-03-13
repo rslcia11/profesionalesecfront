@@ -45,6 +45,12 @@ import {
   Info,
   Globe,
   Eye,
+  Loader2,
+  Facebook,
+  Instagram,
+  Linkedin,
+  Twitter,
+  Music
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -119,6 +125,7 @@ export default function AdminDashboard() {
 
   const [ponencias, setPonencias] = useState<Ponencia[]>([])
   const [perfilesPendientes, setPerfilesPendientes] = useState<PerfilPendiente[]>([])
+  const [processingProfiles, setProcessingProfiles] = useState<Record<number, "approving" | "rejecting" | null>>({})
 
   const [planes, setPlanes] = useState<Plan[]>([
     {
@@ -359,6 +366,7 @@ export default function AdminDashboard() {
   }
 
   const aprobarPerfil = async (id: number) => {
+    setProcessingProfiles((prev) => ({ ...prev, [id]: "approving" }))
     try {
       const token = localStorage.getItem("auth_token")
       if (!token) return
@@ -376,10 +384,13 @@ export default function AdminDashboard() {
       })
     } catch (e) {
       toast({ title: "Error", description: "No se pudo aprobar el perfil", variant: "destructive" })
+    } finally {
+      setProcessingProfiles((prev) => ({ ...prev, [id]: null }))
     }
   }
 
   const rechazarPerfil = async (id: number) => {
+    setProcessingProfiles((prev) => ({ ...prev, [id]: "rejecting" }))
     try {
       const token = localStorage.getItem("auth_token")
       if (!token) return
@@ -398,6 +409,8 @@ export default function AdminDashboard() {
       })
     } catch (e) {
       toast({ title: "Error", description: "No se pudo rechazar el perfil", variant: "destructive" })
+    } finally {
+      setProcessingProfiles((prev) => ({ ...prev, [id]: null }))
     }
   }
 
@@ -708,9 +721,34 @@ export default function AdminDashboard() {
     return <Badge className={cn("border", variant.color)}>{variant.text}</Badge>
   }
 
-  const openProfileDetails = (profile: any) => {
+  const openProfileDetails = async (profile: any) => {
     setSelectedProfile(profile)
     setIsProfileDetailsOpen(true)
+
+    // Fetch full profile data to get documents and other details not in the list summary
+    const token = localStorage.getItem("auth_token")
+    if (token) {
+      try {
+        const fullData = await profesionalApi.obtenerMiPerfil(token, profile.id)
+        const detailedProfile = Array.isArray(fullData) ? fullData[0] : (fullData.perfil || fullData)
+        
+        if (detailedProfile) {
+          setSelectedProfile((prev: any) => ({
+            ...prev,
+            ...detailedProfile,
+            // Flatten nested objects that might have been overwritten
+            profesion: detailedProfile.profesion?.nombre || detailedProfile.profesion || prev.profesion,
+            especialidad: detailedProfile.especialidad?.nombre || detailedProfile.especialidad || prev.especialidad,
+            ciudad: detailedProfile.ciudad?.nombre || detailedProfile.ciudad || prev.ciudad,
+            provincia: detailedProfile.ciudad?.provincia?.nombre || detailedProfile.provincia || prev.provincia,
+            // Ensure documents are mapped even if field names vary
+            documentos: detailedProfile.documentos || detailedProfile.PerfilDocumentos || detailedProfile.perfil_documentos || prev.documentos || []
+          }))
+        }
+      } catch (error) {
+        console.error("Error fetching full profile details:", error)
+      }
+    }
   }
 
   const openConversatorioDetails = (ponencia: Ponencia) => {
@@ -1646,9 +1684,17 @@ export default function AdminDashboard() {
                             {perfil.estado !== "aprobado" && (
                               <Button
                                 onClick={() => aprobarPerfil(perfil.id)}
-                                className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300 hover:scale-105"
+                                disabled={!!processingProfiles[perfil.id]}
+                                className={cn(
+                                  "flex-1 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300 hover:scale-105",
+                                  processingProfiles[perfil.id] && "opacity-50 cursor-not-allowed"
+                                )}
                               >
-                                <Check className="mr-2 h-4 w-4" />
+                                {processingProfiles[perfil.id] === "approving" ? (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Check className="mr-2 h-4 w-4" />
+                                )}
                                 Aprobar
                               </Button>
                             )}
@@ -1656,9 +1702,17 @@ export default function AdminDashboard() {
                               <Button
                                 onClick={() => rechazarPerfil(perfil.id)}
                                 variant="destructive"
-                                className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 transition-all duration-300 hover:scale-105"
+                                disabled={!!processingProfiles[perfil.id]}
+                                className={cn(
+                                  "flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 transition-all duration-300 hover:scale-105",
+                                  processingProfiles[perfil.id] && "opacity-50 cursor-not-allowed"
+                                )}
                               >
-                                <X className="mr-2 h-4 w-4" />
+                                {processingProfiles[perfil.id] === "rejecting" ? (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                  <X className="mr-2 h-4 w-4" />
+                                )}
                                 Rechazar
                               </Button>
                             )}
@@ -2398,6 +2452,45 @@ export default function AdminDashboard() {
                     </CardContent>
                   </Card>
 
+                  {/* Redes Sociales */}
+                  {(selectedProfile.facebook_url || selectedProfile.instagram_url || selectedProfile.tiktok_url || selectedProfile.linkedin_url || selectedProfile.x_url) && (
+                    <div>
+                      <h3 className="font-semibold mb-3 text-lg">Redes Sociales</h3>
+                      <div className="flex flex-wrap gap-4">
+                        {selectedProfile.facebook_url && (
+                          <a href={selectedProfile.facebook_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors">
+                            <Facebook className="h-4 w-4" />
+                            <span className="text-sm font-medium">Facebook</span>
+                          </a>
+                        )}
+                        {selectedProfile.instagram_url && (
+                          <a href={selectedProfile.instagram_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-pink-50 text-pink-700 rounded-lg border border-pink-100 hover:bg-pink-100 transition-colors">
+                            <Instagram className="h-4 w-4" />
+                            <span className="text-sm font-medium">Instagram</span>
+                          </a>
+                        )}
+                        {selectedProfile.x_url && (
+                          <a href={selectedProfile.x_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
+                            <div className="h-4 w-4 flex items-center justify-center font-bold text-[10px] border border-gray-700 rounded-sm leading-none">X</div>
+                            <span className="text-sm font-medium">Twitter / X</span>
+                          </a>
+                        )}
+                        {selectedProfile.linkedin_url && (
+                          <a href={selectedProfile.linkedin_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-800 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors">
+                            <Linkedin className="h-4 w-4" />
+                            <span className="text-sm font-medium">LinkedIn</span>
+                          </a>
+                        )}
+                        {selectedProfile.tiktok_url && (
+                          <a href={selectedProfile.tiktok_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-gray-50 text-gray-900 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
+                            <Music className="h-4 w-4" />
+                            <span className="text-sm font-medium">TikTok</span>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Descripción */}
                   <div>
                     <h3 className="font-semibold mb-2 text-lg">Descripción Profesional</h3>
@@ -2414,7 +2507,7 @@ export default function AdminDashboard() {
                         {selectedProfile.documentos.map((doc: any, index: number) => (
                           <a
                             key={index}
-                            href={doc.url}
+                            href={formatUrl(doc.url) || "#"}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-3 p-3 border rounded-lg hover:bg-blue-50 transition-colors group bg-white"

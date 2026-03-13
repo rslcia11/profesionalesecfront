@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { profesionalApi, horariosApi } from "@/lib/api"
-import { MapPin, Phone, Mail, Facebook, Instagram, Twitter, Check } from "lucide-react"
+import { MapPin, Phone, Mail, Facebook, Instagram, Twitter, Check, Linkedin, Music } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import Header from "@/components/header"
@@ -71,7 +71,7 @@ export default function ProfessionalProfile() {
     }
 
     // Data Mapping
-    const { usuario, profesion, especialidad, descripcion, tarifa, ciudad, direccion, lat, lng, calle_principal, referencia } = professional
+    const { usuario, profesion, especialidad, descripcion, tarifa, ciudad, direccion, lat, lng, calle_principal, referencia, facebook_url, instagram_url, x_url, linkedin_url, tiktok_url } = professional
     const name = usuario?.nombre || "Profesional"
     const title = profesion?.nombre || "Profesional"
     const subTitle = especialidad?.nombre ? `${title} Especializada en ${especialidad.nombre}` : title
@@ -126,11 +126,42 @@ export default function ProfessionalProfile() {
                         <p className="text-gray-500 text-lg mb-6 max-w-md">{subTitle}</p>
 
                         {/* Social Icons */}
-                        <div className="flex gap-4 mt-2">
-                            <a href="#" className="bg-black text-white p-3 rounded-full hover:bg-gray-800 transition"><Facebook size={20} /></a>
-                            {phone && <a href={whatsappLink} className="bg-black text-white p-3 rounded-full hover:bg-gray-800 transition"><Phone size={20} /></a>}
-                            <a href="#" className="bg-black text-white p-3 rounded-full hover:bg-gray-800 transition"><Instagram size={20} /></a>
-                            {email && <a href={`mailto:${email}`} className="bg-black text-white p-3 rounded-full hover:bg-gray-800 transition"><Mail size={20} /></a>}
+                        <div className="flex flex-wrap gap-4 mt-2">
+                            {facebook_url && (
+                                <a href={facebook_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center size-12 bg-white border border-gray-100 rounded-2xl text-gray-500 hover:text-blue-600 hover:border-blue-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group shadow-sm" title="Facebook">
+                                    <Facebook size={20} className="group-hover:scale-110 transition-transform" />
+                                </a>
+                            )}
+                            {instagram_url && (
+                                <a href={instagram_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center size-12 bg-white border border-gray-100 rounded-2xl text-gray-500 hover:text-pink-600 hover:border-pink-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group shadow-sm" title="Instagram">
+                                    <Instagram size={20} className="group-hover:scale-110 transition-transform" />
+                                </a>
+                            )}
+                            {x_url && (
+                                <a href={x_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center size-12 bg-white border border-gray-100 rounded-2xl text-gray-500 hover:text-black hover:border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group shadow-sm" title="Twitter / X">
+                                    <div className="size-5 flex items-center justify-center font-bold text-[10px] border border-gray-400 group-hover:border-black rounded-sm leading-none transition-colors">X</div>
+                                </a>
+                            )}
+                            {linkedin_url && (
+                                <a href={linkedin_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center size-12 bg-white border border-gray-100 rounded-2xl text-gray-500 hover:text-blue-800 hover:border-blue-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group shadow-sm" title="LinkedIn">
+                                    <Linkedin size={20} className="group-hover:scale-110 transition-transform" />
+                                </a>
+                            )}
+                            {tiktok_url && (
+                                <a href={tiktok_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center size-12 bg-white border border-gray-100 rounded-2xl text-gray-500 hover:text-black hover:border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group shadow-sm" title="TikTok">
+                                    <Music size={20} className="group-hover:scale-110 transition-transform" />
+                                </a>
+                            )}
+                            {phone && (
+                                <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center size-12 bg-white border border-gray-100 rounded-2xl text-gray-500 hover:text-green-600 hover:border-green-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group shadow-sm" title="WhatsApp">
+                                    <Phone size={20} className="group-hover:scale-110 transition-transform" />
+                                </a>
+                            )}
+                            {email && (
+                                <a href={`mailto:${email}`} className="flex items-center justify-center size-12 bg-white border border-gray-100 rounded-2xl text-gray-500 hover:text-gray-900 hover:border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group shadow-sm" title="Email">
+                                    <Mail size={20} className="group-hover:scale-110 transition-transform" />
+                                </a>
+                            )}
                         </div>
                     </div>
                 </div>
