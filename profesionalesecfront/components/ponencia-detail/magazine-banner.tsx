@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import { ExternalLink, FileText } from "lucide-react"
+import { formatUrl } from "@/lib/utils"
 
 interface MagazineBannerProps {
     ponencia: any
@@ -16,10 +17,12 @@ export default function MagazineBanner({ ponencia, loading }: MagazineBannerProp
         titulo: "Revista Científica Profesionales Ecuador",
         descripcion: "Investigación, innovación y conocimiento multidisciplinario desde Ecuador para el mundo.",
         portada_url: ponencia.foto_revista_general,
-        archivo_url: ponencia.url_revista_general
+        pdf_url: ponencia.url_revista_general
     }
 
-    if (!revistaData.archivo_url && !ponencia.url_revista_general) return null
+    const finalPdfUrl = formatUrl(revistaData.pdf_url || revistaData.archivo_url || ponencia.url_revista_general)
+
+    if (!finalPdfUrl) return null
 
     return (
         <section className="bg-white py-16 px-6">
@@ -40,7 +43,7 @@ export default function MagazineBanner({ ponencia, loading }: MagazineBannerProp
                                 {revistaData.descripcion}
                             </p>
                             <a
-                                href={revistaData.archivo_url || ponencia.url_revista_general}
+                                href={finalPdfUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-3 bg-white text-black px-6 py-4 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all duration-500 group-hover:px-10 shadow-xl shadow-emerald-500/5"

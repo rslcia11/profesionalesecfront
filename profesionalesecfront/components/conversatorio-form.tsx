@@ -622,21 +622,96 @@ export default function ConversatorioForm({ initialData, id, provincias, profesi
                               />
                             </div>
                           </div>
-                          <div className="space-y-2 pt-2 border-t border-slate-100">
-                            <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Tema de la Charla</Label>
-                            <Input 
-                              placeholder="Ej: Nuevas tendencias en..."                               value={ponente.tema_charla || ""} 
-                              onChange={(e) => updateSpeaker(diaIndex, pIndex, "tema_charla", e.target.value)}
-                              className="h-8 text-[11px] border-none bg-white rounded-lg"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">URL Revista/Perfil Personal</Label>
-                            <Input 
-                              placeholder="https://..."                               value={ponente.url_revista_personal || ""} 
-                              onChange={(e) => updateSpeaker(diaIndex, pIndex, "url_revista_personal", e.target.value)}
-                              className="h-8 text-[11px] border-none bg-white rounded-lg font-mono"
-                            />
+                          <div className="space-y-4 pt-4 border-t border-slate-100">
+                            <div className="grid grid-cols-1 gap-4">
+                              <div className="space-y-2">
+                                <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Slogan / Frase de Impacto</Label>
+                                <Input 
+                                  placeholder="Ej: Transformando la visión del futuro" 
+                                  value={ponente.slogan || ""} 
+                                  onChange={(e) => updateSpeaker(diaIndex, pIndex, "slogan", e.target.value)}
+                                  className="h-8 text-[11px] border-none bg-white rounded-lg"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Tema de la Charla</Label>
+                                <Input 
+                                  placeholder="Ej: Nuevas tendencias en..." 
+                                  value={ponente.tema_charla || ""} 
+                                  onChange={(e) => updateSpeaker(diaIndex, pIndex, "tema_charla", e.target.value)}
+                                  className="h-8 text-[11px] border-none bg-white rounded-lg"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Biografía del Ponente</Label>
+                              <Textarea 
+                                placeholder="Breve reseña profesional..." 
+                                value={ponente.biografia || ""} 
+                                onChange={(e) => updateSpeaker(diaIndex, pIndex, "biografia", e.target.value)}
+                                className="min-h-[80px] text-[11px] border-none bg-white rounded-xl p-3 resize-none"
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">URL Video (YouTube)</Label>
+                                <Input 
+                                  placeholder="https://..." 
+                                  value={ponente.video_url || ""} 
+                                  onChange={(e) => updateSpeaker(diaIndex, pIndex, "video_url", e.target.value)}
+                                  className="h-8 text-[11px] border-none bg-white rounded-lg font-mono"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Link Revista/Perfil</Label>
+                                <Input 
+                                  placeholder="https://..." 
+                                  value={ponente.url_revista_personal || ""} 
+                                  onChange={(e) => updateSpeaker(diaIndex, pIndex, "url_revista_personal", e.target.value)}
+                                  className="h-8 text-[11px] border-none bg-white rounded-lg font-mono"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="space-y-3">
+                              <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Multimedia Premium</Label>
+                              <div className="flex items-center gap-3">
+                                <div className="flex-1 relative">
+                                  <Input 
+                                    placeholder="URL Fondo Banner" 
+                                    value={ponente.fondo_banner || ""} 
+                                    onChange={(e) => updateSpeaker(diaIndex, pIndex, "fondo_banner", e.target.value)}
+                                    className="h-8 text-[10px] border-none bg-white rounded-lg pr-8"
+                                  />
+                                  <Button 
+                                    size="icon" 
+                                    type="button"
+                                    className="absolute right-1 top-1 h-6 w-6 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600"
+                                    onClick={() => document.getElementById(`upload-fondo-${diaIndex}-${pIndex}`)?.click()}
+                                  >
+                                    <Upload className="h-3 w-3" />
+                                  </Button>
+                                  <Input
+                                    type="file"
+                                    className="hidden"
+                                    id={`upload-fondo-${diaIndex}-${pIndex}`}
+                                    accept="image/*"
+                                    onChange={(e) => handleFileUpload(e, { type: "ponente_fondo", diaIndex, ponenteIndex: pIndex })}
+                                  />
+                                </div>
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Galería del Ponente (URLs separadas por coma)</Label>
+                                <Input 
+                                  placeholder="url1, url2, url3..." 
+                                  value={Array.isArray(ponente.galeria_fotos) ? ponente.galeria_fotos.join(", ") : ""} 
+                                  onChange={(e) => updateSpeaker(diaIndex, pIndex, "galeria_fotos", e.target.value.split(",").map(u => u.trim()).filter(u => u !== ""))}
+                                  className="h-8 text-[10px] border-none bg-white rounded-lg"
+                                />
+                              </div>
+                            </div>
                           </div>
                         </div>
                       ))}

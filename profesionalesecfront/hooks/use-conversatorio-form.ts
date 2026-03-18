@@ -41,6 +41,11 @@ export type PonenciaForm = {
       tema_charla: string
       foto_revista_url: string
       url_revista_personal: string
+      biografia?: string // NUEVO
+      slogan?: string // NUEVO
+      video_url?: string // NUEVO
+      fondo_banner?: string // PREMIUM
+      galeria_fotos?: string[] // PREMIUM
       orden: number
     }>
   }>
@@ -93,6 +98,11 @@ const sanitizeData = (data: Partial<PonenciaForm>): PonenciaForm => {
           tema_charla: p.tema_charla || "",
           foto_revista_url: p.foto_revista_url || "",
           url_revista_personal: p.url_revista_personal || "",
+          biografia: p.biografia || "",
+          slogan: p.slogan || "",
+          video_url: p.video_url || "",
+          fondo_banner: p.fondo_banner || "",
+          galeria_fotos: Array.isArray(p.galeria_fotos) ? p.galeria_fotos : [],
         })) : []
       }))
     } else if (k === "fecha_inicio" || k === "fecha_fin") {
@@ -197,7 +207,7 @@ export function useConversatorioForm(initialData?: Partial<PonenciaForm>) {
     }
   }
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "imagen_banner" | "galeria_fotos" | "foto_revista_general" | "url_revista_general" | { type: "ponente_foto", diaIndex: number, ponenteIndex: number }) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "imagen_banner" | "galeria_fotos" | "foto_revista_general" | "url_revista_general" | { type: "ponente_foto" | "ponente_fondo", diaIndex: number, ponenteIndex: number }) => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -221,11 +231,16 @@ export function useConversatorioForm(initialData?: Partial<PonenciaForm>) {
           updateField("galeria_fotos", [...currentGaleria, res.url])
           toast({ title: "Éxito", description: "Imagen añadida a la galería." })
         }
-      } else if (field.type === "ponente_foto") {
+      } else if (field.type === "ponente_foto" || field.type === "ponente_fondo") {
         const newDias = [...formData.dias]
-        newDias[field.diaIndex].ponentes[field.ponenteIndex].foto_revista_url = res.url
+        if (field.type === "ponente_foto") {
+          newDias[field.diaIndex].ponentes[field.ponenteIndex].foto_revista_url = res.url
+          toast({ title: "Éxito", description: "Foto del ponente subida." })
+        } else {
+          newDias[field.diaIndex].ponentes[field.ponenteIndex].fondo_banner = res.url
+          toast({ title: "Éxito", description: "Fondo del banner del ponente subido." })
+        }
         updateField("dias", newDias)
-        toast({ title: "Éxito", description: "Foto del ponente subida." })
       }
     } catch (error: any) {
       toast({ title: "Error", description: "Error al subir archivo: " + error.message, variant: "destructive" })
@@ -265,6 +280,11 @@ export function useConversatorioForm(initialData?: Partial<PonenciaForm>) {
       tema_charla: "",
       foto_revista_url: "",
       url_revista_personal: "",
+      biografia: "",
+      slogan: "",
+      video_url: "",
+      fondo_banner: "",
+      galeria_fotos: [],
       orden: formData.dias[diaIndex].ponentes.length
     }
     const newDias = [...formData.dias]

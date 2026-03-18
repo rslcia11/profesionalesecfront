@@ -64,33 +64,6 @@ export default function CommunityCTA() {
           ))}
         </div>
       </section>
-
-      {/* Section 2: Proximos Eventos CTA */}
-      <section className="py-20 px-6 bg-white">
-        <div className="max-w-4xl mx-auto text-center space-y-10">
-          <h2 className="text-5xl md:text-7xl font-black text-black uppercase tracking-tighter leading-[0.85]">
-            ¿TE GUSTARÍA SER PARTE DE NUESTROS PRÓXIMOS EVENTOS?
-          </h2>
-          <p className="text-gray-400 text-lg md:text-xl font-light max-w-2xl mx-auto">
-            Únete a la red de profesionales más prestigiosa y comparte tu conocimiento con el mundo.
-          </p>
-          <div className="flex flex-wrap justify-center gap-6 pt-4">
-            <Link 
-              href="https://wa.me/593994147639" 
-              target="_blank"
-              className="px-12 py-6 bg-emerald-500 text-white rounded-full font-black uppercase tracking-widest text-xs hover:bg-emerald-600 transition-all shadow-2xl shadow-emerald-500/20 active:scale-95"
-            >
-              Quiero ser ponente
-            </Link>
-            <Link 
-              href="/conversatorios" 
-              className="px-12 py-6 bg-black text-white rounded-full font-black uppercase tracking-widest text-xs hover:bg-gray-800 transition-all active:scale-95 shadow-xl shadow-black/10"
-            >
-              Ver más eventos
-            </Link>
-          </div>
-        </div>
-      </section>
     </div>
   )
 }

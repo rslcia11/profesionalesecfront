@@ -43,16 +43,22 @@ export default function EventHero({ ponencia, loading, error }: HeroProps) {
     const isFuturo = new Date(ponencia.fecha_inicio) >= new Date()
 
     return (
-        <section className="relative pt-12 pb-8 px-6 overflow-hidden bg-white border-b border-gray-100">
+        <section className="relative pt-32 pb-8 px-6 overflow-hidden bg-white border-b border-gray-100">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(16,185,129,0.05),transparent_70%)] opacity-100" />
             <div className="max-w-7xl mx-auto relative z-10">
-                <Link
-                    href="/conversatorios"
-                    className="inline-flex items-center gap-2 text-gray-400 hover:text-black text-[9px] font-black tracking-[0.3em] mb-8 transition-all uppercase"
+                <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="mb-10"
                 >
-                    <ArrowLeft className="w-3.5 h-3.5" />
-                    {UI_MESSAGES.backToEducation}
-                </Link>
+                    <Link
+                        href="/conversatorios"
+                        className="group inline-flex items-center gap-3 px-5 py-2.5 bg-slate-50 border border-slate-100 rounded-full text-slate-500 hover:bg-black hover:text-white hover:border-black transition-all shadow-sm hover:shadow-lg"
+                    >
+                        <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">{UI_MESSAGES.backToEducation}</span>
+                    </Link>
+                </motion.div>
 
                 <motion.div
                     initial={{ opacity: 0, y: 15 }}

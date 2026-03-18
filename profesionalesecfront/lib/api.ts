@@ -197,6 +197,8 @@ export interface PonenciaPonente {
   biografia?: string // NUEVO
   video_url?: string // NUEVO
   slogan?: string // NUEVO
+  fondo_banner?: string // PREMIUM
+  galeria_fotos?: string[] // PREMIUM
   orden: number
   usuario?: { id: number; nombre: string; foto_url?: string }
 }

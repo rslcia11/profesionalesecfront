@@ -2,11 +2,12 @@
 
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { ponenciasApi } from "@/lib/api"
 import { motion, AnimatePresence } from "framer-motion"
+import { ArrowLeft } from "lucide-react"
 
 // Atomic Components
 import EventHero from "@/components/ponencia-detail/hero"
@@ -20,8 +21,10 @@ import EventRegistration from "@/components/ponencia-detail/registration"
 
 export default function ConversatorioDetallePage() {
     const params = useParams()
+    const router = useRouter()
     const id = params.id as string
-
+    
+    // ... rest of the component state ...
     const [ponencia, setPonencia] = useState<any>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState("")
