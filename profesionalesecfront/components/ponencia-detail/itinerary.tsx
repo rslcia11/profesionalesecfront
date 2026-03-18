@@ -78,7 +78,11 @@ export default function EventItinerary({ ponencia, loading }: ItineraryProps) {
                                             <div className="h-px bg-gray-100 mb-12" />
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                                 {dia.ponentes?.map((pon: any) => (
-                                                    <SpeakerCard key={pon.id} ponente={pon} />
+                                                    <SpeakerCard 
+                                                        key={pon.id} 
+                                                        ponente={pon} 
+                                                        ponenciaId={ponencia.id} 
+                                                    />
                                                 ))}
                                                 {(!dia.ponentes || dia.ponentes.length === 0) && (
                                                     <p className="col-span-full text-gray-400 italic text-center py-8">No hay ponentes registrados para este día.</p>

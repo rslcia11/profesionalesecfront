@@ -193,6 +193,10 @@ export interface PonenciaPonente {
   tema_charla?: string
   foto_revista_url?: string
   url_revista_personal?: string
+  slug?: string // NUEVO
+  biografia?: string // NUEVO
+  video_url?: string // NUEVO
+  slogan?: string // NUEVO
   orden: number
   usuario?: { id: number; nombre: string; foto_url?: string }
 }
@@ -651,7 +655,10 @@ export const ponentesApi = {
       return [];
     }
   }, // Admin
-  async listarMisPonencias(token: string) { return fetchApi("/ponentes/mis-ponencias", { headers: authHeader(token) }); }
+  async listarMisPonencias(token: string) { return fetchApi("/ponentes/mis-ponencias", { headers: authHeader(token) }); },
+  async obtenerPerfilPublico(ponenciaId: string | number, slug: string) {
+    return fetchApi(`/ponentes/perfil/${ponenciaId}/${slug}`);
+  }
 }
 
 // Publicidad API
