@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { CheckCircle2, DollarSign } from "lucide-react"
+import { CheckCircle2, DollarSign, Clock } from "lucide-react"
 import { ponenciasApi } from "@/lib/api"
 import { UI_MESSAGES } from "@/constants/ponencias"
 
@@ -19,7 +19,15 @@ export default function EventRegistration({ ponencia, loading }: RegistrationPro
 
     if (loading || !ponencia) return null
 
+    const isPastEvent = (() => {
+        if (!ponencia.fecha_fin) return false
+        const endTime = ponencia.hora_fin || "23:59:59"
+        const endDateTime = new Date(`${ponencia.fecha_fin}T${endTime}`)
+        return endDateTime < new Date()
+    })()
+
     const handleInscripcion = async (e: React.FormEvent) => {
+        if (isPastEvent) return
         e.preventDefault()
         setInscLoading(true)
         setInscError("")
@@ -35,8 +43,9 @@ export default function EventRegistration({ ponencia, loading }: RegistrationPro
             setInscLoading(false)
         }
     }
+
     return (
-        <section id="registro" className="bg-black py-16 px-6 relative overflow-hidden">
+        <section id="registro" className={`py-16 px-6 relative overflow-hidden ${isPastEvent ? 'bg-gray-900' : 'bg-black'}`}>
             <div className="absolute inset-0 bg-emerald-500/5" />
             <div className="max-w-7xl mx-auto relative z-10 text-center">
                 <motion.div
@@ -45,7 +54,21 @@ export default function EventRegistration({ ponencia, loading }: RegistrationPro
                     viewport={{ once: true }}
                     className="max-w-xl mx-auto bg-white/[0.01] border border-white/5 backdrop-blur-xl p-10 md:p-14 rounded-[2rem]"
                 >
-                    {inscSuccess ? (
+                    {isPastEvent ? (
+                        <div className="text-center py-8">
+                            <div className="w-20 h-20 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <Clock className="w-10 h-10" />
+                            </div>
+                            <h3 className="text-3xl md:text-5xl font-black text-white italic uppercase tracking-tighter mb-4 leading-none">
+                                REGISTRO FINALIZADO
+                            </h3>
+                            <p className="text-gray-400 text-sm mb-6 max-w-xs mx-auto text-balance">
+                                Este evento ha concluido. Te invitamos a estar pendiente de nuestras próximas capacitaciones.
+                            </p>
+                            <div className="h-px bg-white/10 w-full mb-6" />
+                            <p className="text-[10px] font-black text-amber-500/50 uppercase tracking-[0.3em]">Evento Finalizado</p>
+                        </div>
+                    ) : inscSuccess ? (
                         <div className="text-center py-16">
                             <div className="w-20 h-20 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
                                 <CheckCircle2 className="w-10 h-10" />

@@ -207,6 +207,33 @@ export default function ConversatorioForm({ initialData, id, provincias, profesi
                 </div>
               </div>
 
+              {/* NUEVO: Horario General */}
+              <div className="bg-white p-6 rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 flex items-center justify-around gap-4">
+                <div className="space-y-2 flex-1">
+                  <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1 pl-1">
+                    <Clock className="h-3 w-3 text-blue-500" /> Hora Inicio Gral.
+                  </Label>
+                  <Input 
+                    type="time" 
+                    value={formData.hora_inicio || "09:00"} 
+                    onChange={(e) => updateField("hora_inicio", e.target.value)}
+                    className="h-11 bg-slate-50 border-none font-bold text-center rounded-xl focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+                <div className="w-px h-12 bg-slate-100" />
+                <div className="space-y-2 flex-1">
+                  <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1 pl-1">
+                    <Clock className="h-3 w-3 text-orange-500" /> Hora Fin Gral.
+                  </Label>
+                  <Input 
+                    type="time" 
+                    value={formData.hora_fin || "18:00"} 
+                    onChange={(e) => updateField("hora_fin", e.target.value)}
+                    className="h-11 bg-slate-50 border-none font-bold text-center rounded-xl focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-6 w-full">
                 <div className="space-y-4 bg-white p-8 rounded-[2rem] shadow-lg shadow-emerald-900/5 border border-slate-100 relative overflow-hidden group">
                   <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full -mr-12 -mt-12 transition-all group-hover:bg-emerald-500/10"></div>
@@ -620,6 +647,33 @@ export default function ConversatorioForm({ initialData, id, provincias, profesi
                                 onChange={(e) => updateSpeaker(diaIndex, pIndex, "profesion", e.target.value)}
                                 className="h-9 text-[10px] text-center border-none bg-white/50 rounded-lg"
                               />
+                              
+                              {/* NUEVO: Horario del Ponente */}
+                              <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-100 shadow-sm">
+                                <div className="flex-1 space-y-1">
+                                  <Label className="text-[8px] font-black text-slate-400 uppercase tracking-widest pl-1 flex items-center gap-1 leading-none">
+                                    <Clock className="h-2 w-2 text-blue-500" /> Inicio
+                                  </Label>
+                                  <Input 
+                                    type="time" 
+                                    value={ponente.hora_inicio || "09:00"} 
+                                    onChange={(e) => updateSpeaker(diaIndex, pIndex, "hora_inicio", e.target.value)}
+                                    className="h-7 px-1 text-[10px] font-bold text-center border-none bg-transparent shadow-none focus-visible:ring-0"
+                                  />
+                                </div>
+                                <div className="w-px h-6 bg-slate-100" />
+                                <div className="flex-1 space-y-1">
+                                  <Label className="text-[8px] font-black text-slate-400 uppercase tracking-widest pl-1 flex items-center gap-1 leading-none">
+                                    <Clock className="h-2 w-2 text-orange-500" /> Fin
+                                  </Label>
+                                  <Input 
+                                    type="time" 
+                                    value={ponente.hora_fin || "10:00"} 
+                                    onChange={(e) => updateSpeaker(diaIndex, pIndex, "hora_fin", e.target.value)}
+                                    className="h-7 px-1 text-[10px] font-bold text-center border-none bg-transparent shadow-none focus-visible:ring-0"
+                                  />
+                                </div>
+                              </div>
                             </div>
                           </div>
                           <div className="space-y-4 pt-4 border-t border-slate-100">
@@ -666,12 +720,33 @@ export default function ConversatorioForm({ initialData, id, provincias, profesi
                               </div>
                               <div className="space-y-2">
                                 <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Link Revista/Perfil</Label>
-                                <Input 
-                                  placeholder="https://..." 
-                                  value={ponente.url_revista_personal || ""} 
-                                  onChange={(e) => updateSpeaker(diaIndex, pIndex, "url_revista_personal", e.target.value)}
-                                  className="h-8 text-[11px] border-none bg-white rounded-lg font-mono"
-                                />
+                                <div className="flex items-center gap-2">
+                                  <Input 
+                                    placeholder="https://..." 
+                                    value={ponente.url_revista_personal || ""} 
+                                    onChange={(e) => updateSpeaker(diaIndex, pIndex, "url_revista_personal", e.target.value)}
+                                    className="h-8 text-[11px] border-none bg-white rounded-lg font-mono flex-1"
+                                  />
+                                  <div className="relative">
+                                    <Button 
+                                      size="icon" 
+                                      type="button"
+                                      className="h-8 w-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all border border-slate-200/50"
+                                      onClick={() => document.getElementById(`upload-revista-${diaIndex}-${pIndex}`)?.click()}
+                                      title="Subir PDF/Archivo"
+                                      disabled={isUploading}
+                                    >
+                                      {isUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                                    </Button>
+                                    <Input
+                                      type="file"
+                                      className="hidden"
+                                      id={`upload-revista-${diaIndex}-${pIndex}`}
+                                      accept=".pdf,image/*"
+                                      onChange={(e) => handleFileUpload(e, { type: "ponente_revista", diaIndex, ponenteIndex: pIndex })}
+                                    />
+                                  </div>
+                                </div>
                               </div>
                             </div>
 
@@ -704,12 +779,33 @@ export default function ConversatorioForm({ initialData, id, provincias, profesi
                               </div>
                               <div className="space-y-1">
                                 <Label className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Galería del Ponente (URLs separadas por coma)</Label>
-                                <Input 
-                                  placeholder="url1, url2, url3..." 
-                                  value={Array.isArray(ponente.galeria_fotos) ? ponente.galeria_fotos.join(", ") : ""} 
-                                  onChange={(e) => updateSpeaker(diaIndex, pIndex, "galeria_fotos", e.target.value.split(",").map(u => u.trim()).filter(u => u !== ""))}
-                                  className="h-8 text-[10px] border-none bg-white rounded-lg"
-                                />
+                                <div className="flex items-center gap-2">
+                                  <Input 
+                                    placeholder="url1, url2, url3..." 
+                                    value={Array.isArray(ponente.galeria_fotos) ? ponente.galeria_fotos.join(", ") : ""} 
+                                    onChange={(e) => updateSpeaker(diaIndex, pIndex, "galeria_fotos", e.target.value.split(",").map(u => u.trim()).filter(u => u !== ""))}
+                                    className="h-8 text-[10px] border-none bg-white rounded-lg flex-1"
+                                  />
+                                  <div className="relative">
+                                    <Button 
+                                      size="icon" 
+                                      type="button"
+                                      className="h-8 w-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all border border-slate-200/50"
+                                      onClick={() => document.getElementById(`upload-galeria-${diaIndex}-${pIndex}`)?.click()}
+                                      title="Añadir a Galería"
+                                      disabled={isUploading}
+                                    >
+                                      {isUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+                                    </Button>
+                                    <Input
+                                      type="file"
+                                      className="hidden"
+                                      id={`upload-galeria-${diaIndex}-${pIndex}`}
+                                      accept="image/*"
+                                      onChange={(e) => handleFileUpload(e, { type: "ponente_galeria", diaIndex, ponenteIndex: pIndex })}
+                                    />
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>

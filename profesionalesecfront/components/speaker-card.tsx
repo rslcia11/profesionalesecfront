@@ -1,6 +1,6 @@
 "use client"
 
-import { User } from "lucide-react"
+import { User, Clock } from "lucide-react"
 import Link from "next/link"
 import { formatUrl } from "@/lib/utils"
 
@@ -42,14 +42,24 @@ export default function SpeakerCard({ ponente, ponenciaId }: SpeakerCardProps) {
         </div>
         <div className="space-y-1 text-left">
           <p className="font-black text-black uppercase tracking-tight">{nombre}</p>
-          <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded-md inline-block">
-            {profesion}
-          </p>
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded-md inline-block">
+              {profesion}
+            </p>
+            {ponente.hora_inicio ? (
+              <p className="text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md flex items-center gap-1">
+                <Clock className="w-2.5 h-2.5" />
+                {ponente.hora_inicio.slice(0, 5)} - {ponente.hora_fin?.slice(0, 5)}
+              </p>
+            ) : (
+              <span className="text-[7px] text-slate-200">v1.2.3 • No schedule</span>
+            )}
+          </div>
           {ponente.tema_charla && (
-            <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed pt-1">
+            <div className="text-sm text-gray-500 line-clamp-2 leading-relaxed pt-2">
               <span className="font-bold text-gray-400 text-[10px] uppercase block mb-0.5">Tema a exponer:</span>
               {ponente.tema_charla}
-            </p>
+            </div>
           )}
         </div>
       </div>

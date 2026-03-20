@@ -35,13 +35,19 @@ export default function EventStats({ ponencia, loading }: StatsProps) {
             label: "Inversión", 
             value: Number(ponencia.precio) === 0 ? "Gratuito" : `$${ponencia.precio}`, 
             color: "text-purple-500" 
+        },
+        { 
+            icon: Clock, 
+            label: "Horario", 
+            value: ponencia.hora_inicio && ponencia.hora_fin ? `${ponencia.hora_inicio.slice(0, 5)} - ${ponencia.hora_fin.slice(0, 5)}` : "09:00 - 18:00", 
+            color: "text-rose-500" 
         }
     ]
 
     return (
         <section className="bg-white py-12 px-6 border-b border-gray-100">
             <div className="max-w-7xl mx-auto">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     {stats.map((item, index) => (
                         <motion.div
                             key={index}

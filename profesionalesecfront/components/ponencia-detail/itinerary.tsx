@@ -57,7 +57,7 @@ export default function EventItinerary({ ponencia, loading }: ItineraryProps) {
                                         <h4 className="text-lg md:text-xl font-black text-black uppercase">{dia.titulo_dia || `Sesión ${index + 1}`}</h4>
                                         <p className="text-xs text-gray-500 flex items-center gap-1.5 mt-0.5">
                                             <Clock className="w-3.5 h-3.5" />
-                                            {dia.hora_inicio} - {dia.hora_fin}
+                                            Horario: {dia.hora_inicio?.slice(0, 5)} - {dia.hora_fin?.slice(0, 5)}
                                         </p>
                                     </div>
                                 </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { ArrowLeft, Play, Quote, User, Info, Video, CheckCircle2 } from "lucide-react"
+import { ArrowLeft, Play, Quote, User, Info, Video, CheckCircle2, FileText, Clock } from "lucide-react"
 import Link from "next/link"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
@@ -167,8 +167,16 @@ export default function SpeakerProfilePage() {
                                     <div className="w-16 h-16 rounded-[1.5rem] bg-white flex items-center justify-center text-emerald-600 shadow-xl shadow-emerald-900/10 transition-transform group-hover:rotate-12">
                                         <CheckCircle2 size={32} />
                                     </div>
-                                    <div>
-                                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-1">Ponencia Magistral</p>
+                                    <div className="flex-1">
+                                        <div className="flex justify-between items-center mb-1">
+                                            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">Ponencia Magistral</p>
+                                            {ponente.hora_inicio && (
+                                                <div className="flex items-center gap-2 bg-emerald-500/10 px-3 py-1 rounded-lg">
+                                                    <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                                                    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">{ponente.hora_inicio.slice(0, 5)} - {ponente.hora_fin?.slice(0, 5)}</span>
+                                                </div>
+                                            )}
+                                        </div>
                                         <p className="text-2xl font-black text-slate-900 uppercase leading-tight tracking-tight">
                                             {ponente.tema_charla || "Tema destacado"}
                                         </p>
@@ -232,6 +240,63 @@ export default function SpeakerProfilePage() {
                     </div>
                 </div>
             </section>
+
+            {/* Magazine/Profile Section - Nielsen Heuristics: Consistency & Standards, Aesthetic Design */}
+            {ponente.url_revista_personal && (
+                <section className="bg-white py-16 px-6">
+                    <div className="max-w-7xl mx-auto">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.98 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            viewport={{ once: true }}
+                            className="relative bg-black rounded-[2.5rem] p-10 md:p-14 overflow-hidden group border border-emerald-500/20 shadow-2xl shadow-emerald-900/10"
+                        >
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_100%_0%,rgba(16,185,129,0.1),transparent_50%)]" />
+                            <div className="flex flex-col md:flex-row items-center gap-12 relative z-10">
+                                <div className="flex-1 text-center md:text-left">
+                                    <div className="inline-flex items-center gap-2 bg-emerald-500/10 px-4 py-2 rounded-full mb-6 border border-emerald-500/20">
+                                        <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                        <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">
+                                            Recurso Académico
+                                        </p>
+                                    </div>
+                                    <h3 className="text-3xl md:text-5xl font-black text-white mb-4 uppercase italic tracking-tighter leading-none">
+                                        REVISTA & PERFIL <br /> <span className="text-emerald-500">PROFESIONAL</span>
+                                    </h3>
+                                    <p className="text-base text-gray-400 font-light mb-8 max-w-lg">
+                                        Descarga la contribución detallada de {nombre} en nuestra revista exclusiva. Artículos, trayectoria y conocimiento experto a un clic de distancia.
+                                    </p>
+                                    <a
+                                        href={formatUrl(ponente.url_revista_personal)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-3 bg-white text-black px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all duration-500 group-hover:px-12 shadow-xl shadow-emerald-500/5"
+                                    >
+                                        <FileText className="w-4 h-4" />
+                                        LEER PUBLICACIÓN COMPLETA
+                                    </a>
+                                </div>
+                                <div className="hidden md:block w-48 relative group">
+                                    <div className="absolute -inset-4 bg-emerald-500/20 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <div className="relative rounded-[2rem] overflow-hidden border-4 border-white/5 shadow-2xl transform group-hover:-rotate-2 group-hover:scale-105 transition-all duration-700">
+                                        {fotoUrl ? (
+                                            <img
+                                                src={fotoUrl || undefined}
+                                                alt={nombre}
+                                                className="w-full aspect-[3/4] object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-full aspect-[3/4] bg-slate-900 flex items-center justify-center text-slate-700">
+                                                <User size={64} />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                </section>
+            )}
 
             {/* Video Section */}
             {ponente.video_url && (
