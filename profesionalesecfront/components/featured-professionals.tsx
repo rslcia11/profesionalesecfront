@@ -91,7 +91,7 @@ export default function FeaturedProfessionals() {
               {/* Image */}
               <div className="relative overflow-hidden">
                 <img
-                  src={formatUrl(pro.usuario.foto_url) || "/placeholder.svg"}
+                  src={formatUrl(pro.usuario.foto_url) || "/logo-black.png"}
                   alt={pro.usuario.nombre}
                   className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
                 />

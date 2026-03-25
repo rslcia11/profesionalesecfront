@@ -18,6 +18,31 @@ const workModes = ["Presencial", "Virtual", "Ambas modalidades"]
 const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
 const hours = Array.from({ length: 24 }, (_, i) => i)
 
+// Cloudinary config for unsigned uploads
+const CLOUDINARY_CLOUD_NAME = "dw4p8pdcz"
+const CLOUDINARY_UPLOAD_PRESET = "profesionales"
+
+async function uploadToCloudinary(file: File): Promise<string> {
+  const formData = new FormData()
+  formData.append("file", file)
+  formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET)
+
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  )
+
+  if (!res.ok) {
+    throw new Error(`Cloudinary upload failed: ${res.statusText}`)
+  }
+
+  const data = await res.json()
+  return data.secure_url
+}
+
 
 interface FormData {
   fullName: string
@@ -570,8 +595,20 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
       try {
         let token = localStorage.getItem("auth_token")
 
+        // Step 1: Upload profile image directly to Cloudinary (unsigned, no auth needed)
+        let fotoUrl = ""
+        if (formData.profileImage) {
+          try {
+            console.log("[v0] Uploading profile image to Cloudinary")
+            fotoUrl = await uploadToCloudinary(formData.profileImage)
+            console.log("[v0] Profile image uploaded, URL:", fotoUrl)
+          } catch (uploadError) {
+            console.warn("Could not upload profile image:", uploadError)
+          }
+        }
+
         if (!isAdditionalProfile) {
-          // Step 1: Register user with auth API
+          // Step 2: Register user with auth API (now with foto_url)
           const registerData = {
             nombre: formData.fullName,
             correo: formData.email,
@@ -579,6 +616,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
             cedula: formData.cedula,
             telefono: formData.phone,
             rol_id: 2, // Always 2 for professionals
+            foto_url: fotoUrl, // Include the uploaded photo URL
           }
 
           console.log("[v0] Registering user:", registerData)
@@ -593,7 +631,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
           console.log("[v0] Using existing token for additional profile")
         }
 
-        // Step 2: Create professional profile FIRST (Independent of photo/docs in new architecture)
+        // Step 3: Create professional profile (without foto_url since it's now in the user)
         const perfilData: any = {
           profesion_id: Number(formData.profession),
           especialidad_id: Number(formData.specialty),
@@ -614,6 +652,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
           tiktok_url: formData.tiktok_url,
           linkedin_url: formData.linkedin_url,
           x_url: formData.x_url,
+          foto_url: fotoUrl, // Include foto_url directly in creation request
         }
 
         console.log("[v0] Creating professional profile:", perfilData)
@@ -623,23 +662,6 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
         if (!perfilId) throw new Error("No se pudo obtener el ID del perfil creado")
         console.log("[v0] Professional profile created with ID:", perfilId)
 
-        // Step 3: Upload profile image using the new perfilId
-        let finalFotoUrl = ""
-        if (formData.profileImage) {
-          try {
-            console.log("[v0] Uploading profile image for profile:", perfilId)
-            const photoRes = await profesionalApi.subirDocumento("foto_perfil", formData.profileImage, token, perfilId)
-            finalFotoUrl = photoRes.doc?.url || photoRes.archivo?.url || photoRes.url || photoRes.path || ""
-            
-            // Update profile with the URL if we got it
-            if (finalFotoUrl) {
-              await profesionalApi.actualizarPerfil({ id: perfilId, foto_url: finalFotoUrl }, token)
-            }
-          } catch (uploadError) {
-            console.warn("Could not upload profile image:", uploadError)
-          }
-        }
-
         // Step 4: Sync user record in 'usuarios' table (only for new users)
         if (!isAdditionalProfile) {
           try {
@@ -647,7 +669,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
               nombre: formData.fullName,
               telefono: formData.phone,
               cedula: formData.cedula,
-              foto_url: finalFotoUrl
+              foto_url: fotoUrl
             }
             await usuarioApi.actualizarPerfil(userUpdateData, token)
           } catch (updateError) {

@@ -20,6 +20,7 @@ export interface RegisterData {
   rol_id?: number
   telefono?: string
   cedula?: string
+  foto_url?: string
 }
 
 export interface LoginData {

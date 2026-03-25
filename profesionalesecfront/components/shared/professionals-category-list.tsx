@@ -124,7 +124,7 @@ export default function ProfessionalsCategoryList({
                         >
                             <div className="relative h-64 overflow-hidden">
                                 <img
-                                    src={formatUrl(pro.usuario.foto_url) || "/placeholder.svg"}
+                                    src={formatUrl(pro.usuario.foto_url) || "/logo-black.png"}
                                     alt={pro.usuario.nombre}
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                 />
