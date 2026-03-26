@@ -5,8 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:ios": "NEXT_PUBLIC_API_URL=http://localhost:3001/api next build",
+    "build:android": "NEXT_PUBLIC_API_URL=http://10.0.2.2:3001/api next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "cap:ios": "npm run build:ios && npx cap sync ios",
+    "cap:android": "npm run build:android && npx cap sync android"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.0",

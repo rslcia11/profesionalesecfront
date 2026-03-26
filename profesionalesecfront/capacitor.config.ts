@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'ProfesionalEs',
   webDir: 'out',
   server: {
-    url: 'http://10.0.2.2:3001'
+    url: process.env.CAPACITOR_SERVER_URL || 'http://10.0.2.2:3001'
   },
   android: {
     backgroundColor: '#ffffff'
@@ -13,3 +13,5 @@ const config: CapacitorConfig = {
 };
 
 export default config;
+
+// para android studio usar http://10.0.2.2:3001 y para ios emulator usar http://localhost:3001

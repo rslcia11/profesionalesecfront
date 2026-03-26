@@ -1,36 +1,119 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ProfesionalEs
 
-## Getting Started
+App web progresiva construida con [Next.js](https://nextjs.org), [Capacitor](https://capacitorjs.com/) y Tailwind CSS.
 
-First, run the development server:
+## Requisitos previos
+
+- Node.js 18+
+- npm / yarn / pnpm
+- [Android Studio](https://developer.android.com/studio) (para Android)
+- [Xcode](https://developer.apple.com/xcode/) (para iOS)
+- Xcode Command Line Tools
+
+## Desarrollo web
 
 ```bash
+# Instalar dependencias
+npm install
+
+# Iniciar servidor de desarrollo
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abrir [http://localhost:3001](http://localhost:3001) en el navegador.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Build para Android
 
-## Learn More
+```bash
+# 1. Build de Next.js
+npm run build
 
-To learn more about Next.js, take a look at the following resources:
+# 2. Sincronizar con Android
+npx cap sync android
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Abrir en Android Studio:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npx cap open android
+```
 
-## Deploy on Vercel
+O desde Android Studio: **File → Open** → seleccionar carpeta `android/`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### URL del servidor
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Para desarrollo con emulator Android, la app se conecta a `http://10.0.2.2:3001` (IP especial del emulador Android para acessar el host).
+
+**Nota**: Si el dev server está corriendo en otra IP (no localhost), cambiar la URL en `capacitor.config.ts`:
+
+```typescript
+server: {
+  url: 'http://TU_IP:3001'
+}
+```
+
+---
+
+## Build para iOS
+
+```bash
+# 1. Build de Next.js
+npm run build
+
+# 2. Sincronizar con iOS
+npx cap sync ios
+```
+
+Abrir en Xcode:
+
+```bash
+npx cap open ios
+```
+
+O desde Xcode: **File → Open** → seleccionar carpeta `ios/App/`
+
+### URL del servidor
+
+Para desarrollo con iOS Simulator, la app se conecta a `http://localhost:3001`.
+
+---
+
+## Notas importantes
+
+- La app es **online-only** — requiere conexión a internet para funcionar correctamente
+- El build de Next.js (`out/`) se ignora cuando `server.url` está configurado en `capacitor.config.ts`
+- Para cambiar entre URLs de Android/iOS, editar `capacitor.config.ts`
+
+## Estructura del proyecto
+
+```
+├── app/                  # Páginas de Next.js (App Router)
+├── src/                  # Componentes y utilidades
+├── public/               # Assets estáticos
+├── ios/                  # Proyecto iOS (Capacitor)
+├── android/              # Proyecto Android (Capacitor)
+├── capacitor.config.ts   # Configuración de Capacitor
+└── next.config.ts        # Configuración de Next.js
+```
+
+## Troubleshooting
+
+### Pantalla en blanco en iOS
+
+- Verificar que `server.url` en `capacitor.config.ts` apunte a `http://localhost:3001`
+- Verificar que el dev server esté corriendo en `localhost:3001`
+
+### Pantalla en blanco en Android
+
+- Verificar que `server.url` apunte a `http://10.0.2.2:3001` (emulador) o la IP de tu computadora (dispositivo real)
+- En dispositivo real, la computadora y el celular deben estar en la misma red WiFi
+
+### Errores de sincronización
+
+```bash
+# Limpiar y resincronizar
+npx cap sync android --force
+npx cap sync ios --force
+```
