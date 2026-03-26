@@ -11,7 +11,9 @@ export type PonenciaForm = {
   fecha_fin: Date
   hora_fin: string
   precio: number
+  es_gratuita: boolean
   cupo: number
+  es_ilimitado: boolean
   profesion_id: number
   estado: "borrador" | "publicada" | "finalizada"
   provincia_id: number
@@ -61,7 +63,9 @@ const initialForm: PonenciaForm = {
   fecha_fin: new Date(),
   hora_fin: "11:00",
   precio: 0,
+  es_gratuita: false,
   cupo: 0,
+  es_ilimitado: false,
   profesion_id: 0,
   estado: "borrador",
   provincia_id: 0,
@@ -130,7 +134,13 @@ const sanitizeData = (data: Partial<PonenciaForm>): PonenciaForm => {
 export function useConversatorioForm(initialData?: Partial<PonenciaForm>) {
   const { toast } = useToast()
   const router = useRouter()
-  const [formData, setFormData] = useState<PonenciaForm>(sanitizeData(initialData || {}))
+  // Derivar es_gratuita y es_ilimitado desde precio/cupo si no están definidos (para edición de conversatorios existentes)
+  const dataWithSwitches = {
+    ...initialData,
+    es_gratuita: initialData?.es_gratuita ?? (initialData?.precio === 0),
+    es_ilimitado: initialData?.es_ilimitado ?? (initialData?.cupo === 0),
+  }
+  const [formData, setFormData] = useState<PonenciaForm>(sanitizeData(dataWithSwitches || {}))
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [ciudades, setCiudades] = useState<any[]>([])
@@ -339,8 +349,8 @@ export function useConversatorioForm(initialData?: Partial<PonenciaForm>) {
       })
 
       // Validaciones de negocio
-      if (formData.precio < 0) throw new Error("El precio no puede ser negativo")
-      if (formData.cupo <= 0) throw new Error("El cupo debe ser mayor a cero")
+      if (!formData.es_gratuita && formData.precio <= 0) throw new Error("La inversión debe ser mayor a cero")
+      if (!formData.es_ilimitado && formData.cupo <= 0) throw new Error("El cupo debe ser mayor a cero")
       if (!formData.latitud || !formData.longitud) throw new Error("Debes ubicar el evento en el mapa")
 
       const dataToSave = {

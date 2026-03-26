@@ -98,7 +98,7 @@ export default function ProfessionalsPage() {
         name: p.usuario?.nombre || "Usuario",
         specialty: p.especialidad?.nombre || p.profesion?.nombre || "Profesional",
         location: p.ciudad ? `${p.ciudad.nombre}, ${p.ciudad.provincia?.nombre || ""}` : "Ecuador",
-        image: formatUrl(p.usuario?.foto_url) || "/placeholder.svg",
+        image: formatUrl(p.usuario?.foto_url) || "/logo-black.png",
         price: `$${p.tarifa_hora || p.tarifa || 0}`,
         unit: "hora",
         experience: "Experiencia verificada",

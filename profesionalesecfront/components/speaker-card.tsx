@@ -21,7 +21,6 @@ export default function SpeakerCard({ ponente, ponenciaId }: SpeakerCardProps) {
   const profileUrl = ponente.slug && finalPonenciaId ? `/conversatorios/${finalPonenciaId}/ponente/${ponente.slug}` : "#"
 
   return (
-<<<<<<< Updated upstream
     <Link 
       href={profileUrl} 
       className="block group"
@@ -30,7 +29,7 @@ export default function SpeakerCard({ ponente, ponenciaId }: SpeakerCardProps) {
         <div className="w-16 h-16 shrink-0 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 font-black text-2xl border border-emerald-100 overflow-hidden shadow-inner group-hover:scale-110 transition-transform">
           {fotoUrl ? (
             <img 
-              src={fotoUrl} 
+              src={formatUrl(fotoUrl) || ""} 
               alt={nombre} 
               className="w-full h-full object-cover"
               onError={(e) => {
@@ -63,22 +62,6 @@ export default function SpeakerCard({ ponente, ponenciaId }: SpeakerCardProps) {
             </div>
           )}
         </div>
-=======
-    <div className="flex items-start gap-4 p-5 rounded-3xl border border-gray-100 bg-white shadow-sm hover:shadow-xl hover:border-emerald-100 transition-all duration-300 group">
-      <div className="w-16 h-16 shrink-0 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 font-black text-2xl border border-emerald-100 overflow-hidden shadow-inner group-hover:scale-110 transition-transform">
-        {fotoUrl ? (
-          <img 
-            src={formatUrl(fotoUrl) || ""} 
-            alt={nombre} 
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-            }}
-          />
-        ) : (
-          nombre.charAt(0).toUpperCase()
-        )}
->>>>>>> Stashed changes
       </div>
     </Link>
   )

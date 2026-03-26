@@ -267,7 +267,7 @@ export default function SpeakerProfilePage() {
                                         Descarga la contribución detallada de {nombre} en nuestra revista exclusiva. Artículos, trayectoria y conocimiento experto a un clic de distancia.
                                     </p>
                                     <a
-                                        href={formatUrl(ponente.url_revista_personal)}
+                                        href={formatUrl(ponente.url_revista_personal) || undefined}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center gap-3 bg-white text-black px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all duration-500 group-hover:px-12 shadow-xl shadow-emerald-500/5"

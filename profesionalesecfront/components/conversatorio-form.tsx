@@ -18,7 +18,8 @@ import {
   Trash2,
   Image,
   BookOpen,
-  Layout
+  Layout,
+  Infinity
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -29,6 +30,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Switch } from "@/components/ui/switch"
 import dynamic from "next/dynamic"
 import { useConversatorioForm, PonenciaForm } from "@/hooks/use-conversatorio-form"
 
@@ -240,15 +242,29 @@ export default function ConversatorioForm({ initialData, id, provincias, profesi
                   <Label htmlFor="precio" className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
                     <DollarSign className="h-4 w-4 text-emerald-500" /> Inversión
                   </Label>
-                  <div className="flex items-baseline gap-1">
+                  <div className="flex items-center gap-1">
                     <span className="text-2xl font-bold text-slate-300">$</span>
                     <Input
                       id="precio"
                       type="number"
                       step="0.01"
-                      value={formData.precio === 0 ? "" : formData.precio}
+                      value={formData.es_gratuita ? 0 : (formData.precio === 0 ? "" : formData.precio)}
                       onChange={(e) => updateField("precio", e.target.value === "" ? 0 : Number(e.target.value))}
-                      className="h-auto p-0 border-none text-4xl font-black text-slate-900 focus-visible:ring-0 bg-transparent w-full"
+                      disabled={formData.es_gratuita}
+                      className="h-auto p-0 border-none text-5xl font-black text-slate-900 focus-visible:ring-0 bg-transparent w-full disabled:opacity-100 disabled:text-slate-900"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-100 mt-4">
+                    <Label htmlFor="es_gratuita" className="text-[10px] font-bold text-slate-500 cursor-pointer">¿Es gratuita?</Label>
+                    <Switch
+                      id="es_gratuita"
+                      checked={formData.es_gratuita}
+                      onCheckedChange={(checked) => {
+                        updateField("es_gratuita", checked)
+                        if (checked) {
+                          updateField("precio", 0)
+                        }
+                      }}
                     />
                   </div>
                 </div>
@@ -258,15 +274,37 @@ export default function ConversatorioForm({ initialData, id, provincias, profesi
                   <Label htmlFor="cupo" className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
                     <Users className="h-4 w-4 text-blue-500" /> Capacidad
                   </Label>
-                  <div className="flex items-baseline gap-2">
-                    <Input
-                      id="cupo"
-                      type="number"
-                      value={formData.cupo === 0 ? "" : formData.cupo}
-                      onChange={(e) => updateField("cupo", e.target.value === "" ? 0 : Number(e.target.value))}
-                      className="h-auto p-0 border-none text-4xl font-black text-slate-900 focus-visible:ring-0 bg-transparent w-full"
+                  <div className="flex items-center gap-2">
+                    {formData.es_ilimitado ? (
+                      <div className="flex items-center gap-1">
+                        <Infinity className="h-10 w-10 text-blue-500" />
+                        <span className="text-lg font-bold text-blue-500 uppercase ml-2">Ilimitado</span>
+                      </div>
+                    ) : (
+                      <>
+                        <Input
+                          id="cupo"
+                          type="number"
+                          value={formData.cupo === 0 ? "" : formData.cupo}
+                          onChange={(e) => updateField("cupo", e.target.value === "" ? 0 : Number(e.target.value))}
+                          className="h-auto p-0 border-none text-5xl font-black text-slate-900 focus-visible:ring-0 bg-transparent w-full"
+                        />
+                        <span className="text-2xl font-bold text-slate-300 uppercase">Pax</span>
+                      </>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-100 mt-4">
+                    <Label htmlFor="es_ilimitado" className="text-[10px] font-bold text-slate-500 cursor-pointer">¿Es ilimitado?</Label>
+                    <Switch
+                      id="es_ilimitado"
+                      checked={formData.es_ilimitado}
+                      onCheckedChange={(checked) => {
+                        updateField("es_ilimitado", checked)
+                        if (checked) {
+                          updateField("cupo", 0)
+                        }
+                      }}
                     />
-                    <span className="text-lg font-bold text-slate-300 uppercase">Pax</span>
                   </div>
                 </div>
               </div>
