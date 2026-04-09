@@ -1,0 +1,13 @@
+{
+	"appId": "com.tuempresa.profesionalesec",
+	"appName": "ProfesionalEs",
+	"webDir": "out",
+	"server": {
+		"hostname": "localhost",
+		"iosScheme": "http",
+		"androidScheme": "http"
+	},
+	"packageClassList": [
+		"CAPCameraPlugin"
+	]
+}

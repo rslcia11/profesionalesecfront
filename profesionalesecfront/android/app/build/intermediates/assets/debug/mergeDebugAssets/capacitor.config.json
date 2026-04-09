@@ -1,0 +1,11 @@
+{
+	"appId": "com.tuempresa.profesionalesec",
+	"appName": "ProfesionalEs",
+	"webDir": "out",
+	"server": {
+		"url": "http://10.0.2.2:3001"
+	},
+	"android": {
+		"backgroundColor": "#ffffff"
+	}
+}

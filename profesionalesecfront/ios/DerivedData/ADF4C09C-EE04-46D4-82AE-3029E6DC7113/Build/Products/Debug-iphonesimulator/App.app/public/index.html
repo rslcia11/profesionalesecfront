@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>ProfesionalEs</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+      color: white;
+      padding: 24px;
+    }
+    .logo {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .subtitle {
+      font-size: 16px;
+      opacity: 0.8;
+      margin-bottom: 40px;
+      text-align: center;
+    }
+    .btn {
+      background: white;
+      color: #1e3a5f;
+      border: none;
+      padding: 16px 48px;
+      font-size: 18px;
+      font-weight: 600;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(0,0,0,0.3);
+    }
+    .btn:active {
+      transform: translateY(0);
+    }
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      display: none;
+      margin-right: 8px;
+    }
+    .btn.loading .spinner {
+      display: inline-block;
+    }
+    .btn.loading .btn-text {
+      display: none;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .error {
+      background: rgba(220, 38, 38, 0.9);
+      padding: 12px 24px;
+      border-radius: 8px;
+      margin-top: 24px;
+      display: none;
+      text-align: center;
+    }
+    .error.show {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="logo">👨‍💼</div>
+  <h1>ProfesionalEs</h1>
+  <p class="subtitle">Red profesional de Chile</p>
+  
+  <button class="btn" id="openApp">
+    <span class="spinner"></span>
+    <span class="btn-text">Abrir App</span>
+  </button>
+  
+  <div class="error" id="error">
+    No se pudo conectar al servidor.<br>
+    Asegúrate de que la app esté corriendo.
+  </div>
+
+  <script type="module">
+    const SERVER_URL = 'http://localhost:3001';
+    const btn = document.getElementById('openApp');
+    const error = document.getElementById('error');
+
+    btn.addEventListener('click', async () => {
+      btn.classList.add('loading');
+      error.classList.remove('show');
+
+      try {
+        // Check if server is reachable
+        const response = await fetch(SERVER_URL, { 
+          method: 'HEAD',
+          mode: 'no-cors'
+        });
+        
+        // If we get here, server is reachable
+        // Navigate in the same webview (no Safari)
+        window.location.href = SERVER_URL;
+      } catch (e) {
+        // Server not reachable
+        btn.classList.remove('loading');
+        error.classList.add('show');
+      }
+    });
+  </script>
+</body>
+</html>

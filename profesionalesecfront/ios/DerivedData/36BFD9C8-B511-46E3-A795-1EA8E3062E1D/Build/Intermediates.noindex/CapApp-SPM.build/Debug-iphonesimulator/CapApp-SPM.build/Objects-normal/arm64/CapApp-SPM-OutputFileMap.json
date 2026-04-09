@@ -1,0 +1,19 @@
+{
+  "" : {
+    "diagnostics" : "/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/ios/DerivedData/36BFD9C8-B511-46E3-A795-1EA8E3062E1D/Build/Intermediates.noindex/CapApp-SPM.build/Debug-iphonesimulator/CapApp-SPM.build/Objects-normal/arm64/CapApp-SPM-primary.dia",
+    "emit-module-dependencies" : "/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/ios/DerivedData/36BFD9C8-B511-46E3-A795-1EA8E3062E1D/Build/Intermediates.noindex/CapApp-SPM.build/Debug-iphonesimulator/CapApp-SPM.build/Objects-normal/arm64/CapApp-SPM-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/ios/DerivedData/36BFD9C8-B511-46E3-A795-1EA8E3062E1D/Build/Intermediates.noindex/CapApp-SPM.build/Debug-iphonesimulator/CapApp-SPM.build/Objects-normal/arm64/CapApp-SPM-primary-emit-module.dia",
+    "pch" : "/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/ios/DerivedData/36BFD9C8-B511-46E3-A795-1EA8E3062E1D/Build/Intermediates.noindex/CapApp-SPM.build/Debug-iphonesimulator/CapApp-SPM.build/Objects-normal/arm64/CapApp-SPM-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/ios/DerivedData/36BFD9C8-B511-46E3-A795-1EA8E3062E1D/Build/Intermediates.noindex/CapApp-SPM.build/Debug-iphonesimulator/CapApp-SPM.build/Objects-normal/arm64/CapApp-SPM-primary.swiftdeps"
+  },
+  "/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/ios/App/CapApp-SPM/Sources/CapApp-SPM/CapApp-SPM.swift" : {
+    "const-values" : "/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/ios/DerivedData/36BFD9C8-B511-46E3-A795-1EA8E3062E1D/Build/Intermediates.noindex/CapApp-SPM.build/Debug-iphonesimulator/CapApp-SPM.build/Objects-normal/arm64/CapApp-SPM.swiftconstvalues",
+    "dependencies" : "/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/ios/DerivedData/36BFD9C8-B511-46E3-A795-1EA8E3062E1D/Build/Intermediates.noindex/CapApp-SPM.build/Debug-iphonesimulator/CapApp-SPM.build/Objects-normal/arm64/CapApp-SPM.d",
+    "diagnostics" : "/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/ios/DerivedData/36BFD9C8-B511-46E3-A795-1EA8E3062E1D/Build/Intermediates.noindex/CapApp-SPM.build/Debug-iphonesimulator/CapApp-SPM.build/Objects-normal/arm64/CapApp-SPM.dia",
+    "index-unit-output-path" : "/CapApp-SPM.build/Debug-iphonesimulator/CapApp-SPM.build/Objects-normal/arm64/CapApp-SPM.o",
+    "llvm-bc" : "/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/ios/DerivedData/36BFD9C8-B511-46E3-A795-1EA8E3062E1D/Build/Intermediates.noindex/CapApp-SPM.build/Debug-iphonesimulator/CapApp-SPM.build/Objects-normal/arm64/CapApp-SPM.bc",
+    "object" : "/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/ios/DerivedData/36BFD9C8-B511-46E3-A795-1EA8E3062E1D/Build/Intermediates.noindex/CapApp-SPM.build/Debug-iphonesimulator/CapApp-SPM.build/Objects-normal/arm64/CapApp-SPM.o",
+    "swift-dependencies" : "/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/ios/DerivedData/36BFD9C8-B511-46E3-A795-1EA8E3062E1D/Build/Intermediates.noindex/CapApp-SPM.build/Debug-iphonesimulator/CapApp-SPM.build/Objects-normal/arm64/CapApp-SPM.swiftdeps",
+    "swiftmodule" : "/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/ios/DerivedData/36BFD9C8-B511-46E3-A795-1EA8E3062E1D/Build/Intermediates.noindex/CapApp-SPM.build/Debug-iphonesimulator/CapApp-SPM.build/Objects-normal/arm64/CapApp-SPM~partial.swiftmodule"
+  }
+}

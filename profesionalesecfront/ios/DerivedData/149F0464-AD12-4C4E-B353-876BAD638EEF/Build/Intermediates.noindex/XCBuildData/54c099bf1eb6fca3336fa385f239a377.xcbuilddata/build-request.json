@@ -1,0 +1,70 @@
+{
+  "buildCommand" : {
+    "command" : "build",
+    "skipDependencies" : false,
+    "style" : "buildOnly"
+  },
+  "configuredTargets" : [
+    {
+      "guid" : "0ca3007d900a678c2b4d53418799ee3d34df47fa015b7e467e67e9235d8a1297"
+    }
+  ],
+  "containerPath" : "/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/ios/App/App.xcodeproj",
+  "continueBuildingAfterErrors" : false,
+  "dependencyScope" : "workspace",
+  "enableIndexBuildArena" : false,
+  "hideShellScriptEnvironment" : false,
+  "parameters" : {
+    "action" : "build",
+    "activeArchitecture" : "arm64",
+    "activeRunDestination" : {
+      "disableOnlyActiveArch" : false,
+      "platform" : "iphonesimulator",
+      "sdk" : "iphonesimulator26.2",
+      "sdkVariant" : "iphonesimulator",
+      "supportedArchitectures" : [
+        "arm64"
+      ],
+      "targetArchitecture" : "arm64"
+    },
+    "arenaInfo" : {
+      "buildIntermediatesPath" : "/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/ios/DerivedData/149F0464-AD12-4C4E-B353-876BAD638EEF/Build/Intermediates.noindex",
+      "buildProductsPath" : "/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/ios/DerivedData/149F0464-AD12-4C4E-B353-876BAD638EEF/Build/Products",
+      "derivedDataPath" : "/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/ios/DerivedData/149F0464-AD12-4C4E-B353-876BAD638EEF",
+      "indexDataStoreFolderPath" : "/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/ios/DerivedData/149F0464-AD12-4C4E-B353-876BAD638EEF/Index.noindex/DataStore",
+      "indexEnableDataStore" : true,
+      "indexPCHPath" : "/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/ios/DerivedData/149F0464-AD12-4C4E-B353-876BAD638EEF/Index.noindex/PrecompiledHeaders",
+      "pchPath" : "/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/ios/DerivedData/149F0464-AD12-4C4E-B353-876BAD638EEF/Build/Intermediates.noindex/PrecompiledHeaders"
+    },
+    "configurationName" : "Debug",
+    "overrides" : {
+      "commandLine" : {
+        "table" : {
+
+        }
+      },
+      "synthesized" : {
+        "table" : {
+          "ACTION" : "build",
+          "ASSETCATALOG_FILTER_FOR_DEVICE_MODEL" : "iPhone18,3",
+          "ASSETCATALOG_FILTER_FOR_DEVICE_OS_VERSION" : "26.3.1",
+          "ASSETCATALOG_FILTER_FOR_THINNING_DEVICE_CONFIGURATION" : "iPhone18,3",
+          "BUILD_ACTIVE_RESOURCES_ONLY" : "YES",
+          "ENABLE_PREVIEWS" : "NO",
+          "ENABLE_XOJIT_PREVIEWS" : "YES",
+          "ONLY_ACTIVE_ARCH" : "YES",
+          "TARGET_DEVICE_IDENTIFIER" : "149F0464-AD12-4C4E-B353-876BAD638EEF",
+          "TARGET_DEVICE_MODEL" : "iPhone18,3",
+          "TARGET_DEVICE_OS_VERSION" : "26.3.1",
+          "TARGET_DEVICE_PLATFORM_NAME" : "iphonesimulator"
+        }
+      }
+    }
+  },
+  "schemeCommand" : "launch",
+  "showNonLoggedProgress" : true,
+  "useDryRun" : false,
+  "useImplicitDependencies" : true,
+  "useLegacyBuildLocations" : false,
+  "useParallelTargets" : true
+}

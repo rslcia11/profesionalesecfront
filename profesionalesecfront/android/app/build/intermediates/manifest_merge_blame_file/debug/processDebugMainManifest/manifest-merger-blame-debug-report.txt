@@ -1,0 +1,184 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.tuempresa.profesionalesec"
+4    android:versionCode="1"
+5    android:versionName="1.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="24"
+9        android:targetSdkVersion="36" />
+10
+11    <!-- Permissions -->
+12
+13    <uses-permission android:name="android.permission.INTERNET" />
+13-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:41:5-67
+13-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:41:22-64
+14    <uses-permission android:name="android.permission.CAMERA" />
+14-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:42:5-65
+14-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:42:22-62
+15    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+15-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:43:5-80
+15-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:43:22-77
+16    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+16-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:44:5-81
+16-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:44:22-78
+17
+18    <uses-feature
+18-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:45:5-85
+19        android:name="android.hardware.camera"
+19-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:45:19-57
+20        android:required="false" />
+20-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:45:58-82
+21
+22    <queries>
+22-->[:capacitor-camera] /Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/node_modules/@capacitor/camera/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:7:5-11:15
+23        <intent>
+23-->[:capacitor-camera] /Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/node_modules/@capacitor/camera/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:8:9-10:18
+24            <action android:name="android.media.action.IMAGE_CAPTURE" />
+24-->[:capacitor-camera] /Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/node_modules/@capacitor/camera/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:9:13-73
+24-->[:capacitor-camera] /Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/node_modules/@capacitor/camera/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:9:21-70
+25        </intent>
+26    </queries>
+27
+28    <permission
+28-->[androidx.core:core:1.17.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/11094a199bb7945826b161d8a9c17beb/transformed/core-1.17.0/AndroidManifest.xml:22:5-24:47
+29        android:name="com.tuempresa.profesionalesec.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+29-->[androidx.core:core:1.17.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/11094a199bb7945826b161d8a9c17beb/transformed/core-1.17.0/AndroidManifest.xml:23:9-81
+30        android:protectionLevel="signature" />
+30-->[androidx.core:core:1.17.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/11094a199bb7945826b161d8a9c17beb/transformed/core-1.17.0/AndroidManifest.xml:24:9-44
+31
+32    <uses-permission android:name="com.tuempresa.profesionalesec.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+32-->[androidx.core:core:1.17.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/11094a199bb7945826b161d8a9c17beb/transformed/core-1.17.0/AndroidManifest.xml:26:5-97
+32-->[androidx.core:core:1.17.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/11094a199bb7945826b161d8a9c17beb/transformed/core-1.17.0/AndroidManifest.xml:26:22-94
+33
+34    <application
+34-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:4:5-37:19
+35        android:allowBackup="true"
+35-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:5:9-35
+36        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+36-->[androidx.core:core:1.17.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/11094a199bb7945826b161d8a9c17beb/transformed/core-1.17.0/AndroidManifest.xml:28:18-86
+37        android:debuggable="true"
+38        android:extractNativeLibs="false"
+39        android:icon="@mipmap/ic_launcher"
+39-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:6:9-43
+40        android:label="@string/app_name"
+40-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:7:9-41
+41        android:roundIcon="@mipmap/ic_launcher_round"
+41-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:8:9-54
+42        android:supportsRtl="true"
+42-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:9:9-35
+43        android:testOnly="true"
+44        android:theme="@style/AppTheme"
+44-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:10:9-40
+45        android:usesCleartextTraffic="true" >
+45-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:11:9-44
+46        <activity
+46-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:13:9-26:20
+47            android:name="com.tuempresa.profesionalesec.MainActivity"
+47-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:15:13-41
+48            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+48-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:14:13-148
+49            android:exported="true"
+49-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:19:13-36
+50            android:label="@string/title_activity_main"
+50-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:16:13-56
+51            android:launchMode="singleTask"
+51-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:18:13-44
+52            android:theme="@style/AppTheme.NoActionBarLaunch" >
+52-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:17:13-62
+53            <intent-filter>
+53-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:21:13-24:29
+54                <action android:name="android.intent.action.MAIN" />
+54-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:22:17-69
+54-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:22:25-66
+55
+56                <category android:name="android.intent.category.LAUNCHER" />
+56-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:23:17-77
+56-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:23:27-74
+57            </intent-filter>
+58        </activity>
+59
+60        <provider
+61            android:name="androidx.core.content.FileProvider"
+61-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:29:13-62
+62            android:authorities="com.tuempresa.profesionalesec.fileprovider"
+62-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:30:13-64
+63            android:exported="false"
+63-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:31:13-37
+64            android:grantUriPermissions="true" >
+64-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:32:13-47
+65            <meta-data
+65-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:33:13-35:64
+66                android:name="android.support.FILE_PROVIDER_PATHS"
+66-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:34:17-67
+67                android:resource="@xml/file_paths" />
+67-->/Users/juancampana/Documents/GitHub/profesionalesecfront/profesionalesecfront/android/app/src/main/AndroidManifest.xml:35:17-51
+68        </provider>
+69        <provider
+69-->[androidx.emoji2:emoji2:1.3.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/353d69426d62513a7e19e841051a3a44/transformed/emoji2-1.3.0/AndroidManifest.xml:24:9-32:20
+70            android:name="androidx.startup.InitializationProvider"
+70-->[androidx.emoji2:emoji2:1.3.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/353d69426d62513a7e19e841051a3a44/transformed/emoji2-1.3.0/AndroidManifest.xml:25:13-67
+71            android:authorities="com.tuempresa.profesionalesec.androidx-startup"
+71-->[androidx.emoji2:emoji2:1.3.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/353d69426d62513a7e19e841051a3a44/transformed/emoji2-1.3.0/AndroidManifest.xml:26:13-68
+72            android:exported="false" >
+72-->[androidx.emoji2:emoji2:1.3.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/353d69426d62513a7e19e841051a3a44/transformed/emoji2-1.3.0/AndroidManifest.xml:27:13-37
+73            <meta-data
+73-->[androidx.emoji2:emoji2:1.3.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/353d69426d62513a7e19e841051a3a44/transformed/emoji2-1.3.0/AndroidManifest.xml:29:13-31:52
+74                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+74-->[androidx.emoji2:emoji2:1.3.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/353d69426d62513a7e19e841051a3a44/transformed/emoji2-1.3.0/AndroidManifest.xml:30:17-75
+75                android:value="androidx.startup" />
+75-->[androidx.emoji2:emoji2:1.3.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/353d69426d62513a7e19e841051a3a44/transformed/emoji2-1.3.0/AndroidManifest.xml:31:17-49
+76            <meta-data
+76-->[androidx.lifecycle:lifecycle-process:2.6.2] /Users/juancampana/.gradle/caches/8.14.3/transforms/14a3b51da1167f75215e7e32d2231e74/transformed/lifecycle-process-2.6.2/AndroidManifest.xml:29:13-31:52
+77                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+77-->[androidx.lifecycle:lifecycle-process:2.6.2] /Users/juancampana/.gradle/caches/8.14.3/transforms/14a3b51da1167f75215e7e32d2231e74/transformed/lifecycle-process-2.6.2/AndroidManifest.xml:30:17-78
+78                android:value="androidx.startup" />
+78-->[androidx.lifecycle:lifecycle-process:2.6.2] /Users/juancampana/.gradle/caches/8.14.3/transforms/14a3b51da1167f75215e7e32d2231e74/transformed/lifecycle-process-2.6.2/AndroidManifest.xml:31:17-49
+79            <meta-data
+79-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/f95ab50c54d3211c648684c462933e30/transformed/profileinstaller-1.4.0/AndroidManifest.xml:29:13-31:52
+80                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+80-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/f95ab50c54d3211c648684c462933e30/transformed/profileinstaller-1.4.0/AndroidManifest.xml:30:17-85
+81                android:value="androidx.startup" />
+81-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/f95ab50c54d3211c648684c462933e30/transformed/profileinstaller-1.4.0/AndroidManifest.xml:31:17-49
+82        </provider>
+83
+84        <receiver
+84-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/f95ab50c54d3211c648684c462933e30/transformed/profileinstaller-1.4.0/AndroidManifest.xml:34:9-52:20
+85            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+85-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/f95ab50c54d3211c648684c462933e30/transformed/profileinstaller-1.4.0/AndroidManifest.xml:35:13-76
+86            android:directBootAware="false"
+86-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/f95ab50c54d3211c648684c462933e30/transformed/profileinstaller-1.4.0/AndroidManifest.xml:36:13-44
+87            android:enabled="true"
+87-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/f95ab50c54d3211c648684c462933e30/transformed/profileinstaller-1.4.0/AndroidManifest.xml:37:13-35
+88            android:exported="true"
+88-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/f95ab50c54d3211c648684c462933e30/transformed/profileinstaller-1.4.0/AndroidManifest.xml:38:13-36
+89            android:permission="android.permission.DUMP" >
+89-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/f95ab50c54d3211c648684c462933e30/transformed/profileinstaller-1.4.0/AndroidManifest.xml:39:13-57
+90            <intent-filter>
+90-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/f95ab50c54d3211c648684c462933e30/transformed/profileinstaller-1.4.0/AndroidManifest.xml:40:13-42:29
+91                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+91-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/f95ab50c54d3211c648684c462933e30/transformed/profileinstaller-1.4.0/AndroidManifest.xml:41:17-91
+91-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/f95ab50c54d3211c648684c462933e30/transformed/profileinstaller-1.4.0/AndroidManifest.xml:41:25-88
+92            </intent-filter>
+93            <intent-filter>
+93-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/f95ab50c54d3211c648684c462933e30/transformed/profileinstaller-1.4.0/AndroidManifest.xml:43:13-45:29
+94                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+94-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/f95ab50c54d3211c648684c462933e30/transformed/profileinstaller-1.4.0/AndroidManifest.xml:44:17-85
+94-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/f95ab50c54d3211c648684c462933e30/transformed/profileinstaller-1.4.0/AndroidManifest.xml:44:25-82
+95            </intent-filter>
+96            <intent-filter>
+96-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/f95ab50c54d3211c648684c462933e30/transformed/profileinstaller-1.4.0/AndroidManifest.xml:46:13-48:29
+97                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+97-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/f95ab50c54d3211c648684c462933e30/transformed/profileinstaller-1.4.0/AndroidManifest.xml:47:17-88
+97-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/f95ab50c54d3211c648684c462933e30/transformed/profileinstaller-1.4.0/AndroidManifest.xml:47:25-85
+98            </intent-filter>
+99            <intent-filter>
+99-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/f95ab50c54d3211c648684c462933e30/transformed/profileinstaller-1.4.0/AndroidManifest.xml:49:13-51:29
+100                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+100-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/f95ab50c54d3211c648684c462933e30/transformed/profileinstaller-1.4.0/AndroidManifest.xml:50:17-95
+100-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/juancampana/.gradle/caches/8.14.3/transforms/f95ab50c54d3211c648684c462933e30/transformed/profileinstaller-1.4.0/AndroidManifest.xml:50:25-92
+101            </intent-filter>
+102        </receiver>
+103    </application>
+104
+105</manifest>

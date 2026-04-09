@@ -1,0 +1,12 @@
+{
+	"appId": "com.tuempresa.profesionalesec",
+	"appName": "ProfesionalEs",
+	"webDir": "out",
+	"server": {
+		"hostname": "localhost",
+		"url": "http://localhost:3001"
+	},
+	"packageClassList": [
+		"CAPCameraPlugin"
+	]
+}
