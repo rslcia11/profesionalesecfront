@@ -434,6 +434,10 @@ export const profesionalApi = {
     return fetchApi(`/profesionales/cercanos?lat=${lat}&lng=${lng}&radio=${radio}`);
   },
 
+  async obtenerPublico(id: string | number) {
+    return fetchApi(`/profesionales/publico/${id}`);
+  },
+
   async gestionarUbicacion(data: UbicacionData, token: string) {
     return fetchApi("/profesionales/ubicacion", {
       method: "POST",
