@@ -23,22 +23,20 @@ export default function ProfessionalProfile() {
             if (!params.id) return
             try {
                 setLoading(true)
-                const allData = await profesionalApi.obtenerVerificados()
-                if (Array.isArray(allData)) {
-                    const found = allData.find((p: any) => p.id.toString() === params.id)
-                    setProfessional(found || null)
-                    
-                    if (found) {
-                        try {
-                            const schedData = await horariosApi.obtenerPublico(found.id)
-                            if (schedData && schedData.matriz) {
-                                setSchedule(schedData.matriz)
-                            }
-                        } catch (err) {
-                            console.warn("No availability data found or error fetching it:", err)
+                const found = await profesionalApi.obtenerPublico(params.id as string)
+                setProfessional(found || null)
+                
+                if (found) {
+                    try {
+                        const schedData = await horariosApi.obtenerPublico(found.id)
+                        if (schedData && schedData.matriz) {
+                            setSchedule(schedData.matriz)
                         }
+                    } catch (err) {
+                        console.warn("No availability data found or error fetching it:", err)
                     }
                 }
+
             } catch (error) {
                 console.error("Error fetching profile:", error)
             } finally {
