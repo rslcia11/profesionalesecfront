@@ -414,8 +414,20 @@ export const profesionalApi = {
     return fetchApi(`/profesionales/buscar?${params.toString()}`);
   },
 
-  async obtenerVerificados() {
-    return fetchApi("/profesionales/verificados");
+  async obtenerVerificados(filtros: any = {}) {
+    const params = new URLSearchParams()
+    Object.keys(filtros).forEach(key => {
+      if (filtros[key] !== undefined && filtros[key] !== "") {
+        params.append(key, filtros[key].toString());
+      }
+    });
+    
+    // Usamos fetch nativo para evitar que fetchApi nos quite el objeto `meta`
+    const res = await fetch(`${API_URL}/profesionales/verificados?${params.toString()}`);
+    if (!res.ok) {
+      throw new Error("Error fetching verificados");
+    }
+    return res.json(); // Devolvemos el json completo { data: [...], meta: {...} }
   },
 
   async buscarCercanos(lat: number, lng: number, radio: number = 10) {

@@ -22,7 +22,11 @@ export default function ProfessionalsPage() {
     sortBy: "featured",
   })
 
-  // Raw data from API (fetched once)
+  // Pagination & Metadata state
+  const [page, setPage] = useState(1)
+  const [meta, setMeta] = useState<any>({ totalPages: 1, totalItems: 0, currentPage: 1 })
+
+  // Raw data from API
   const [rawProfessionals, setRawProfessionals] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -30,18 +34,31 @@ export default function ProfessionalsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedProfessional, setSelectedProfessional] = useState<any>(null)
 
-  // Fetch professionals ONCE on mount
+  // Fetch professionals
   useEffect(() => {
     const fetchProfessionals = async () => {
       setLoading(true)
       try {
-        console.log("Fetching public profiles via /verificados endpoint");
-        const allData = await profesionalApi.obtenerVerificados();
+        console.log("Fetching public profiles via /verificados endpoint with filters", filters, "page", page);
+        // Include page, limit, and the filters
+        const qs = {
+          page,
+          limit: 12,
+          keyword: filters.keyword,
+          profession: filters.profession,
+          specialty: filters.specialty,
+          city: filters.city,
+        };
+        
+        const response = await profesionalApi.obtenerVerificados(qs);
 
-        if (Array.isArray(allData)) {
-          setRawProfessionals(allData)
+        if (response && response.data) {
+          setRawProfessionals(response.data)
+          if (response.meta) {
+            setMeta(response.meta)
+          }
         } else {
-          console.error("API did not return an array", allData);
+          console.error("API format changed, couldn't find 'data'", response);
           setRawProfessionals([])
         }
       } catch (error) {
@@ -51,69 +68,42 @@ export default function ProfessionalsPage() {
       }
     }
 
-    fetchProfessionals()
-  }, []) // Empty deps = fetch once
+    // Debounce
+    const delayDebounceFn = setTimeout(() => {
+      fetchProfessionals()
+    }, 500)
 
-  // Apply filters client-side using useMemo (derived state)
+    return () => clearTimeout(delayDebounceFn)
+  }, [filters, page])
+
+  // If user changes a filter, reset page to 1
+  useEffect(() => {
+    setPage(1)
+  }, [filters.keyword, filters.profession, filters.specialty, filters.province, filters.city, filters.verifiedOnly])
+
+  // Map to display format (filtering is now handled by backend)
   const professionals = useMemo(() => {
-    let data = [...rawProfessionals]
-
-    // Keyword filter
-    if (filters.keyword) {
-      const lowerKeyword = filters.keyword.toLowerCase();
-      data = data.filter((p: any) =>
-        (p.usuario?.nombre || "").toLowerCase().includes(lowerKeyword) ||
-        (p.profesion?.nombre || "").toLowerCase().includes(lowerKeyword) ||
-        (p.especialidad?.nombre || "").toLowerCase().includes(lowerKeyword) ||
-        (p.descripcion || "").toLowerCase().includes(lowerKeyword) ||
-        (p.servicios && Array.isArray(p.servicios) && p.servicios.some((s: any) => (s.descripcion || "").toLowerCase().includes(lowerKeyword)))
-      );
-    }
-
-    // Profession filter
-    if (filters.profession) {
-      data = data.filter((p: any) => p.profesion_id?.toString() === filters.profession);
-    }
-
-    // Specialty filter
-    if (filters.specialty) {
-      data = data.filter((p: any) => p.especialidad_id?.toString() === filters.specialty);
-    }
-
-    // Province filter
-    if (filters.province) {
-      data = data.filter((p: any) => p.ciudad?.provincia_id?.toString() === filters.province);
-    }
-
-    // City filter
-    if (filters.city) {
-      data = data.filter((p: any) => p.ciudad_id?.toString() === filters.city);
-    }
-
-    // Map to display format
-    return data
-      .filter((p: any) => !!p.verificado || p.estado_id === 3 || p.estado === 'aprobado')
-      .map((p: any) => ({
-        id: p.id,
-        name: p.usuario?.nombre || "Usuario",
-        specialty: p.especialidad?.nombre || p.profesion?.nombre || "Profesional",
-        location: p.ciudad ? `${p.ciudad.nombre}, ${p.ciudad.provincia?.nombre || ""}` : "Ecuador",
-        image: formatUrl(p.usuario?.foto_url) || "/logo-black.png",
-        price: `$${p.tarifa_hora || p.tarifa || 0}`,
-        unit: "hora",
-        experience: "Experiencia verificada",
-        category: "general",
-        featured: false,
-        verified: p.verificado,
-        profession: p.profesion_id?.toString(),
-        status: p.estado,
-        status_id: p.estado_id,
-        specialty_id: p.especialidad_id?.toString(),
-        province: p.ciudad?.provincia_id?.toString(),
-        city: p.ciudad_id?.toString(),
-        description: p.descripcion
-      }))
-  }, [rawProfessionals, filters])
+    return rawProfessionals.map((p: any) => ({
+      id: p.id,
+      name: p.usuario?.nombre || "Usuario",
+      specialty: p.especialidad?.nombre || p.profesion?.nombre || "Profesional",
+      location: p.ciudad ? `${p.ciudad.nombre}, ${p.ciudad.provincia?.nombre || ""}` : "Ecuador",
+      image: formatUrl(p.usuario?.foto_url) || "/logo-black.png",
+      price: `$${p.tarifa_hora || p.tarifa || 0}`,
+      unit: "hora",
+      experience: "Experiencia verificada",
+      category: "general",
+      featured: false,
+      verified: p.verificado,
+      profession: p.profesion_id?.toString(),
+      status: p.estado,
+      status_id: p.estado_id,
+      specialty_id: p.especialidad_id?.toString(),
+      province: p.ciudad?.provincia_id?.toString(),
+      city: p.ciudad_id?.toString(),
+      description: p.descripcion
+    }))
+  }, [rawProfessionals])
 
   // Sorting logic (can still be done client-side for these results)
   const sortedProfessionals = [...professionals].sort((a, b) => {
@@ -255,6 +245,35 @@ export default function ProfessionalsPage() {
           </div>
         )}
       </section>
+
+      {/* Pagination Controls */}
+      {meta?.totalPages > 1 && (
+        <section className="max-w-7xl mx-auto px-4 md:px-6 pb-12 flex justify-center items-center gap-4">
+          <button
+            onClick={() => {
+              setPage((prev) => Math.max(1, prev - 1));
+              window.scrollTo({ top: 400, behavior: "smooth" });
+            }}
+            disabled={page === 1 || loading}
+            className="px-6 py-2 bg-card border border-border rounded-full hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
+          >
+            Anterior
+          </button>
+          <span className="text-muted-foreground text-sm font-medium">
+            Página {page} de {meta.totalPages}
+          </span>
+          <button
+            onClick={() => {
+              setPage((prev) => Math.min(meta.totalPages, prev + 1));
+              window.scrollTo({ top: 400, behavior: "smooth" });
+            }}
+            disabled={page === meta.totalPages || loading}
+            className="px-6 py-2 bg-card border border-border rounded-full hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
+          >
+            Siguiente
+          </button>
+        </section>
+      )}
 
       {/* Bottom CTA Section */}
       <section className="max-w-4xl mx-auto px-4 md:px-6 pb-16">
