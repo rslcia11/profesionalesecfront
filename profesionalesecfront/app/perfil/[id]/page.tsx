@@ -9,7 +9,6 @@ import Header from "@/components/header"
 import Footer from "@/components/footer"
 import BookingForm from "@/components/booking-form"
 import LocationMap from "@/components/shared/location-map"
-import ScheduleGrid from "@/components/schedule-grid"
 import { formatUrl } from "@/lib/utils"
 
 export default function ProfessionalProfile() {
@@ -203,17 +202,6 @@ export default function ProfessionalProfile() {
                                         </div>
                                     ))}
                                 </div>
-                            </div>
-                        )}
-
-                        {/* Disponibilidad Horaria */}
-                        {schedule && (
-                            <div className="mt-12">
-                                <h3 className="text-xl font-bold uppercase text-gray-800 mb-6 border-b pb-4">DISPONIBILIDAD HORARIA</h3>
-                                <ScheduleGrid 
-                                    matrix={schedule} 
-                                    readOnly={true} 
-                                />
                             </div>
                         )}
 
