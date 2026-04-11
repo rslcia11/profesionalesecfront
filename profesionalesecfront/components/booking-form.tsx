@@ -1,7 +1,13 @@
 "use client"
 
-import { useState } from "react"
-import { Calendar, Clock, User, Mail, Phone, MessageSquare } from "lucide-react"
+import { useState, useMemo } from "react"
+import { format } from "date-fns"
+import { es } from "date-fns/locale"
+import { Calendar as CalendarIcon, Clock, User, Mail, Phone, MessageSquare } from "lucide-react"
+import { Calendar as CalendarComponent } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { cn } from "@/lib/utils"
 import { citasApi } from "@/lib/api"
 
 interface BookingFormProps {
@@ -59,6 +65,61 @@ export default function BookingForm({ professional, schedule }: BookingFormProps
         }
     }
 
+    const isDateDisabled = (date: Date) => {
+        if (!schedule) return false; // si no hay schedule, dejamos abierto
+        
+        // 0: Sun, 1: Mon... 6: Sat
+        const dayOfWeek = date.getDay();
+        // matrix: 0: Mon ... 6: Sun
+        const matrixDayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        
+        // Return true (disabled) if there are NO available slots in this day
+        // meaning every hour is false
+        const startIdx = matrixDayIndex * 24;
+        const endIdx = startIdx + 24;
+        
+        let hasAvailability = false;
+        for (let i = startIdx; i < endIdx; i++) {
+            if (schedule[i] === true) {
+                hasAvailability = true;
+                break;
+            }
+        }
+        
+        return !hasAvailability;
+    }
+
+    const availableHours = useMemo(() => {
+        if (!schedule || !formData.fecha_cita) return [];
+        
+        const dateObj = new Date(formData.fecha_cita + "T12:00:00Z");
+        const dayOfWeek = dateObj.getUTCDay();
+        const matrixDayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        
+        const startIdx = matrixDayIndex * 24;
+        const endIdx = startIdx + 24;
+        
+        const hours: { value: string, label: string }[] = [];
+        for (let i = startIdx; i < endIdx; i++) {
+            if (schedule[i] === true) {
+                const hourNum = i - startIdx;
+                const formattedHour = `${String(hourNum).padStart(2, '0')}:00`;
+                
+                const ampm_start = hourNum >= 12 ? 'pm' : 'am';
+                const hour12_start = hourNum % 12 || 12;
+                
+                const nextHourNum = hourNum + 1;
+                const ampm_end = nextHourNum >= 12 && nextHourNum % 24 !== 0 ? 'pm' : 'am';
+                const hour12_end = nextHourNum % 12 || 12;
+                
+                const label = `${hour12_start} ${ampm_start} a ${hour12_end} ${ampm_end}`;
+                
+                hours.push({ value: formattedHour, label });
+            }
+        }
+        return hours;
+    }, [schedule, formData.fecha_cita]);
+
     const handleFieldChange = (field: string, value: string) => {
         const newFormData = { ...formData, [field]: value }
         setFormData(newFormData)
@@ -93,7 +154,7 @@ export default function BookingForm({ professional, schedule }: BookingFormProps
         return (
             <div className="bg-green-50 p-8 rounded-lg text-center h-full flex flex-col items-center justify-center">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                    <Calendar className="h-8 w-8 text-green-600" />
+                    <CalendarIcon className="h-8 w-8 text-green-600" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">¡Cita Agendada!</h3>
                 <p className="text-gray-600 mb-6">
@@ -171,25 +232,75 @@ export default function BookingForm({ professional, schedule }: BookingFormProps
 
             {/* Fecha y Hora Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+                <div className="flex flex-col mt-0">
                     <label className="block text-sm font-semibold text-gray-600 mb-1">Fecha de agendamiento *</label>
-                    <input
-                        type="date"
-                        required
-                        value={formData.fecha_cita}
-                        onChange={(e) => handleFieldChange("fecha_cita", e.target.value)}
-                        className="w-full border-b border-gray-300 py-2 focus:border-black focus:outline-none bg-transparent text-gray-600"
-                    />
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <button
+                                type="button"
+                                className={cn(
+                                    "w-full border-b border-gray-300 py-2 focus:border-black focus:outline-none bg-transparent text-left flex justify-between items-center outline-none ring-0",
+                                    !formData.fecha_cita && "text-gray-400"
+                                )}
+                            >
+                                {formData.fecha_cita ? (
+                                    <span className="text-gray-800">
+                                        {format(new Date(`${formData.fecha_cita}T12:00:00`), "dd 'de' MMMM, yyyy", { locale: es })}
+                                    </span>
+                                ) : (
+                                    <span className="text-gray-400 font-normal">Seleccionar fecha</span>
+                                )}
+                                <CalendarIcon className="h-4 w-4 opacity-50" />
+                            </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 z-50 bg-white" align="start">
+                            <CalendarComponent
+                                mode="single"
+                                selected={formData.fecha_cita ? new Date(`${formData.fecha_cita}T12:00:00`) : undefined}
+                                startMonth={new Date()}
+                                onSelect={(date) => {
+                                    if (date) {
+                                        const year = date.getFullYear();
+                                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                                        const day = String(date.getDate()).padStart(2, '0');
+                                        const dateStr = `${year}-${month}-${day}`;
+                                        
+                                        // Update the date, and reset the time since the new day has different slots
+                                        const newFormData = { ...formData, fecha_cita: dateStr, hora_cita: "" };
+                                        setFormData(newFormData);
+                                        validateAvailability(dateStr, "");
+                                    }
+                                }}
+                                disabled={(date) => {
+                                    const today = new Date();
+                                    today.setHours(0, 0, 0, 0);
+                                    if (date < today) return true; // No past dates
+                                    return isDateDisabled(date);
+                                }}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
                 </div>
                 <div>
                     <label className="block text-sm font-semibold text-gray-600 mb-1">Hora *</label>
-                    <input
-                        type="time"
+                    <Select 
+                        value={formData.hora_cita} 
+                        onValueChange={(val) => handleFieldChange("hora_cita", val)}
+                        disabled={!formData.fecha_cita || availableHours.length === 0}
                         required
-                        value={formData.hora_cita}
-                        onChange={(e) => handleFieldChange("hora_cita", e.target.value)}
-                        className="w-full border-b border-gray-300 py-2 focus:border-black focus:outline-none bg-transparent text-gray-600"
-                    />
+                    >
+                        <SelectTrigger className="w-full border-b border-x-0 border-t-0 border-gray-300 rounded-none shadow-none px-0 py-2 focus:border-black focus:ring-0 bg-transparent data-[state=open]:bg-transparent outline-none ring-0 focus-visible:ring-0">
+                            <SelectValue placeholder={!formData.fecha_cita ? "Seleccione un día primero" : (availableHours.length === 0 ? "Sin disponibilidad" : "Seleccione hora")} />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white">
+                            {availableHours.map(hour => (
+                                <SelectItem key={hour.value} value={hour.value} className="cursor-pointer">
+                                    {hour.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
             </div>
 
