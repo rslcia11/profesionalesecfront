@@ -16,44 +16,8 @@ export default function PageLoader() {
   if (!isLoading) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-white via-blue-50 to-gray-100 animate-in fade-in duration-300">
-      <div className="relative">
-        <div className="flex flex-col items-center gap-6">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-32 h-32 rounded-full bg-blue-400/30 animate-ping" />
-          </div>
-
-          <div className="relative z-10 bg-white rounded-2xl p-6 shadow-2xl border border-gray-200 animate-in zoom-in duration-700">
-            <img src="/logo-black.png" alt="Profesionales.ec" className="h-16 w-auto object-contain" />
-          </div>
-
-          <div className="w-64 h-1.5 bg-gray-200 rounded-full overflow-hidden animate-in slide-in-from-bottom duration-500 delay-300">
-            <div className="h-full bg-gradient-to-r from-blue-500 to-blue-400 loading-bar" />
-          </div>
-
-          <p className="text-gray-600 text-sm font-medium animate-pulse">Cargando...</p>
-        </div>
-      </div>
-
-      <style jsx>{`
-        @keyframes loading-bar {
-          0% {
-            width: 0%;
-            margin-left: 0%;
-          }
-          50% {
-            width: 75%;
-            margin-left: 12.5%;
-          }
-          100% {
-            width: 0%;
-            margin-left: 100%;
-          }
-        }
-        .loading-bar {
-          animation: loading-bar 1.5s ease-in-out infinite;
-        }
-      `}</style>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
+      <img src="/logo-black.png" alt="Profesionales.ec" className="h-16 w-auto object-contain" />
     </div>
   )
 }

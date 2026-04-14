@@ -3,7 +3,7 @@ import Link from "next/link"
 export function WhatsAppFloat() {
   return (
     <Link
-      href="https://wa.me/593999999999" // Replace with actual WhatsApp number
+      href="https://wa.me/593998925381"
       target="_blank"
       rel="noopener noreferrer"
       className="fixed bottom-6 left-6 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-[#25D366] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl"

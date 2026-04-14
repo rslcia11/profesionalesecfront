@@ -101,7 +101,7 @@ export default function PreinscripcionPage() {
               onClick={() => setSelectedPlan("paid")}
             >
               <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg">
-                ⚡ MÁS POPULAR
+                MÁS POPULAR
               </div>
 
               {selectedPlan === "paid" && (

@@ -75,7 +75,15 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
 
   return (
     <div className="w-full space-y-8">
+      {/* Hide scrollbar for mobile carousel */}
       <style jsx>{`
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
         @keyframes slideInRight {
           0% {
             opacity: 0;
@@ -123,7 +131,8 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
         onMouseLeave={() => setIsHoveringCarousel(false)}
       >
         <div className={`transition-all duration-800 ease-in-out ${getAnimationClass()}`}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Desktop: Grid */}
+          <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {visibleServices.map((service, index) => {
               const CardContent = (
                 <div
@@ -159,10 +168,47 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
               )
             })}
           </div>
+
+          {/* Mobile: Horizontal scroll carousel */}
+          <div className="md:hidden overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-4 px-4 flex gap-4 pb-4">
+            {services.map((service) => {
+              const CardContent = (
+                <div
+                  key={service.id}
+                  className="relative h-64 w-64 flex-shrink-0 rounded-2xl overflow-hidden snap-center"
+                >
+                  <img
+                    src={service.image || "/placeholder.svg?height=256&width=256&query=professional service"}
+                    alt={service.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-black/70" />
+                  <div className="absolute inset-0 flex items-end p-4 z-10">
+                    <div className="w-full text-center">
+                      <div className="inline-block px-3 py-1.5 bg-white/20 backdrop-blur-md border border-white/30 rounded-full">
+                        <p className="text-white font-semibold text-sm">{service.title}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+
+              return service.href ? (
+                <Link key={service.id} href={service.href} className="flex-shrink-0">
+                  {CardContent}
+                </Link>
+              ) : (
+                <div key={service.id} className="flex-shrink-0">
+                  {CardContent}
+                </div>
+              )
+            })}
+          </div>
         </div>
+        {/* Navigation arrows - hidden on mobile */}
         <button
           onClick={handlePrev}
-          className={`absolute left-2 md:left-2 top-1/2 -translate-y-1/2 z-20 p-3 bg-primary hover:bg-primary/80 text-white rounded-full shadow-lg transition-all duration-500 ease-out ${isHoveringCarousel ? "opacity-100 scale-110" : "opacity-0 scale-90"
+          className={`hidden md:block absolute left-2 top-1/2 -translate-y-1/2 z-20 p-3 bg-primary hover:bg-primary/80 text-white rounded-full shadow-lg transition-all duration-500 ease-out ${isHoveringCarousel ? "opacity-100 scale-110" : "opacity-0 scale-90"
             } active:scale-95 hover:shadow-2xl`}
           aria-label="Previous slide"
           disabled={isTransitioning}
@@ -171,7 +217,7 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
         </button>
         <button
           onClick={handleNext}
-          className={`absolute right-2 md:right-2 top-1/2 -translate-y-1/2 z-20 p-3 bg-primary hover:bg-primary/80 text-white rounded-full shadow-lg transition-all duration-500 ease-out ${isHoveringCarousel ? "opacity-100 scale-110" : "opacity-0 scale-90"
+          className={`hidden md:block absolute right-2 top-1/2 -translate-y-1/2 z-20 p-3 bg-primary hover:bg-primary/80 text-white rounded-full shadow-lg transition-all duration-500 ease-out ${isHoveringCarousel ? "opacity-100 scale-110" : "opacity-0 scale-90"
             } active:scale-95 hover:shadow-2xl`}
           aria-label="Next slide"
           disabled={isTransitioning}
@@ -179,7 +225,8 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
           <ChevronRight className="w-6 h-6" />
         </button>
       </div>
-      <div className="flex justify-center items-center gap-2">
+      {/* Pagination dots - hidden on mobile */}
+      <div className="hidden md:flex justify-center items-center gap-2">
         {Array.from({ length: totalPages }).map((_, idx) => (
           <button
             key={idx}

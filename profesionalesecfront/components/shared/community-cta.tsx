@@ -54,7 +54,7 @@ export default function CommunityCTA() {
                 {role.description}
               </p>
               <Link 
-                href={`https://wa.me/593994147639?text=${encodeURIComponent(`Hola, me interesa participar como ${role.role} en Profesionales.ec`)}`} 
+                href={`https://wa.me/593998925381?text=${encodeURIComponent(`Hola, me interesa participar como ${role.role} en Profesionales.ec`)}`} 
                 target="_blank"
                 className="text-[10px] font-black tracking-widest text-emerald-600 uppercase hover:text-emerald-700"
               >

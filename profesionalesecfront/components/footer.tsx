@@ -124,7 +124,9 @@ export default function Footer() {
 
         {/* Bottom Section */}
         <div className="pt-4 border-t border-gray-900 flex flex-col md:flex-row justify-between items-center text-[10px] text-gray-600">
-          <p>© 1998 - Desarrollo Digital y Marketing</p>
+          <a href="https://mil998.com/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+            Developed by 1998 - Desarrollo Digital y Marketing
+          </a>
           <div className="flex gap-4 mt-2 md:mt-0">
             <Link href="/terminos-y-condiciones" className="hover:text-gray-400">Términos</Link>
             <span>|</span>
