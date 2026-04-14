@@ -88,23 +88,17 @@ export default function ProfessionalProfile() {
         <div className="min-h-screen bg-white font-sans flex flex-col">
             <Header />
 
-            {/* SPACER for Fixed Header (Adjusted for h-16 header + top bar) */}
-            <div className="h-24 md:h-28 bg-black"></div>
 
-            {/* NAME BAR (Black Background) */}
-            <div className="bg-black text-white py-8 text-center">
-                <h1 className="text-3xl md:text-5xl font-bold">{name}</h1>
-            </div>
 
             {/* MAIN CONTENT CONTAINER */}
-            <div className="w-full max-w-7xl mx-auto px-4 md:px-8 py-12">
+            <div className="w-full max-w-7xl mx-auto px-4 md:px-8 py-12 pt-32">
 
                 {/* TOP SECTION: Photo & Branding/Info */}
                 <div className="flex flex-col md:flex-row gap-12 mb-16 items-center md:items-start">
 
                     {/* LEFT: Photo (Circle) - Centered visually in this column */}
                     <div className="w-full md:w-1/2 flex justify-center md:justify-end pr-0 md:pr-12">
-                        <div className="w-64 h-64 md:w-[450px] md:h-[450px] rounded-full overflow-hidden shadow-2xl border-[10px] border-white -mt-4 bg-gray-200">
+                        <div className="w-64 h-64 md:w-[450px] md:h-[450px] rounded-full overflow-hidden shadow-2xl border-[10px] border-white bg-gray-200">
                             <img src={image} alt={name} className="w-full h-full object-cover" />
                         </div>
                     </div>
