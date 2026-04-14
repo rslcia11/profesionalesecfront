@@ -123,11 +123,11 @@ export default function Footer() {
         </div>
 
         {/* Bottom Section */}
-        <div className="pt-4 border-t border-gray-900 flex flex-col md:flex-row justify-between items-center text-[10px] text-gray-600">
-          <a href="https://mil998.com/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+        <div className="pt-4 border-t border-gray-900 flex flex-col items-center text-[10px] text-gray-600 gap-2">
+          <a href="https://mil998.com/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors order-1">
             Developed by 1998 - Desarrollo Digital y Marketing
           </a>
-          <div className="flex gap-4 mt-2 md:mt-0">
+          <div className="flex gap-4 order-2 md:order-2">
             <Link href="/terminos-y-condiciones" className="hover:text-gray-400">Términos</Link>
             <span>|</span>
             <a href="mailto:info@profesionales.ec" className="hover:text-gray-400">info@profesionales.ec</a>
