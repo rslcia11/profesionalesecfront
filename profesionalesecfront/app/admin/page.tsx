@@ -127,7 +127,7 @@ export default function AdminDashboard() {
   const { toast } = useToast()
   const { confirm: animatedConfirm, isOpen: isConfirmOpen, options: confirmOptions, handleConfirm: onConfirm, handleCancel: onCancel } = useAnimatedConfirm()
 
-  const [activeTab, setActiveTab] = useState("conversatorios")
+  const [activeTab, setActiveTab] = useState("dashboard")
 
   const [ponencias, setPonencias] = useState<Ponencia[]>([])
   const [perfilesPendientes, setPerfilesPendientes] = useState<PerfilPendiente[]>([])
@@ -726,8 +726,8 @@ export default function AdminDashboard() {
 
       <main className="flex-grow pt-24 pb-12">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
-            <div className="flex items-center gap-3 mb-3">
+          <div className="mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="flex items-center gap-3 mb-6">
               <div className="p-2 bg-blue-50 rounded-lg border border-blue-200">
                 <Users className="h-6 w-6 text-blue-600" />
               </div>
@@ -735,12 +735,36 @@ export default function AdminDashboard() {
                 Panel de Administración
               </h1>
             </div>
-            <p className="text-gray-600 text-lg">
-              Gestiona conversatorios, perfiles profesionales y planes de pago de forma eficiente
-            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+              <TabsList className="grid w-full grid-cols-5 bg-white border border-gray-200 shadow-sm">
+                <TabsTrigger
+                  value="dashboard"
+                  className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                >
+                  Dashboard
+                </TabsTrigger>
+                <TabsTrigger
+                  value="conversatorios"
+                  className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                >
+                  Conversatorios
+                </TabsTrigger>
+                <TabsTrigger value="perfiles" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                  Profesionales
+                </TabsTrigger>
+                <TabsTrigger value="planes" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                  Planes de Pago
+                </TabsTrigger>
+                <TabsTrigger value="articulos" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                  Artículos
+                </TabsTrigger>
+              </TabsList>
+
+              {/* DASHBOARD TAB */}
+              <TabsContent value="dashboard" className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
               <Card className="bg-white border-gray-200 hover:border-blue-300 transition-all duration-300 hover:shadow-xl hover:shadow-blue-100 hover:scale-105">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -799,30 +823,9 @@ export default function AdminDashboard() {
               </Card>
             </div>
           </div>
+        </TabsContent>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 bg-white border border-gray-200 shadow-sm">
-              <TabsTrigger
-                value="conversatorios"
-                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-              >
-                Conversatorios
-              </TabsTrigger>
-              <TabsTrigger value="perfiles" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-                Profesionales
-              </TabsTrigger>
-              <TabsTrigger value="planes" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-                Planes de Pago
-              </TabsTrigger>
-              <TabsTrigger value="articulos" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-                Artículos
-              </TabsTrigger>
-              <TabsTrigger value="revistas" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-                Revistas
-              </TabsTrigger>
-            </TabsList>
-
-            {/* CONVERSATORIOS TAB */}
+        {/* CONVERSATORIOS TAB */}
             <TabsContent value="conversatorios" className="space-y-4">
               <div className="animate-in fade-in duration-300">
                 <div className="flex justify-between items-center mb-6">

@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { ponenciasApi, catalogosApi, multimediaApi } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
@@ -28,6 +28,7 @@ export type PonenciaForm = {
   url_revista_general: string
   foto_revista_general: string
   subtitulo: string
+  precio_anterior?: number
   dias: Array<{
     id?: number
     fecha: Date
@@ -134,16 +135,44 @@ const sanitizeData = (data: Partial<PonenciaForm>): PonenciaForm => {
 export function useConversatorioForm(initialData?: Partial<PonenciaForm>) {
   const { toast } = useToast()
   const router = useRouter()
-  // Derivar es_gratuita y es_ilimitado desde precio/cupo si no están definidos (para edición de conversatorios existentes)
+  
+  // Debug: ver qué valores llegan
+  console.log("initialData:", initialData)
+  console.log("precio:", initialData?.precio, "tipo:", typeof initialData?.precio)
+  
+  // Derivar es_gratuita y es_ilimitado desde precio/cupo
+  // Convertir a número para comparar correctamente
+  const precioNum = Number(initialData?.precio ?? -1)
+  const cupoNum = Number(initialData?.cupo ?? -1)
+  
   const dataWithSwitches = {
     ...initialData,
-    es_gratuita: initialData?.es_gratuita ?? (initialData?.precio === 0),
-    es_ilimitado: initialData?.es_ilimitado ?? (initialData?.cupo === 0),
+    es_gratuita: precioNum === 0 ? true : (initialData?.es_gratuita ?? false),
+    es_ilimitado: cupoNum === 0 ? true : (initialData?.es_ilimitado ?? false),
   }
+  
+  console.log("dataWithSwitches:", dataWithSwitches)
+  
   const [formData, setFormData] = useState<PonenciaForm>(sanitizeData(dataWithSwitches || {}))
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [ciudades, setCiudades] = useState<any[]>([])
+
+  // Cargar ciudades automáticamente cuando hay una provincia seleccionada (para modo edición)
+  useEffect(() => {
+    const loadCiudades = async () => {
+      if (formData.provincia_id && formData.provincia_id > 0) {
+        try {
+          const res = await catalogosApi.obtenerCiudades(formData.provincia_id)
+          const filtered = Array.isArray(res) ? res.filter((c: any) => c.provincia_id === formData.provincia_id || (c.provincia && c.provincia.id === formData.provincia_id)) : []
+          setCiudades(filtered)
+        } catch (error) {
+          console.error("Error loading cities:", error)
+        }
+      }
+    }
+    loadCiudades()
+  }, [formData.provincia_id])
 
   const syncItineraryWithDates = useCallback((inicio: Date, fin: Date) => {
     setFormData(prev => {

@@ -262,7 +262,15 @@ export default function ConversatorioForm({ initialData, id, provincias, profesi
                       onCheckedChange={(checked) => {
                         updateField("es_gratuita", checked)
                         if (checked) {
+                          // Guardar precio anterior antes de ponerlo en 0
+                          if (formData.precio > 0) {
+                            updateField("precio_anterior", formData.precio)
+                          }
                           updateField("precio", 0)
+                        } else {
+                          // Restaurar precio anterior si existe
+                          const precioAnterior = formData.precio_anterior || 50
+                          updateField("precio", precioAnterior)
                         }
                       }}
                     />

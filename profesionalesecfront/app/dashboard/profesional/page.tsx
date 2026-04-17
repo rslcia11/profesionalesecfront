@@ -41,7 +41,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
 export default function ProfesionalDashboard() {
-  const [activeTab, setActiveTab] = useState("overview")
+  const [activeTab, setActiveTab] = useState("dashboard")
   const { toast } = useToast()
 
   // State
@@ -278,84 +278,85 @@ export default function ProfesionalDashboard() {
           </div>
         </div>
 
-        {/* Estadísticas Generales */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <Card className="bg-white border-gray-200 hover:border-yellow-300 transition-all duration-300 hover:scale-105 hover:shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Citas Pendientes</CardTitle>
-              <AlertCircle className="h-4 w-4 text-yellow-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-yellow-600">{estadisticas.citasPendientes}</div>
-              <p className="text-xs text-gray-500 mt-1">Requieren confirmación</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white border-gray-200 hover:border-green-300 transition-all duration-300 hover:scale-105 hover:shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Citas Confirmadas</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-green-600">{estadisticas.citasConfirmadas}</div>
-              <p className="text-xs text-gray-500 mt-1">Próximas citas agendadas</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white border-gray-200 hover:border-blue-300 transition-all duration-300 hover:scale-105 hover:shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Citas Completadas</CardTitle>
-              <TrendingUp className="h-4 w-4 text-blue-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-blue-600">{estadisticas.citasCompletadas}</div>
-              <p className="text-xs text-gray-500 mt-1">Histórico total</p>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Tabs para diferentes secciones */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <div className="flex justify-center">
-            <TabsList className="inline-flex h-11 items-center justify-center rounded-xl bg-white p-1 text-gray-400 border border-gray-100 shadow-sm">
-              <TabsTrigger
-                value="overview"
-                className="rounded-lg px-6 py-2 text-sm font-medium transition-all data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md"
-              >
-                Resumen
-              </TabsTrigger>
-              <TabsTrigger
-                value="citas"
-                className="rounded-lg px-6 py-2 text-sm font-medium transition-all data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md"
-              >
-                Citas
-              </TabsTrigger>
-              <TabsTrigger
-                value="articulos"
-                className="rounded-lg px-6 py-2 text-sm font-medium transition-all data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md"
-              >
-                Artículos
-              </TabsTrigger>
-              <TabsTrigger
-                value="servicios"
-                className="rounded-lg px-6 py-2 text-sm font-medium transition-all data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md"
-              >
-                Servicios
-              </TabsTrigger>
-              <TabsTrigger
-                value="horario"
-                className="rounded-lg px-6 py-2 text-sm font-medium transition-all data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md"
-              >
-                Horario
-              </TabsTrigger>
-              <TabsTrigger
-                value="redes"
-                className="rounded-lg px-6 py-2 text-sm font-medium transition-all data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md"
-              >
-                Redes Sociales
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList className="grid w-full grid-cols-6 bg-white border border-gray-200 shadow-sm">
+            <TabsTrigger
+              value="dashboard"
+              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            >
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger
+              value="citas"
+              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            >
+              Citas
+            </TabsTrigger>
+            <TabsTrigger
+              value="articulos"
+              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            >
+              Artículos
+            </TabsTrigger>
+            <TabsTrigger
+              value="servicios"
+              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            >
+              Servicios
+            </TabsTrigger>
+            <TabsTrigger
+              value="horario"
+              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            >
+              Horario
+            </TabsTrigger>
+            <TabsTrigger
+              value="redes"
+              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            >
+              Redes Sociales
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Tab: Dashboard */}
+          <TabsContent value="dashboard" className="space-y-6">
+            {/* Estadísticas Generales */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              <Card className="bg-white border-gray-200 hover:border-yellow-300 transition-all duration-300 hover:scale-105 hover:shadow-lg">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">Citas Pendientes</CardTitle>
+                  <AlertCircle className="h-4 w-4 text-yellow-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-yellow-600">{estadisticas.citasPendientes}</div>
+                  <p className="text-xs text-gray-500 mt-1">Requieren confirmación</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white border-gray-200 hover:border-green-300 transition-all duration-300 hover:scale-105 hover:shadow-lg">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">Citas Confirmadas</CardTitle>
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-green-600">{estadisticas.citasConfirmadas}</div>
+                  <p className="text-xs text-gray-500 mt-1">Próximas citas agendadas</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white border-gray-200 hover:border-blue-300 transition-all duration-300 hover:scale-105 hover:shadow-lg">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">Citas Completadas</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-blue-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-blue-600">{estadisticas.citasCompletadas}</div>
+                  <p className="text-xs text-gray-500 mt-1">Histórico total</p>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
           {/* Tab: Resumen */}
           <TabsContent value="overview" className="space-y-6">

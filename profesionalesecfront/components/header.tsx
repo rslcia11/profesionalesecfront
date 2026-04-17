@@ -73,7 +73,7 @@ export default function Header() {
 
             {/* Logo - Z-index to stay above centered nav */}
             <Link href="/" className="flex items-center gap-2 group hover:opacity-80 transition-opacity duration-300 z-10 shrink-0">
-              <img src="/logo-white.png" alt="Profesionales.ec" className="h-10 w-auto object-contain" />
+              <img src="/logo-white.png" alt="Profesionales.ec" className="h-16 md:h-14 w-auto object-contain" />
             </Link>
 
             {/* Desktop Navigation - CENTERED ABSOLUTELY */}
