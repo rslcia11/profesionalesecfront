@@ -849,7 +849,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
-            {errors.password && touched.password && <p className="text-red-400 text-sm mt-1">{errors.password}</p>}
+            <p className={`text-red-400 text-sm mt-1 min-h-[20px] ${errors.password && touched.password ? 'visible' : 'invisible'}`}>{errors.password || '\u00A0'}</p>
           </div>
           <div className="flex flex-col">
             <label className="block text-sm font-medium text-muted-foreground mb-2">
@@ -872,7 +872,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
                 {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
-            {errors.confirmPassword && touched.confirmPassword && <p className="text-red-400 text-sm mt-1">{errors.confirmPassword}</p>}
+            <p className={`text-red-400 text-sm mt-1 min-h-[20px] ${errors.confirmPassword && touched.confirmPassword ? 'visible' : 'invisible'}`}>{errors.confirmPassword || '\u00A0'}</p>
           </div>
         </div>
       )}
@@ -1649,7 +1649,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
           </div>
         </div>
 
-        <div className="relative overflow-hidden">
+        <div className="relative overflow-x-hidden p-1">
           <div
             className={`transition-all duration-500 ease-in-out ${slideDirection === "right" ? "animate-in slide-in-from-right" : "animate-in slide-in-from-left"
               }`}
