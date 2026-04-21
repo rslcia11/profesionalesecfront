@@ -738,7 +738,7 @@ export default function AdminDashboard() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-5 bg-white border border-gray-200 shadow-sm">
+              <TabsList className="grid w-full grid-cols-6 bg-white border border-gray-200 shadow-sm">
                 <TabsTrigger
                   value="dashboard"
                   className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
@@ -759,6 +759,13 @@ export default function AdminDashboard() {
                 </TabsTrigger>
                 <TabsTrigger value="articulos" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                   Artículos
+                </TabsTrigger>
+                <TabsTrigger
+                  value="convenios"
+                  className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                  onClick={() => router.push("/admin/convenios")}
+                >
+                  Convenios
                 </TabsTrigger>
               </TabsList>
 
