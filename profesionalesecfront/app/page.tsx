@@ -4,7 +4,6 @@ import Services from "@/components/services"
 import Convenios from "@/components/convenios"
 import ConnectingProfessionals from "@/components/connecting-professionals"
 import FeaturedProfessionals from "@/components/featured-professionals"
-import LearnAndGrow from "@/components/learn-and-grow"
 import Footer from "@/components/footer"
 
 export default function Home() {
@@ -16,7 +15,6 @@ export default function Home() {
       <Convenios />
       <ConnectingProfessionals />
       <FeaturedProfessionals />
-      <LearnAndGrow />
       <Footer />
     </main>
   )

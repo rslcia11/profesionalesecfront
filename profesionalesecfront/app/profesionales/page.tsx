@@ -323,10 +323,10 @@ export default function ProfessionalsPage() {
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
             Únete a nuestra red de expertos verificados y conecta con clientes que buscan excelencia
           </p>
-          <button className="group px-8 py-4 bg-primary text-primary-foreground rounded-full font-semibold hover:bg-primary/90 transition-all hover:shadow-xl hover:shadow-primary/20 inline-flex items-center gap-3">
+          <Link href="/preinscripcion" className="group px-8 py-4 bg-primary text-primary-foreground rounded-full font-semibold hover:bg-primary/90 transition-all hover:shadow-xl hover:shadow-primary/20 inline-flex items-center gap-3">
             Crear perfil profesional
             <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-          </button>
+          </Link>
         </div>
       </section>
 
