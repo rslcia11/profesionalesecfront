@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { profesionalApi, horariosApi } from "@/lib/api"
-import { MapPin, Phone, Mail, Facebook, Instagram, Twitter, Check, Linkedin, Music } from "lucide-react"
+import { MapPin, Phone, Mail, Facebook, Instagram, Twitter, Check, Linkedin, Music, Youtube } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import Header from "@/components/header"
@@ -69,7 +69,7 @@ export default function ProfessionalProfile() {
     }
 
     // Data Mapping
-    const { usuario, profesion, especialidad, descripcion, tarifa, ciudad, direccion, lat, lng, calle_principal, referencia, facebook_url, instagram_url, x_url, linkedin_url, tiktok_url } = professional
+    const { usuario, profesion, especialidad, descripcion, tarifa, ciudad, direccion, lat, lng, calle_principal, referencia, facebook_url, instagram_url, x_url, linkedin_url, tiktok_url, yt_url } = professional
     const name = usuario?.nombre || "Profesional"
     const title = profesion?.nombre || "Profesional"
     const subTitle = especialidad?.nombre ? `${title} Especializada en ${especialidad.nombre}` : title
@@ -142,6 +142,11 @@ export default function ProfessionalProfile() {
                             {tiktok_url && (
                                 <a href={tiktok_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center size-12 bg-white border border-gray-100 rounded-2xl text-gray-500 hover:text-black hover:border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group shadow-sm" title="TikTok">
                                     <Music size={20} className="group-hover:scale-110 transition-transform" />
+                                </a>
+                            )}
+                            {yt_url && (
+                                <a href={yt_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center size-12 bg-white border border-gray-100 rounded-2xl text-gray-500 hover:text-red-600 hover:border-red-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group shadow-sm" title="YouTube">
+                                    <Youtube size={20} className="group-hover:scale-110 transition-transform" />
                                 </a>
                             )}
                             {phone && (

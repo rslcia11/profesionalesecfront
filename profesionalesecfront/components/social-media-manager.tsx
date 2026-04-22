@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Facebook, Instagram, Linkedin, Music, Save, Loader2, Globe } from "lucide-react"
+import { Facebook, Instagram, Linkedin, Music, Youtube, Save, Loader2, Globe } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -21,6 +21,7 @@ export default function SocialMediaManager({ perfil, onUpdate }: SocialMediaMana
     tiktok_url: perfil?.tiktok_url || "",
     linkedin_url: perfil?.linkedin_url || "",
     x_url: perfil?.x_url || "",
+    yt_url: perfil?.yt_url || "",
   })
   const { toast } = useToast()
 
@@ -32,6 +33,7 @@ export default function SocialMediaManager({ perfil, onUpdate }: SocialMediaMana
         tiktok_url: perfil.tiktok_url || "",
         linkedin_url: perfil.linkedin_url || "",
         x_url: perfil.x_url || "",
+        yt_url: perfil.yt_url || "",
       })
     }
   }, [perfil])
@@ -152,7 +154,7 @@ export default function SocialMediaManager({ perfil, onUpdate }: SocialMediaMana
             />
           </div>
 
-          <div className="space-y-2 md:col-span-2">
+          <div className="space-y-2">
             <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
               <Music className="h-4 w-4 text-gray-900" /> TikTok
             </label>
@@ -161,6 +163,19 @@ export default function SocialMediaManager({ perfil, onUpdate }: SocialMediaMana
               value={formData.tiktok_url}
               onChange={handleInputChange}
               placeholder="https://tiktok.com/@tu-usuario"
+              className="bg-gray-50/50 border-gray-200 focus:ring-pink-500/20 focus:border-pink-500 transition-all"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              <Youtube className="h-4 w-4 text-red-600" /> YouTube
+            </label>
+            <Input
+              name="yt_url"
+              value={formData.yt_url}
+              onChange={handleInputChange}
+              placeholder="https://youtube.com/@tu-canal"
               className="bg-gray-50/50 border-gray-200 focus:ring-pink-500/20 focus:border-pink-500 transition-all"
             />
           </div>

@@ -4,7 +4,7 @@ import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { CheckCircle2, ChevronLeft, ChevronRight, Home, Upload, Eye, EyeOff, PartyPopper, Loader2, Facebook, Instagram, Linkedin, Twitter, Music } from "lucide-react"
+import { CheckCircle2, ChevronLeft, ChevronRight, Home, Upload, Eye, EyeOff, PartyPopper, Loader2, Facebook, Instagram, Linkedin, Twitter, Music, Youtube } from "lucide-react"
 import { Check, X } from "lucide-react" // Declared the Check variable
 import { authApi, profesionalApi, catalogosApi, saveToken, usuarioApi, horariosApi } from "@/lib/api"
 import ScheduleGrid from "@/components/schedule-grid"
@@ -78,6 +78,7 @@ interface FormData {
   tiktok_url: string
   linkedin_url: string
   x_url: string
+  yt_url: string
 }
 
 interface CatalogItem {
@@ -146,6 +147,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
     tiktok_url: "",
     linkedin_url: "",
     x_url: "",
+    yt_url: "",
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [touched, setTouched] = useState<FormTouched>({})
@@ -652,6 +654,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
           tiktok_url: formData.tiktok_url,
           linkedin_url: formData.linkedin_url,
           x_url: formData.x_url,
+          yt_url: formData.yt_url,
           foto_url: fotoUrl, // Include foto_url directly in creation request
         }
 
@@ -1498,7 +1501,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
             />
           </div>
 
-          <div className="space-y-2 md:col-span-2">
+          <div className="space-y-2">
             <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <Music className="size-4 text-gray-900" /> TikTok
             </label>
@@ -1510,6 +1513,21 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
               onBlur={handleBlur}
               placeholder="https://tiktok.com/@usuario"
               className={`w-full px-4 py-2.5 bg-card border ${getInputBorderColor("tiktok_url")} rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30`}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Youtube className="size-4 text-red-600" /> YouTube
+            </label>
+            <input
+              type="url"
+              name="yt_url"
+              value={formData.yt_url}
+              onChange={handleInputChange}
+              onBlur={handleBlur}
+              placeholder="https://youtube.com/@canal"
+              className={`w-full px-4 py-2.5 bg-card border ${getInputBorderColor("yt_url")} rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30`}
             />
           </div>
         </div>
