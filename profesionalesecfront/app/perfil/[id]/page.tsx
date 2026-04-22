@@ -69,7 +69,7 @@ export default function ProfessionalProfile() {
     }
 
     // Data Mapping
-    const { usuario, profesion, especialidad, descripcion, tarifa, ciudad, direccion, lat, lng, calle_principal, referencia, facebook_url, instagram_url, x_url, linkedin_url, tiktok_url, yt_url } = professional
+    const { usuario, profesion, especialidad, descripcion, tarifa, ciudad, direccion, lat, lng, calle_principal, referencia, facebook_url, instagram_url, x_url, linkedin_url, tiktok_url, yt_url, show_phone, show_email } = professional
     const name = usuario?.nombre || "Profesional"
     const title = profesion?.nombre || "Profesional"
     const subTitle = especialidad?.nombre ? `${title} Especializada en ${especialidad.nombre}` : title
@@ -78,8 +78,9 @@ export default function ProfessionalProfile() {
     const image = formatUrl(usuario?.foto_url) || "/logo-black.png"
     const price = tarifa ? `$${tarifa}` : "A convenir"
     const locationName = ciudad?.nombre || "Ecuador"
-    const phone = usuario?.telefono || ""
-    const email = usuario?.correo || ""
+    // Respetar preferencias de privacidad del profesional
+    const phone = show_phone !== false ? (usuario?.telefono || "") : ""
+    const email = show_email !== false ? (usuario?.correo || "") : ""
     const whatsappLink = `https://wa.me/593${phone.replace(/^0/, "")}?text=Hola, deseo agendar una cita.`
 
 

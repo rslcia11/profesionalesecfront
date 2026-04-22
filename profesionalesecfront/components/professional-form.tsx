@@ -655,6 +655,8 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
           linkedin_url: formData.linkedin_url,
           x_url: formData.x_url,
           yt_url: formData.yt_url,
+          show_phone: formData.showPhone,
+          show_email: formData.showEmail,
           foto_url: fotoUrl, // Include foto_url directly in creation request
         }
 
