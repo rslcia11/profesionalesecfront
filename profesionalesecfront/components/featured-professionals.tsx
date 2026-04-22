@@ -34,8 +34,13 @@ export default function FeaturedProfessionals() {
     async function fetchProfessionals() {
       try {
         const response = await profesionalApi.obtenerDestacados()
-        if (response && Array.isArray(response)) {
+        if (response && Array.isArray(response) && response.length > 0) {
           setProfessionals(response)
+        } else {
+          // Fallback: si no hay destacados aún, mostrar verificados
+          const fallback = await profesionalApi.obtenerVerificados()
+          const list = Array.isArray(fallback) ? fallback : (fallback?.data ?? [])
+          setProfessionals(list.slice(0, 4))
         }
       } catch (error) {
         console.error("Error fetching featured professionals:", error)
