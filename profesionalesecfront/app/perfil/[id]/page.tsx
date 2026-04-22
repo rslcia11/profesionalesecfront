@@ -106,8 +106,8 @@ export default function ProfessionalProfile() {
 
                     {/* RIGHT: Info & Branding */}
                     <div className="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-left pt-4">
-                        {/* New Official Logo Branding */}
-                        <img src="/logo-directorio.png" alt="P.ec" className="h-20 w-auto object-contain mb-6" />
+                        {/* New Official Logo Branding - Icon Only */}
+                        <img src="/logo-icono.png" alt="P.ec" className="h-20 w-auto object-contain mb-6" />
 
                         {/* Name & Subtitle */}
                         <h2 className="text-3xl font-bold text-gray-900 mb-2">{name}</h2>
@@ -190,7 +190,7 @@ export default function ProfessionalProfile() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                                     {professional.servicios.map((servicio: any) => (
                                         <div key={servicio.servicio_id} className="flex items-center gap-3 group">
-                                            <img src="/logo-icono.png" alt="P.ec" className="h-8 w-auto object-contain shrink-0" />
+                                            <img src="/logo-icono.png" alt="P.ec" className="h-10 w-auto object-contain shrink-0" />
                                             <p className="text-gray-500 text-sm md:text-base border-l border-gray-100 pl-3 group-hover:text-black group-hover:border-black transition-all">
                                                 {servicio.descripcion}
                                             </p>
