@@ -51,6 +51,10 @@ async function fetchConvenios(endpoint: string, options: RequestInit = {}): Prom
     throw new Error(data.error?.message || data.message || data.error || data.mensaje || "Error en la petición")
   }
 
+  if (data.meta !== undefined) {
+    return data
+  }
+
   return data.data !== undefined ? data.data : data
 }
 

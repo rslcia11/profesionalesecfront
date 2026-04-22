@@ -122,17 +122,23 @@ export default function Convenios() {
     return DEFAULT_ICON
   }
 
-  const IconComponent = getIconComponent(currentConvenio.categorias)
+  const getVisibleConvenios = () => {
+    if (convenios.length === 0) return []
+    if (convenios.length === 1) return [convenios[0]]
+    const first = convenios[currentIndex]
+    const second = convenios[(currentIndex + 1) % convenios.length]
+    return [first, second]
+  }
 
   return (
-    <section className="py-8 md:py-10 px-4 bg-gradient-to-br from-background via-secondary/5 to-background relative overflow-hidden">
+    <section className="py-8 md:py-16 px-4 bg-gradient-to-br from-background via-secondary/5 to-background relative overflow-hidden">
       {/* Background decorations */}
       <div className="absolute top-10 right-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 left-10 w-96 h-96 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Header */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-10 md:mb-16">
           <h2 className="text-4xl md:text-5xl font-heading font-bold mb-4 text-foreground">
             Nuestros Convenios
           </h2>
@@ -142,102 +148,111 @@ export default function Convenios() {
         </div>
 
         {/* Carousel */}
-        <div className="relative">
-          <div className="bg-card border border-border rounded-2xl p-8 md:p-12 shadow-xl hover:shadow-2xl transition-all duration-500">
-            <div className="grid md:grid-cols-2 gap-8 items-center">
-              {/* Logo and Icon */}
-              <div className="flex flex-col items-center text-center space-y-6">
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl group-hover:blur-2xl transition-all" />
-                  <img
-                    src={currentConvenio.logoUrl || "/placeholder.svg"}
-                    alt={currentConvenio.titulo}
-                    className="w-40 h-40 rounded-full border-4 border-primary/20 object-cover relative z-10 transform group-hover:scale-105 transition-transform duration-500"
-                    onError={(e) => {
-                      ;(e.target as HTMLImageElement).src = "/placeholder.svg"
-                    }}
-                  />
-                  <div className="absolute -bottom-2 -right-2 bg-primary text-primary-foreground p-3 rounded-full z-20 shadow-lg">
-                    <IconComponent size={24} />
+        <div className="relative px-0 md:px-14 lg:px-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 lg:gap-10">
+            {getVisibleConvenios().map((convenio, idx) => {
+              const IconComponent = getIconComponent(convenio.categorias)
+              return (
+                <div
+                  key={`${convenio.id}-${idx}`}
+                  className={`bg-card border border-border rounded-2xl p-6 md:p-8 lg:p-10 shadow-xl hover:shadow-2xl transition-all duration-500 flex-col h-full ${
+                    idx === 1 ? "hidden md:flex" : "flex"
+                  }`}
+                >
+                  <div className="flex flex-col items-center text-center mb-6">
+                    <div className="relative group mt-2 mb-2">
+                      <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl group-hover:blur-2xl transition-all" />
+                      <img
+                        src={convenio.logoUrl || "/placeholder.svg"}
+                        alt={convenio.titulo}
+                        className="w-36 h-36 md:w-48 md:h-48 rounded-full border-4 border-card object-cover relative z-10 transform group-hover:scale-105 transition-transform duration-500 shadow-xl"
+                        onError={(e) => {
+                          ;(e.target as HTMLImageElement).src = "/placeholder.svg"
+                        }}
+                      />
+                      <div className="absolute -bottom-2 -right-2 bg-primary text-primary-foreground p-3 rounded-full z-20 shadow-lg">
+                        <IconComponent size={20} />
+                      </div>
+                    </div>
                   </div>
-                </div>
-                {currentConvenio.categorias && (
-                  <div className="inline-block px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-button font-semibold">
-                    {currentConvenio.categorias}
-                  </div>
-                )}
-              </div>
 
-              {/* Information */}
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-3xl font-heading font-bold mb-3 text-foreground">
-                    {currentConvenio.titulo}
-                  </h3>
-                  <p className="text-muted-foreground font-body leading-relaxed">
-                    {currentConvenio.descripcion}
-                  </p>
-                </div>
+                  <div className="space-y-5 flex-grow flex flex-col">
+                    <div className="text-center flex flex-col items-center">
+                      <h3 className="text-xl md:text-2xl font-heading font-bold mb-3 text-foreground">
+                        {convenio.titulo}
+                      </h3>
+                      {convenio.categorias && (
+                        <div className="inline-block px-4 py-1.5 mb-4 bg-primary/10 text-primary rounded-full text-xs font-button font-bold uppercase tracking-wider">
+                          {convenio.categorias}
+                        </div>
+                      )}
+                      <p className="text-muted-foreground font-body leading-relaxed text-xs md:text-sm max-w-[90%] mx-auto">
+                        {convenio.descripcion}
+                      </p>
+                    </div>
 
-                {currentConvenio.beneficios && currentConvenio.beneficios.length > 0 && (
-                  <div>
-                    <h4 className="text-lg font-heading font-semibold mb-3 text-foreground">
-                      Beneficios:
-                    </h4>
-                    <ul className="space-y-2">
-                      {currentConvenio.beneficios.map((benefit, index) => (
-                        <li
-                          key={index}
-                          className="flex items-start gap-3 text-muted-foreground font-body animate-fade-in-up"
-                          style={{ animationDelay: `${index * 0.1}s` }}
+                    {convenio.beneficios && convenio.beneficios.length > 0 && (
+                      <div className="flex-grow pt-4 border-t border-border/50 mt-4">
+                        <h4 className="text-sm font-heading font-bold mb-4 text-foreground text-center uppercase tracking-wider text-muted-foreground">
+                          Beneficios Incluidos
+                        </h4>
+                        <ul className="space-y-2 max-w-sm mx-auto">
+                          {convenio.beneficios.map((benefit: string, bIndex: number) => (
+                            <li
+                              key={bIndex}
+                              className="flex items-start gap-2 text-muted-foreground font-body text-xs md:text-sm"
+                            >
+                              <span className="w-1.5 h-1.5 bg-primary rounded-full mt-1.5 flex-shrink-0 shadow-sm" />
+                              <span>{benefit}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {convenio.link && (
+                      <div className="text-center pt-6 mt-auto">
+                        <a
+                          href={convenio.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-primary hover:text-primary/80 font-button font-bold transition-colors group"
                         >
-                          <span className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                          <span>{benefit}</span>
-                        </li>
-                      ))}
-                    </ul>
+                          Visitar sitio
+                          <TrendingUp size={16} className="transform group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                        </a>
+                      </div>
+                    )}
                   </div>
-                )}
-
-                {currentConvenio.link && (
-                  <a
-                    href={currentConvenio.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
-                  >
-                    Visitar sitio
-                    <TrendingUp size={16} />
-                  </a>
-                )}
-              </div>
-            </div>
+                </div>
+              )
+            })}
           </div>
 
           {/* Navigation Buttons */}
           <button
             onClick={prevSlide}
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-card border border-border rounded-full p-3 shadow-lg hover:bg-primary hover:text-primary-foreground hover:scale-110 transition-all duration-300 z-20"
+            className="absolute -left-2 md:left-2 lg:-left-4 top-1/2 -translate-y-1/2 bg-card border border-border rounded-full p-3 md:p-4 shadow-xl hover:bg-primary hover:text-primary-foreground hover:scale-110 transition-all duration-300 z-20"
             aria-label="Anterior convenio"
           >
-            <ChevronLeft size={24} />
+            <ChevronLeft size={24} className="md:w-7 md:h-7" />
           </button>
           <button
             onClick={nextSlide}
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-card border border-border rounded-full p-3 shadow-lg hover:bg-primary hover:text-primary-foreground hover:scale-110 transition-all duration-300 z-20"
+            className="absolute -right-2 md:right-2 lg:-right-4 top-1/2 -translate-y-1/2 bg-card border border-border rounded-full p-3 md:p-4 shadow-xl hover:bg-primary hover:text-primary-foreground hover:scale-110 transition-all duration-300 z-20"
             aria-label="Siguiente convenio"
           >
-            <ChevronRight size={24} />
+            <ChevronRight size={24} className="md:w-7 md:h-7" />
           </button>
 
           {/* Dots indicator */}
-          <div className="flex justify-center gap-2 mt-8">
+          <div className="flex justify-center gap-2 mt-10 md:mt-12">
             {convenios.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentIndex(index)}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  index === currentIndex ? "w-8 bg-primary" : "w-2 bg-border hover:bg-primary/50"
+                className={`h-2.5 rounded-full transition-all duration-300 ${
+                  index === currentIndex ? "w-10 bg-primary shadow-md" : "w-2.5 bg-border hover:bg-primary/50"
                 }`}
                 aria-label={`Ir a convenio ${index + 1}`}
               />
