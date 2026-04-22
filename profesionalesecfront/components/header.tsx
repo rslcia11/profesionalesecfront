@@ -73,13 +73,13 @@ export default function Header() {
 
             {/* Logo - Z-index to stay above centered nav */}
             <Link href="/" className="flex items-center gap-2 group hover:opacity-80 transition-opacity duration-300 z-10 shrink-0">
-              {/* Logo 3: logo + directorio digital — used in header (inverted for dark bg) */}
+              {/* Logo Blanco oficial para el header */}
               <img
-                src="/logo-directorio.png"
+                src="/logo-white.png"
                 alt="Profesionales.ec"
-                className="hidden md:block h-24 w-auto object-contain [filter:invert(1)]"
+                className="hidden md:block h-24 w-auto object-contain"
               />
-              {/* Logo 2: solo icono — mobile */}
+              {/* Logo icono para mobile (este sigue necesitando invert porque es el icono negro) */}
               <img
                 src="/logo-icono.png"
                 alt="Profesionales.ec"
