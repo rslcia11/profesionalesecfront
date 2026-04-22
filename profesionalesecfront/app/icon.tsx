@@ -6,7 +6,7 @@ export const size = { width: 512, height: 512 }
 export const contentType = 'image/png'
 
 export default function Icon() {
-  const logoData = readFileSync(join(process.cwd(), 'public', 'logo-black.png'))
+  const logoData = readFileSync(join(process.cwd(), 'public', 'logo-icono.png'))
 
   return new ImageResponse(
     (

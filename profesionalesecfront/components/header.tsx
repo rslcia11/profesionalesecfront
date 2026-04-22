@@ -73,7 +73,18 @@ export default function Header() {
 
             {/* Logo - Z-index to stay above centered nav */}
             <Link href="/" className="flex items-center gap-2 group hover:opacity-80 transition-opacity duration-300 z-10 shrink-0">
-              <img src="/logo-white.png" alt="Profesionales.ec" className="h-20 min-w-[160px] w-auto object-contain" />
+              {/* Logo 3: logo + directorio digital — used in header (inverted for dark bg) */}
+              <img
+                src="/logo-black.png"
+                alt="Profesionales.ec"
+                className="hidden md:block h-14 w-auto object-contain [filter:invert(1)]"
+              />
+              {/* Logo 2: solo icono — mobile */}
+              <img
+                src="/logo-icono.png"
+                alt="Profesionales.ec"
+                className="md:hidden h-12 w-auto object-contain [filter:invert(1)]"
+              />
             </Link>
 
             {/* Desktop Navigation - CENTERED ABSOLUTELY */}

@@ -33,9 +33,19 @@ export default function FeaturedProfessionals() {
   useEffect(() => {
     async function fetchProfessionals() {
       try {
-        const response = await profesionalApi.obtenerDestacados()
-        if (response && Array.isArray(response) && response.length > 0) {
-          setProfessionals(response)
+        // Intentar destacados primero; si no existe el endpoint en el backend, ignorar silenciosamente
+        let highlighted: Professional[] = []
+        try {
+          const response = await profesionalApi.obtenerDestacados()
+          if (response && Array.isArray(response) && response.length > 0) {
+            highlighted = response
+          }
+        } catch {
+          // El endpoint /profesionales/destacados puede no existir aún — ignoramos
+        }
+
+        if (highlighted.length > 0) {
+          setProfessionals(highlighted)
         } else {
           // Fallback: si no hay destacados aún, mostrar verificados
           const fallback = await profesionalApi.obtenerVerificados()
@@ -43,7 +53,7 @@ export default function FeaturedProfessionals() {
           setProfessionals(list.slice(0, 4))
         }
       } catch (error) {
-        console.error("Error fetching featured professionals:", error)
+        // Silencioso — si no hay datos simplemente no se renderiza la sección
       } finally {
         setLoading(false)
       }

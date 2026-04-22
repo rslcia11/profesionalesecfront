@@ -43,18 +43,16 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto">
         {/* Top Section: Logo & Description */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 border-b border-gray-900 pb-4">
-          <div className="flex items-center gap-3">
-            <img src="/logo-white.png" alt="Profesionales Ecuador" className="w-20 h-auto object-contain" />
-            <p className="text-gray-500 max-w-xs leading-tight hidden md:block">
-              Conectando profesionales y oportunidades en Ecuador.
-            </p>
+          <div className="flex items-center gap-3 md:pl-20">
+            {/* Logo 1: logo + "PROFESIONALES ECUADOR" — footer */}
+            <img src="/logo-directorio.png" alt="Profesionales Ecuador" className="w-52 h-auto object-contain [filter:invert(1)]" />
           </div>
-          <div className="flex gap-4">
-            <Link href="https://www.facebook.com/profile.php?id=61556825827660" target="_blank" className="hover:opacity-80">
-              <Facebook size={18} />
+          <div className="flex gap-8 md:pr-20">
+            <Link href="https://www.facebook.com/profile.php?id=61556825827660" target="_blank" className="hover:opacity-80 transition-opacity">
+              <Facebook size={32} />
             </Link>
-            <Link href="https://www.instagram.com/profesionalesec/" target="_blank" className="hover:opacity-80">
-              <Instagram size={18} />
+            <Link href="https://www.instagram.com/profesionalesec/" target="_blank" className="hover:opacity-80 transition-opacity">
+              <Instagram size={32} />
             </Link>
           </div>
         </div>
