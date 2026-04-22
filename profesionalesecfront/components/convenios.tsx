@@ -35,17 +35,19 @@ export default function Convenios() {
       try {
         setIsLoading(true)
         setError(null)
-        const response = await fetch("/api/convenios?limit=10&offset=0")
-        
+
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api"
+        const response = await fetch(`${backendUrl}/convenios?limit=10&offset=0`)
+
         if (!response.ok) {
           throw new Error("Error al cargar convenios")
         }
 
         const data = await response.json()
-        const conveniosData = Array.isArray(data.data) ? data.data : []
-        
-        // Filter only published convenios and map for display
-        const publishedConvenios = conveniosData.map((conv: any) => ({
+        // El backend devuelve { data: [...], meta: {...} }
+        const conveniosData = Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : []
+
+        const mappedConvenios = conveniosData.map((conv: any) => ({
           id: conv.id,
           titulo: conv.titulo,
           descripcion: conv.descripcion,
@@ -56,10 +58,9 @@ export default function Convenios() {
           bannerUrl: conv.bannerUrl,
         }))
 
-        setConvenios(publishedConvenios)
-        
-        // Reset index if it's out of bounds
-        if (currentIndex >= publishedConvenios.length && publishedConvenios.length > 0) {
+        setConvenios(mappedConvenios)
+
+        if (currentIndex >= mappedConvenios.length && mappedConvenios.length > 0) {
           setCurrentIndex(0)
         }
       } catch (err) {
