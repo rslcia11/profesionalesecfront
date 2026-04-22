@@ -1829,18 +1829,12 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
                     Tu cuenta ha sido creada exitosamente.
                   </p>
                   <div className="bg-gradient-to-br from-primary/10 to-primary/5 p-6 rounded-2xl border border-primary/20 shadow-inner overflow-hidden relative text-left">
-                    <div className="absolute -top-4 -right-4 opacity-10 rotate-12">
-                      <PartyPopper className="size-24" />
-                    </div>
-                    <h4 className="font-oswald text-xl font-bold text-primary mb-2 flex items-center gap-2">
-                      ¡Excelente primer paso! <PartyPopper className="size-5 text-primary animate-bounce" />
-                    </h4>
                     <p className="text-sm text-foreground leading-relaxed">
-                      ¡Estamos muy emocionados de tenerte con nosotros! Tu perfil ha sido recibido con éxito y ya está en manos de nuestro equipo de revisión. 
+                      Estamos muy emocionados de tenerte con nosotros Tu perfil ha sido recibido con éxito y ya está en manos de nuestro equipo de revisión. 
                     </p>
                     <div className="mt-4 p-3 bg-card/50 rounded-lg border border-primary/10">
                       <p className="text-sm font-medium text-primary">
-                        🚀 Te enviaremos un correo electrónico apenas tu perfil sea aprobado para que empieces a conectar con clientes.
+                        Te enviaremos un correo electrónico apenas tu perfil sea aprobado para que empieces a conectar con clientes.
                       </p>
                     </div>
                     <p className="text-xs text-muted-foreground mt-4 text-center italic">

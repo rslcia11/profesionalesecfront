@@ -52,6 +52,7 @@ import {
   Linkedin,
   Twitter,
   Music,
+  Youtube,
   Upload
 } from "lucide-react"
 import { format } from "date-fns"
@@ -1990,7 +1991,7 @@ export default function AdminDashboard() {
                   </Card>
 
                   {/* Redes Sociales */}
-                  {(selectedProfile.facebook_url || selectedProfile.instagram_url || selectedProfile.tiktok_url || selectedProfile.linkedin_url || selectedProfile.x_url) && (
+                  {(selectedProfile.facebook_url || selectedProfile.instagram_url || selectedProfile.tiktok_url || selectedProfile.linkedin_url || selectedProfile.x_url || selectedProfile.yt_url) && (
                     <div>
                       <h3 className="font-semibold mb-3 text-lg">Redes Sociales</h3>
                       <div className="flex flex-wrap gap-4">
@@ -2022,6 +2023,12 @@ export default function AdminDashboard() {
                           <a href={selectedProfile.tiktok_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-gray-50 text-gray-900 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
                             <Music className="h-4 w-4" />
                             <span className="text-sm font-medium">TikTok</span>
+                          </a>
+                        )}
+                        {selectedProfile.yt_url && (
+                          <a href={selectedProfile.yt_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-700 rounded-lg border border-red-100 hover:bg-red-100 transition-colors">
+                            <Youtube className="h-4 w-4" />
+                            <span className="text-sm font-medium">YouTube</span>
                           </a>
                         )}
                       </div>
