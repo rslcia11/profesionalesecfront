@@ -53,6 +53,7 @@ import {
   Twitter,
   Music,
   Youtube,
+  Star,
   Upload
 } from "lucide-react"
 import { format } from "date-fns"
@@ -375,6 +376,27 @@ export default function AdminDashboard() {
       toast({ title: "Error", description: "No se pudo rechazar el perfil", variant: "destructive" })
     } finally {
       setProcessingProfiles((prev) => ({ ...prev, [id]: null }))
+    }
+  }
+
+  const toggleDestacadoPerfil = async (id: number) => {
+    try {
+      const token = localStorage.getItem("auth_token")
+      if (!token) return
+
+      const result = await adminApi.toggleDestacado(id, token)
+      setSelectedProfile((prev: any) => prev ? { ...prev, is_featured: result.is_featured } : prev)
+      setPerfilesPendientes((prev: any[]) =>
+        prev.map((p) => p.id === id ? { ...p, is_featured: result.is_featured } : p)
+      )
+      toast({
+        title: result.is_featured ? "Perfil destacado" : "Perfil removido de destacados",
+        description: result.is_featured
+          ? "El perfil aparecerá en la sección de Profesionales Destacados del home."
+          : "El perfil ya no aparecerá en la sección de destacados.",
+      })
+    } catch (e) {
+      toast({ title: "Error", description: "No se pudo actualizar el estado de destacado", variant: "destructive" })
     }
   }
 
@@ -2085,6 +2107,18 @@ export default function AdminDashboard() {
                   <div className="flex gap-3 justify-end mt-6 pt-6 border-t">
                     <Button variant="outline" onClick={() => setIsProfileDetailsOpen(false)}>
                       Cerrar
+                    </Button>
+                    {/* Toggle Destacado */}
+                    <Button
+                      variant="outline"
+                      onClick={() => toggleDestacadoPerfil(selectedProfile.id)}
+                      className={selectedProfile.is_featured
+                        ? "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                        : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                      }
+                    >
+                      <Star className={`mr-2 h-4 w-4 ${selectedProfile.is_featured ? "fill-amber-400 text-amber-400" : ""}`} />
+                      {selectedProfile.is_featured ? "Quitar Destacado" : "Marcar Destacado"}
                     </Button>
                     {selectedProfile.estado !== "aprobado" && (
                       <Button

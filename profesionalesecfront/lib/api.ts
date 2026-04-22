@@ -448,7 +448,11 @@ export const profesionalApi = {
 
   async obtenerUbicacion(token: string) {
     return fetchApi("/profesionales/ubicacion", { headers: authHeader(token) });
-  }
+  },
+
+  async obtenerDestacados() {
+    return fetchApi("/profesionales/destacados");
+  },
 }
 
 // Citas API
@@ -813,6 +817,13 @@ export const adminApi = {
     return fetchApi(`/planes/${id}`, {
       method: "DELETE",
       headers: authHeader(token)
+    });
+  },
+
+  async toggleDestacado(id: number, token: string) {
+    return fetchApi(`/profesionales/destacado/${id}`, {
+      method: "PATCH",
+      headers: authHeader(token),
     });
   }
 }
