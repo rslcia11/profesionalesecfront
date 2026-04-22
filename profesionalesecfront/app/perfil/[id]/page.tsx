@@ -92,10 +92,10 @@ export default function ProfessionalProfile() {
 
 
             {/* MAIN CONTENT CONTAINER */}
-            <div className="w-full max-w-7xl mx-auto px-4 md:px-8 py-12 pt-32">
+            <div className="w-full max-w-7xl mx-auto px-4 md:px-8 py-12 pt-24 md:pt-32">
 
                 {/* TOP SECTION: Photo & Branding/Info */}
-                <div className="flex flex-col md:flex-row gap-12 mb-16 items-center md:items-start">
+                <div className="flex flex-col md:flex-row gap-2 md:gap-12 mb-16 items-center md:items-start">
 
                     {/* LEFT: Photo (Circle) - Centered visually in this column */}
                     <div className="w-full md:w-1/2 flex justify-center md:justify-end pr-0 md:pr-12">
@@ -105,9 +105,9 @@ export default function ProfessionalProfile() {
                     </div>
 
                     {/* RIGHT: Info & Branding */}
-                    <div className="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-left pt-4">
-                        {/* New Official Logo Branding - Icon Only */}
-                        <img src="/logo-icono.png" alt="P.ec" className="h-20 w-auto object-contain mb-6" />
+                    <div className="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-left pt-0 md:pt-4">
+                        {/* New Official Logo Branding - Directoy Version */}
+                        <img src="/logo-directorio.png" alt="P.ec" className="h-56 w-auto object-contain mb-4 -mt-8 md:-mt-12 md:-ml-5" />
 
                         {/* Name & Subtitle */}
                         <h2 className="text-3xl font-bold text-gray-900 mb-2">{name}</h2>

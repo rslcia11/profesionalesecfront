@@ -75,9 +75,9 @@ export default function Header() {
             <Link href="/" className="flex items-center gap-2 group hover:opacity-80 transition-opacity duration-300 z-10 shrink-0">
               {/* Logo 3: logo + directorio digital — used in header (inverted for dark bg) */}
               <img
-                src="/logo-black.png"
+                src="/logo-directorio.png"
                 alt="Profesionales.ec"
-                className="hidden md:block h-14 w-auto object-contain [filter:invert(1)]"
+                className="hidden md:block h-24 w-auto object-contain [filter:invert(1)]"
               />
               {/* Logo 2: solo icono — mobile */}
               <img
