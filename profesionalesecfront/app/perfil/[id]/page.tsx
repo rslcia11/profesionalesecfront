@@ -99,7 +99,7 @@ export default function ProfessionalProfile() {
 
                     {/* LEFT: Photo (Circle) - Centered visually in this column */}
                     <div className="w-full md:w-1/2 flex justify-center md:justify-end pr-0 md:pr-12">
-                        <div className="w-64 h-64 md:w-[450px] md:h-[450px] rounded-full overflow-hidden shadow-2xl border-[10px] border-white bg-gray-200">
+                        <div className="w-64 h-64 md:w-[450px] md:h-[450px] rounded-full overflow-hidden shadow-2xl border-4 md:border-[10px] border-white bg-gray-200">
                             <img src={image} alt={name} className="w-full h-full object-cover" />
                         </div>
                     </div>
@@ -107,7 +107,7 @@ export default function ProfessionalProfile() {
                     {/* RIGHT: Info & Branding */}
                     <div className="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-left pt-0 md:pt-4">
                         {/* New Official Logo Branding - Directoy Version */}
-                        <img src="/logo-directorio.png" alt="P.ec" className="h-56 w-auto object-contain mb-4 -mt-8 md:-mt-12 md:-ml-5" />
+                        <img src="/logo-directorio.png" alt="P.ec" className="h-32 md:h-56 w-auto object-contain mb-4 -mt-8 md:-mt-12 md:-ml-5" />
 
                         {/* Name & Subtitle */}
                         <h2 className="text-3xl font-bold text-gray-900 mb-2">{name}</h2>

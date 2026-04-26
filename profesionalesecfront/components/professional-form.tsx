@@ -1653,7 +1653,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
                     {isCompleted ? <Check size={20} /> : index + 1}
                   </button>
                   <p
-                    className={`text-sm mt-2 font-medium ${isActive ? "text-primary" : "text-muted-foreground"}`}
+                    className={`hidden md:block text-sm mt-2 font-medium text-center ${isActive ? "text-primary" : "text-muted-foreground"}`}
                   >
                     {step.title}
                   </p>
@@ -1661,6 +1661,12 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
               );
             })}
           </div>
+          
+          {/* Título de paso centralizado solo para móvil */}
+          <div className="md:hidden text-center mb-6 animate-in fade-in duration-300">
+            <p className="text-sm font-bold text-primary uppercase tracking-wider">Paso {currentStep + 1}: {steps[currentStep].title}</p>
+          </div>
+
           <div className="h-1 bg-muted rounded-full overflow-hidden">
             <div
               className="h-full bg-primary transition-all duration-300"

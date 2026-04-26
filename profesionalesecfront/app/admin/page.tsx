@@ -1111,7 +1111,7 @@ export default function AdminDashboard() {
                           <p className="text-gray-500 text-sm">Nadie se ha registrado para este evento todavía.</p>
                         </div>
                       ) : (
-                        <div className="border rounded-2xl overflow-hidden border-gray-100 shadow-sm">
+                        <div className="border rounded-2xl overflow-x-auto border-gray-100 shadow-sm">
                           <Table>
                             <TableHeader className="bg-gray-50">
                               <TableRow>
@@ -1709,8 +1709,9 @@ export default function AdminDashboard() {
                   </Dialog>
                 </div>
 
-                <Card className="bg-white border-gray-200">
-                  <Table>
+                <Card className="bg-white border-gray-200 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <Table>
                     <TableHeader className="bg-gray-50/50">
                       <TableRow>
                         <TableHead className="w-[100px]">Portada</TableHead>
@@ -1765,6 +1766,7 @@ export default function AdminDashboard() {
                       )}
                     </TableBody>
                   </Table>
+                  </div>
                 </Card>
               </div>
             </TabsContent>

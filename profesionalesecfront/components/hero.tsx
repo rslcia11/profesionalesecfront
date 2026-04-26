@@ -110,7 +110,7 @@ export default function Hero() {
       {/* Text */}
       <div className="relative z-10 px-6 lg:px-16 max-w-7xl mx-auto w-full pointer-events-none">
         <div className="max-w-3xl">
-          <h1 className="text-[2.75rem] sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold mb-6 md:mb-8 leading-[1.1] text-white break-words">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold mb-6 md:mb-8 leading-[1.1] text-white break-words">
             Conectando
             <br />
             profesionales

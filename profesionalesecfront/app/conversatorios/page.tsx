@@ -32,7 +32,7 @@ export default function EducacionPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
           >
-            <h1 className="text-7xl md:text-9xl font-black text-white mb-6 tracking-tighter leading-[0.8] uppercase">
+            <h1 className="text-5xl sm:text-7xl md:text-9xl font-black text-white mb-6 tracking-tighter leading-[0.8] uppercase">
               EDUCACIÓN
             </h1>
             <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto font-light leading-relaxed">
@@ -42,7 +42,7 @@ export default function EducacionPage() {
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-6 py-20 space-y-32">
+      <div className="max-w-7xl mx-auto px-6 py-10 md:py-20 space-y-16 md:space-y-32">
         
         {/* 1. Próximos Conversatorios */}
         <section>

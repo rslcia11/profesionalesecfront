@@ -129,7 +129,7 @@ export default function ProfessionalsPage() {
 
         <div className="relative max-w-7xl mx-auto">
           <div className="text-center mb-6">
-            <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-4 tracking-tight">
+            <h1 className="text-4xl md:text-7xl font-bold text-foreground mb-4 tracking-tight">
               Todos los
               <br />
               <span className="text-primary">Profesionales</span>
@@ -318,7 +318,7 @@ export default function ProfessionalsPage() {
 
       {/* Bottom CTA Section */}
       <section className="max-w-4xl mx-auto px-4 md:px-6 pb-16">
-        <div className="bg-background rounded-3xl p-12 border border-primary/20 text-center">
+        <div className="bg-background rounded-3xl p-8 md:p-12 border border-primary/20 text-center">
           <h3 className="text-3xl md:text-4xl font-bold text-foreground mb-4">¿Eres un profesional destacado?</h3>
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
             Únete a nuestra red de expertos verificados y conecta con clientes que buscan excelencia
