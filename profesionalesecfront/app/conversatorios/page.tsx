@@ -69,7 +69,7 @@ export default function EducacionPage() {
               >
                 {proximos.map((evento) => (
                   <Link 
-                    href={`/conversatorios/${evento.id}`} 
+                    href={evento.slug ? `/conversatorios/${evento.slug}` : "#"}
                     key={evento.id}
                     className="group bg-white rounded-3xl border border-gray-100 overflow-hidden hover:border-emerald-500/30 transition-all duration-500 hover:shadow-2xl hover:shadow-emerald-500/5 flex flex-col"
                   >
@@ -123,7 +123,7 @@ export default function EducacionPage() {
           {!loading && realizados.length > 0 ? (
             <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-8">
               {realizados.map((evento) => (
-                <Link href={`/conversatorios/${evento.id}`} key={evento.id} className="group block">
+                <Link href={evento.slug ? `/conversatorios/${evento.slug}` : "#"} key={evento.id} className="group block">
                   <div className="aspect-video rounded-3xl overflow-hidden bg-gray-100 mb-4 border border-gray-100 grayscale hover:grayscale-0 transition-all duration-500">
                     <img src={formatUrl(evento.imagen_banner) || "/images/event-placeholder.jpg"} alt={evento.titulo} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   </div>

@@ -8,6 +8,7 @@ import { Star, MapPin, Briefcase, Award, ArrowRight } from "lucide-react"
 
 interface Professional {
     usuario_id: number
+    slug?: string
     usuario: {
         nombre: string
         foto_url?: string
@@ -118,7 +119,7 @@ export default function ProfessionalsCategoryList({
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {professionals.map((pro, index) => (
                         <Link
-                            href={`/perfil/${pro.usuario_id}`}
+                            href={pro.slug ? `/perfil/${pro.slug}` : "/profesionales"}
                             key={pro.usuario_id}
                             className="group bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
                         >

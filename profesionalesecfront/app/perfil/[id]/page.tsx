@@ -27,7 +27,7 @@ export default function ProfessionalProfile() {
                 
                 if (found) {
                     try {
-                        const schedData = await horariosApi.obtenerPublico(found.id)
+                        const schedData = await horariosApi.obtenerPublico(params.id as string)
                         if (schedData && schedData.matriz) {
                             setSchedule(schedData.matriz)
                         }

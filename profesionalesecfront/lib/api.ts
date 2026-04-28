@@ -145,6 +145,7 @@ export interface Plan {
 
 export interface Ponencia {
   id: number
+  slug?: string
   titulo: string
   descripcion: string
   fecha_inicio: string
@@ -434,8 +435,8 @@ export const profesionalApi = {
     return fetchApi(`/profesionales/cercanos?lat=${lat}&lng=${lng}&radio=${radio}`);
   },
 
-  async obtenerPublico(id: string | number) {
-    return fetchApi(`/profesionales/publico/${id}`);
+  async obtenerPublico(slug: string) {
+    return fetchApi(`/profesionales/publico/${slug}`);
   },
 
   async gestionarUbicacion(data: UbicacionData, token: string) {
@@ -619,8 +620,11 @@ export const ponenciasApi = {
   async listarTodas(token: string) {
     return fetchApi("/ponencias/todas", { headers: authHeader(token) });
   },
-  async obtener(id: string | number) {
-    return fetchApi(`/ponencias/${id}`);
+  async obtener(slug: string) {
+    return fetchApi(`/ponencias/${slug}`);
+  },
+  async obtenerPorId(id: number, token: string) {
+    return fetchApi(`/ponencias/id/${id}`, { headers: authHeader(token) });
   },
   async listarInscritos(id: number, token: string) {
     return fetchApi(`/ponencias/${id}/inscritos`, { headers: authHeader(token) });
@@ -840,8 +844,8 @@ export const serviciosApi = {
   async listarMios(perfilId: number, token: string) {
     return fetchApi(`/servicios/mis-servicios?perfilId=${perfilId}`, { headers: authHeader(token) });
   },
-  async listarPorPerfil(perfilId: number) {
-    return fetchApi(`/servicios/perfil/${perfilId}`);
+  async listarPorPerfil(slug: string) {
+    return fetchApi(`/servicios/perfil/${slug}`);
   },
   async actualizar(id: number, data: { descripcion: string }, token: string) {
     return fetchApi(`/servicios/${id}`, {
@@ -971,8 +975,8 @@ export const horariosApi = {
     });
   },
 
-  async obtenerPublico(perfilId: number) {
-    return fetchApi(`/horarios/publico/${perfilId}`);
+  async obtenerPublico(slug: string) {
+    return fetchApi(`/horarios/publico/${slug}`);
   },
 };
 
@@ -995,5 +999,3 @@ export const removeToken = () => {
     localStorage.removeItem("auth_token")
   }
 }
-
-

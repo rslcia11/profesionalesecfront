@@ -8,6 +8,7 @@ import { formatUrl } from "@/lib/utils"
 
 interface Professional {
   id: number
+  slug?: string
   usuario: {
     nombre: string
     foto_url?: string
@@ -88,7 +89,7 @@ export default function FeaturedProfessionals() {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {professionals.map((pro, index) => (
             <Link
-              href={`/perfil/${pro.id}`}
+              href={pro.slug ? `/perfil/${pro.slug}` : "/profesionales"}
               key={`pro-${pro.id}-${index}`}
               className="group bg-card border border-border rounded-xl overflow-hidden hover:shadow-2xl hover:scale-105 transition-all duration-500 animate-fade-in-up"
               style={{ animationDelay: `${index * 0.1}s` }}

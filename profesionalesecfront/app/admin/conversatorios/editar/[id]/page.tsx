@@ -36,7 +36,7 @@ export default function EditarConversatorioPage() {
         const [profs, provs, convRes] = await Promise.all([
           catalogosApi.obtenerProfesiones(),
           catalogosApi.obtenerProvincias(),
-          ponenciasApi.obtener(Number(id))
+          ponenciasApi.obtenerPorId(Number(id), token)
         ])
         
         setProfesiones(Array.isArray(profs) ? profs : [])

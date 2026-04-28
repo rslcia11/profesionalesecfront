@@ -62,6 +62,7 @@ export default function ProfessionalsPage() {
           // Mapeamos a lo que necesita el HTML
           const mapped = data.data.map((p: any) => ({
             id: p.id,
+            slug: p.slug,
             name: p.usuario?.nombre || "Usuario",
             specialty: p.especialidad?.nombre || p.profesion?.nombre || "Profesional",
             location: p.ciudad ? `${p.ciudad.nombre}, ${p.ciudad.provincia?.nombre || ""}` : "Ecuador",
@@ -83,6 +84,7 @@ export default function ProfessionalsPage() {
            // Fallback en caso de que redis o el back lo pase plano temporalmente
            const mapped = data.map((p: any) => ({
              id: p.id,
+             slug: p.slug,
              name: p.usuario?.nombre || "Usuario",
              specialty: p.especialidad?.nombre || p.profesion?.nombre || "Profesional",
              location: p.ciudad ? `${p.ciudad.nombre}, ${p.ciudad.provincia?.nombre || ""}` : "Ecuador",
@@ -208,7 +210,7 @@ export default function ProfessionalsPage() {
                           )}
                         </div>
                         <Link
-                          href={`/perfil/${professional.id}`}
+                          href={professional.slug ? `/perfil/${professional.slug}` : "/profesionales"}
                           className="bg-blue-900 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-800 transition-colors shadow-lg shadow-blue-900/20 flex items-center gap-2 group"
                         >
                           Ver Perfil <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />

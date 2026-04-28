@@ -22,7 +22,7 @@ import EventRegistration from "@/components/ponencia-detail/registration"
 export default function ConversatorioDetallePage() {
     const params = useParams()
     const router = useRouter()
-    const id = params.id as string
+    const slug = params.id as string
     
     // ... rest of the component state ...
     const [ponencia, setPonencia] = useState<any>(null)
@@ -32,7 +32,7 @@ export default function ConversatorioDetallePage() {
     useEffect(() => {
         const load = async () => {
             try {
-                const found = await ponenciasApi.obtener(id)
+                const found = await ponenciasApi.obtener(slug)
                 if (found) {
                     setPonencia(found)
                 } else {
@@ -44,8 +44,8 @@ export default function ConversatorioDetallePage() {
                 setLoading(false)
             }
         }
-        if (id) load()
-    }, [id])
+        if (slug) load()
+    }, [slug])
 
     // Dynamic Section Renderer
     const renderSection = (sectionName: string) => {
