@@ -165,7 +165,8 @@ export default function ProfessionalProfile() {
                         <h3 className="text-xl font-bold uppercase text-gray-800 mb-8 border-b pb-4">AGENDA UNA CITA</h3>
                         <BookingForm
                             professional={{
-                                id: professional.id, // Fixed: use perfil_id instead of usuario_id
+                                id: professional?.usuario?.id || professional.id,
+                                slug: String(params.id || ""),
                                 name: name,
                                 specialty: specialty
                             }}

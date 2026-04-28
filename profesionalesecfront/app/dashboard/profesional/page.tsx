@@ -30,6 +30,7 @@ import {
   Edit,
   Trash2,
   Plus,
+  MessageCircle,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { citasApi, usuarioApi, articulosApi, profesionalApi, type Articulo } from "@/lib/api"
@@ -58,6 +59,41 @@ export default function ProfesionalDashboard() {
   const [articulos, setArticulos] = useState<Articulo[]>([])
   const [isArticleModalOpen, setIsArticleModalOpen] = useState(false)
   const [editingArticle, setEditingArticle] = useState<Articulo | null>(null)
+
+  const getClienteTelefono = (cita: any): string | null => {
+    const candidates = [
+      cita?.paciente_telefono,
+      cita?.cliente?.telefono,
+      cita?.paciente?.telefono,
+      cita?.solicitante?.telefono,
+      cita?.contacto_telefono,
+      cita?.telefono,
+      cita?.usuario?.telefono,
+    ]
+
+    const telefono = candidates.find(
+      (value) =>
+        value !== null &&
+        value !== undefined &&
+        String(value).trim() !== "" &&
+        String(value).trim().toLowerCase() !== "no disp.",
+    )
+
+    return telefono ? String(telefono).trim() : null
+  }
+
+  const normalizePhoneForWhatsApp = (phone: string | null): string | null => {
+    if (!phone) return null
+    const normalized = phone.replace(/[^\d]/g, "")
+    return normalized.length >= 7 ? normalized : null
+  }
+
+  const getClienteWhatsAppUrl = (cita: any): string | null => {
+    const telefono = normalizePhoneForWhatsApp(getClienteTelefono(cita))
+    if (!telefono) return null
+
+    return `https://wa.me/${telefono}`
+  }
 
   // Load Data
   const loadData = useCallback(async () => {
@@ -102,7 +138,7 @@ export default function ProfesionalDashboard() {
         estado: c.estado_id === 1 ? "pendiente" : c.estado_id === 2 ? "confirmada" : c.estado_id === 3 ? "completada" : "cancelada",
         usuario: c.usuario || { nombre: c.alias || c.nombres_completos || "Cliente sin nombre" },
         descripcion: c.comentario || c.descripcion || "Sin motivo especificado",
-        telefono: c.telefono || c.usuario?.telefono || "No disp.",
+        telefono: getClienteTelefono(c) || "No disp.",
         correo: c.correo || c.usuario?.correo || "No disp."
       }))
       
@@ -128,15 +164,26 @@ export default function ProfesionalDashboard() {
     loadData()
   }, [loadData])
 
-  // Filter citations by selected profile
+  // Filter citas by profile only when cita includes profile linkage.
+  // Citas currently belong to usuario profesional (profesional_id), not perfil_id.
   useEffect(() => {
-    if (perfil) {
-      const filtered = rawCitas.filter(c => c.perfil_id === perfil.id || c.perfil?.id === perfil.id);
-      setCitas(filtered);
-    } else {
-      setCitas(rawCitas);
+    const hasPerfilLink = rawCitas.some((c) => c.perfil_id || c.perfil?.id)
+
+    if (perfil && hasPerfilLink) {
+      const filtered = rawCitas.filter((c) => c.perfil_id === perfil.id || c.perfil?.id === perfil.id)
+      setCitas(filtered)
+      return
     }
-  }, [rawCitas, perfil])
+
+    // Fallback: when backend returns citas by profesional_id (Usuario.id),
+    // do not hide records by an unavailable perfil_id field.
+    if (user?.id) {
+      setCitas(rawCitas.filter((c) => !c.profesional_id || c.profesional_id === user.id))
+      return
+    }
+
+    setCitas(rawCitas)
+  }, [rawCitas, perfil, user])
 
   // Actions
   const handleEstadoCita = async (id: number, nuevoEstado: number) => {
@@ -457,7 +504,10 @@ export default function ProfesionalDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {citas.map((cita) => (
+                      {citas.map((cita) => {
+                        const clienteWhatsappUrl = getClienteWhatsAppUrl(cita)
+
+                        return (
                         <tr key={cita.id} className="border-b border-gray-200/50 hover:bg-gray-100 transition-colors">
                           <td className="p-3 text-gray-900 font-medium">
                             <div>{cita.usuario?.nombre || "N/A"}</div>
@@ -507,6 +557,19 @@ export default function ProfesionalDashboard() {
                                   <Calendar className="h-4 w-4" />
                                 </Button>
                               )}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={!clienteWhatsappUrl}
+                                onClick={() => {
+                                  if (!clienteWhatsappUrl) return
+                                  window.open(clienteWhatsappUrl, "_blank", "noopener,noreferrer")
+                                }}
+                                className="bg-emerald-600/10 border-emerald-600/50 text-emerald-500 hover:bg-emerald-600/20 disabled:opacity-50"
+                                title={clienteWhatsappUrl ? "WhatsApp cliente" : "Cliente sin teléfono"}
+                              >
+                                <MessageCircle className="h-4 w-4" />
+                              </Button>
                               {cita.estado === "pendiente" && (
                                 <Button
                                   size="sm"
@@ -543,7 +606,8 @@ export default function ProfesionalDashboard() {
                             </div>
                           </td>
                         </tr>
-                      ))}
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>

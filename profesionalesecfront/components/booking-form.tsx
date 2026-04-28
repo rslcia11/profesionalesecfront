@@ -3,17 +3,20 @@
 import { useState, useMemo } from "react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { Calendar as CalendarIcon, Clock, User, Mail, Phone, MessageSquare } from "lucide-react"
+import { Calendar as CalendarIcon, Clock, CheckCircle2 } from "lucide-react"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { citasApi } from "@/lib/api"
+import { useToast } from "@/hooks/use-toast"
 
 interface BookingFormProps {
     professional: {
         id: number
         name: string
+        slug?: string
         specialty?: string
     }
     schedule?: boolean[] | null
@@ -29,9 +32,10 @@ export default function BookingForm({ professional, schedule }: BookingFormProps
         comentario: "",
     })
     const [loading, setLoading] = useState(false)
-    const [success, setSuccess] = useState(false)
+    const [successModalOpen, setSuccessModalOpen] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [availabilityWarning, setAvailabilityWarning] = useState<string | null>(null)
+    const { toast } = useToast()
 
     // Real-time validation
     const validateAvailability = (fecha: string, hora: string) => {
@@ -140,48 +144,34 @@ export default function BookingForm({ professional, schedule }: BookingFormProps
         try {
             await citasApi.agendarPublico({
                 profesional_id: professional.id,
+                profesional_slug: professional.slug,
                 ...formData,
             })
-            setSuccess(true)
+            setSuccessModalOpen(true)
+            setFormData({
+                nombres_completos: "",
+                correo: "",
+                telefono: "",
+                fecha_cita: "",
+                hora_cita: "",
+                comentario: "",
+            })
+            setAvailabilityWarning(null)
         } catch (err: any) {
-            setError(err.message || "Error al agendar la cita. Por favor intente nuevamente.")
+            const message = err.message || "Error al agendar la cita. Por favor intente nuevamente."
+            setError(message)
+            toast({
+                title: "No se pudo agendar la cita",
+                description: message,
+                variant: "destructive",
+            })
         } finally {
             setLoading(false)
         }
     }
 
-    if (success) {
-        return (
-            <div className="bg-green-50 p-8 rounded-lg text-center h-full flex flex-col items-center justify-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                    <CalendarIcon className="h-8 w-8 text-green-600" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">¡Cita Agendada!</h3>
-                <p className="text-gray-600 mb-6">
-                    Tu solicitud para <strong>{professional.name}</strong> ha sido enviada con éxito.
-                    Te contactaremos pronto para confirmar.
-                </p>
-                <button
-                    onClick={() => {
-                        setSuccess(false)
-                        setFormData({
-                            nombres_completos: "",
-                            correo: "",
-                            telefono: "",
-                            fecha_cita: "",
-                            hora_cita: "",
-                            comentario: "",
-                        })
-                    }}
-                    className="py-2 px-6 bg-black text-white rounded hover:bg-gray-800 transition uppercase text-sm font-bold tracking-wide"
-                >
-                    Agendar otra cita
-                </button>
-            </div>
-        )
-    }
-
     return (
+        <>
         <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
                 <div className="p-3 bg-red-50 text-red-700 rounded text-sm">
@@ -331,5 +321,21 @@ export default function BookingForm({ professional, schedule }: BookingFormProps
                 {loading ? "Agendando..." : "AGENDAR CITA"}
             </button>
         </form>
+        <Dialog open={successModalOpen} onOpenChange={setSuccessModalOpen}>
+            <DialogContent className="bg-white max-w-md">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-green-700">
+                        <CheckCircle2 className="h-5 w-5" />
+                        Solicitud de cita exitosa
+                    </DialogTitle>
+                    <DialogDescription className="text-gray-600 pt-2 leading-relaxed">
+                        ¡Gracias por confiar en <strong>{professional.name}</strong>! Ya enviamos un correo con los
+                        detalles de tu solicitud de cita. Cuando el profesional responda, también recibirás la
+                        confirmación por correo electrónico.
+                    </DialogDescription>
+                </DialogHeader>
+            </DialogContent>
+        </Dialog>
+        </>
     )
 }
