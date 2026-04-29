@@ -58,7 +58,7 @@ export default function LoginPage() {
           router.push("/dashboard")
         }
       } else if (data && data.requiereCambio) {
-        router.push(`/cambiar-contrasena?usuarioId=${data.usuarioId}`)
+        setError("Tu contraseña requiere actualización. Usa \"¿Olvidaste tu contraseña?\" para restablecerla.")
       } else {
         // Login successful but no token? rare but handleable
         setError("Error: No se recibió token de sesión.")

@@ -7,6 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -31,9 +33,10 @@ import {
   Trash2,
   Plus,
   MessageCircle,
+  Settings,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { citasApi, usuarioApi, articulosApi, profesionalApi, type Articulo } from "@/lib/api"
+import { citasApi, usuarioApi, articulosApi, profesionalApi, authApi, type Articulo } from "@/lib/api"
 import ArticleFormModal from "@/components/article-form-modal"
 import ServicesManager from "@/components/services-manager"
 import ScheduleManager from "@/components/schedule-manager"
@@ -59,6 +62,25 @@ export default function ProfesionalDashboard() {
   const [articulos, setArticulos] = useState<Articulo[]>([])
   const [isArticleModalOpen, setIsArticleModalOpen] = useState(false)
   const [editingArticle, setEditingArticle] = useState<Articulo | null>(null)
+
+  const [perfilForm, setPerfilForm] = useState({
+    nombre: "",
+    telefono: "",
+    foto_url: "",
+  })
+  const [perfilProfesionalForm, setPerfilProfesionalForm] = useState({
+    descripcion: "",
+    tarifa: "",
+    permitir_reagendar: true,
+  })
+  const [passwordForm, setPasswordForm] = useState({
+    contrasena_actual: "",
+    nueva_contrasena: "",
+    confirmar_nueva: "",
+  })
+  const [savingPersonal, setSavingPersonal] = useState(false)
+  const [savingPerfilProfesional, setSavingPerfilProfesional] = useState(false)
+  const [savingPassword, setSavingPassword] = useState(false)
 
   const getClienteTelefono = (cita: any): string | null => {
     const candidates = [
@@ -99,7 +121,7 @@ export default function ProfesionalDashboard() {
   const loadData = useCallback(async () => {
     const token = localStorage.getItem("auth_token")
     if (!token) {
-      window.location.href = "/login"
+      window.location.href = "/"
       return
     }
 
@@ -163,6 +185,22 @@ export default function ProfesionalDashboard() {
   useEffect(() => {
     loadData()
   }, [loadData])
+
+  useEffect(() => {
+    setPerfilForm({
+      nombre: user?.nombre || "",
+      telefono: user?.telefono || "",
+      foto_url: user?.foto_url || "",
+    })
+  }, [user])
+
+  useEffect(() => {
+    setPerfilProfesionalForm({
+      descripcion: perfil?.descripcion || "",
+      tarifa: perfil?.tarifa != null ? String(perfil.tarifa) : "",
+      permitir_reagendar: perfil?.permitir_reagendar ?? true,
+    })
+  }, [perfil])
 
   // Filter citas by profile only when cita includes profile linkage.
   // Citas currently belong to usuario profesional (profesional_id), not perfil_id.
@@ -253,6 +291,80 @@ export default function ProfesionalDashboard() {
     }
   }
 
+  const handleGuardarDatosPersonales = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const token = localStorage.getItem("auth_token")
+    if (!token) return
+
+    try {
+      setSavingPersonal(true)
+      await usuarioApi.actualizarPerfil(
+        {
+          nombre: perfilForm.nombre.trim(),
+          telefono: perfilForm.telefono.trim(),
+          foto_url: perfilForm.foto_url.trim(),
+        },
+        token,
+      )
+      toast({ title: "Datos personales actualizados" })
+      await loadData()
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message || "No se pudo actualizar", variant: "destructive" })
+    } finally {
+      setSavingPersonal(false)
+    }
+  }
+
+  const handleGuardarPerfilProfesional = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const token = localStorage.getItem("auth_token")
+    if (!token || !perfil?.id) return
+
+    try {
+      setSavingPerfilProfesional(true)
+      await profesionalApi.actualizarPerfil(
+        {
+          id: perfil.id,
+          descripcion: perfilProfesionalForm.descripcion,
+          tarifa: perfilProfesionalForm.tarifa ? Number(perfilProfesionalForm.tarifa) : null,
+          permitir_reagendar: perfilProfesionalForm.permitir_reagendar,
+        },
+        token,
+      )
+      toast({ title: "Perfil profesional actualizado" })
+      await loadData()
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message || "No se pudo actualizar", variant: "destructive" })
+    } finally {
+      setSavingPerfilProfesional(false)
+    }
+  }
+
+  const handleCambiarContrasena = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const token = localStorage.getItem("auth_token")
+    if (!token) return
+
+    if (passwordForm.nueva_contrasena !== passwordForm.confirmar_nueva) {
+      toast({ title: "Error", description: "Las contraseñas no coinciden", variant: "destructive" })
+      return
+    }
+
+    try {
+      setSavingPassword(true)
+      await authApi.cambiarContrasena(token, {
+        contrasena_actual: passwordForm.contrasena_actual,
+        nueva_contrasena: passwordForm.nueva_contrasena,
+      })
+      setPasswordForm({ contrasena_actual: "", nueva_contrasena: "", confirmar_nueva: "" })
+      toast({ title: "Contraseña actualizada correctamente" })
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message || "No se pudo cambiar la contraseña", variant: "destructive" })
+    } finally {
+      setSavingPassword(false)
+    }
+  }
+
   // Calculated Stats
   const estadisticas = {
     citasPendientes: citas.filter((c) => c.estado === "pendiente" || c.estado_id === 1).length,
@@ -327,7 +439,7 @@ export default function ProfesionalDashboard() {
 
         {/* Tabs para diferentes secciones */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 bg-white border border-gray-200 shadow-sm">
+          <TabsList className="grid w-full grid-cols-7 bg-white border border-gray-200 shadow-sm">
             <TabsTrigger
               value="dashboard"
               className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
@@ -363,6 +475,9 @@ export default function ProfesionalDashboard() {
               className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
             >
               Redes Sociales
+            </TabsTrigger>
+            <TabsTrigger value="configuracion" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              Configuración
             </TabsTrigger>
           </TabsList>
 
@@ -747,6 +862,86 @@ export default function ProfesionalDashboard() {
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="configuracion" className="space-y-6">
+            <Card className="bg-white border-gray-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Settings className="h-5 w-5 text-blue-500" /> Datos personales</CardTitle>
+                <CardDescription>Edita solo tu información básica de cuenta.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleGuardarDatosPersonales} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="nombre">Nombre</Label>
+                    <Input id="nombre" value={perfilForm.nombre} onChange={(e) => setPerfilForm((prev) => ({ ...prev, nombre: e.target.value }))} required />
+                  </div>
+                  <div>
+                    <Label htmlFor="telefono">Teléfono</Label>
+                    <Input id="telefono" value={perfilForm.telefono} onChange={(e) => setPerfilForm((prev) => ({ ...prev, telefono: e.target.value }))} />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="foto">URL Foto</Label>
+                    <Input id="foto" value={perfilForm.foto_url} onChange={(e) => setPerfilForm((prev) => ({ ...prev, foto_url: e.target.value }))} />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Button type="submit" disabled={savingPersonal}>{savingPersonal ? "Guardando..." : "Guardar datos personales"}</Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white border-gray-200">
+              <CardHeader>
+                <CardTitle>Perfil profesional activo</CardTitle>
+                <CardDescription>Edita descripción, tarifa y reagendamiento del perfil seleccionado.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleGuardarPerfilProfesional} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <Label htmlFor="descripcion">Descripción</Label>
+                    <textarea id="descripcion" className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm" value={perfilProfesionalForm.descripcion} onChange={(e) => setPerfilProfesionalForm((prev) => ({ ...prev, descripcion: e.target.value }))} />
+                  </div>
+                  <div>
+                    <Label htmlFor="tarifa">Tarifa</Label>
+                    <Input id="tarifa" type="number" min="0" step="0.01" value={perfilProfesionalForm.tarifa} onChange={(e) => setPerfilProfesionalForm((prev) => ({ ...prev, tarifa: e.target.value }))} />
+                  </div>
+                  <div className="flex items-end gap-2">
+                    <input id="permitir_reagendar" type="checkbox" checked={perfilProfesionalForm.permitir_reagendar} onChange={(e) => setPerfilProfesionalForm((prev) => ({ ...prev, permitir_reagendar: e.target.checked }))} />
+                    <Label htmlFor="permitir_reagendar">Permitir reagendamiento</Label>
+                  </div>
+                  <div className="md:col-span-2">
+                    <Button type="submit" disabled={savingPerfilProfesional || !perfil?.id}>{savingPerfilProfesional ? "Guardando..." : "Guardar perfil profesional"}</Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white border-gray-200">
+              <CardHeader>
+                <CardTitle>Cambiar contraseña</CardTitle>
+                <CardDescription>Debes ingresar tu contraseña actual.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleCambiarContrasena} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="actual">Contraseña actual</Label>
+                    <Input id="actual" type="password" value={passwordForm.contrasena_actual} onChange={(e) => setPasswordForm((prev) => ({ ...prev, contrasena_actual: e.target.value }))} required />
+                  </div>
+                  <div>
+                    <Label htmlFor="nueva">Nueva contraseña</Label>
+                    <Input id="nueva" type="password" value={passwordForm.nueva_contrasena} onChange={(e) => setPasswordForm((prev) => ({ ...prev, nueva_contrasena: e.target.value }))} required />
+                  </div>
+                  <div>
+                    <Label htmlFor="confirmar">Confirmar nueva contraseña</Label>
+                    <Input id="confirmar" type="password" value={passwordForm.confirmar_nueva} onChange={(e) => setPasswordForm((prev) => ({ ...prev, confirmar_nueva: e.target.value }))} required />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Button type="submit" disabled={savingPassword}>{savingPassword ? "Actualizando..." : "Actualizar contraseña"}</Button>
+                  </div>
+                </form>
               </CardContent>
             </Card>
           </TabsContent>

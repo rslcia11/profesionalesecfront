@@ -29,6 +29,7 @@ export interface LoginData {
 }
 
 export interface PerfilProfesionalData {
+  id?: number
   profesion_id: number
   especialidad_id?: number
   ciudad_id?: number
@@ -49,6 +50,11 @@ export interface UbicacionData {
   latitud: number
   longitud: number
   direccion?: string
+}
+
+export interface CambiarContrasenaData {
+  contrasena_actual: string
+  nueva_contrasena: string
 }
 
 export interface Articulo {
@@ -314,7 +320,7 @@ export const authApi = {
     });
   },
 
-  async cambiarContrasena(token: string, data: { usuario_id: number, nueva_contrasena: string }) {
+  async cambiarContrasena(token: string, data: CambiarContrasenaData) {
     return fetchApi("/auth/cambiar-contrasena", {
       method: "POST",
       headers: authHeader(token),
