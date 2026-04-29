@@ -156,17 +156,31 @@ export default function Convenios() {
               return (
                 <div
                   key={`${convenio.id}-${idx}`}
-                  className={`bg-card border border-border rounded-2xl p-6 md:p-8 lg:p-10 shadow-xl hover:shadow-2xl transition-all duration-500 flex-col h-full ${
+                  className={`bg-card border border-border rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 flex-col h-full ${
                     idx === 1 ? "hidden md:flex" : "flex"
                   }`}
                 >
+                  {/* Banner Photo Section */}
+                  <div className="h-32 md:h-40 w-full relative">
+                    <img 
+                      src={convenio.bannerUrl || "/placeholder.svg"} 
+                      alt="" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        ;(e.target as HTMLImageElement).src = "/placeholder.svg"
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
+                  </div>
+
+                  <div className="p-6 md:p-8 lg:p-10 pt-0 -mt-16 relative z-10">
                   <div className="flex flex-col items-center text-center mb-6">
                     <div className="relative group mt-2 mb-2">
                       <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl group-hover:blur-2xl transition-all" />
                       <img
                         src={convenio.logoUrl || "/placeholder.svg"}
                         alt={convenio.titulo}
-                        className="w-36 h-36 md:w-48 md:h-48 rounded-full border-4 border-card object-cover relative z-10 transform group-hover:scale-105 transition-transform duration-500 shadow-xl"
+                        className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-card object-cover relative z-10 transform group-hover:scale-105 transition-transform duration-500 shadow-xl"
                         onError={(e) => {
                           ;(e.target as HTMLImageElement).src = "/placeholder.svg"
                         }}
@@ -226,21 +240,22 @@ export default function Convenios() {
                     )}
                   </div>
                 </div>
-              )
-            })}
+              </div>
+            )
+          })}
           </div>
 
           {/* Navigation Buttons */}
           <button
             onClick={prevSlide}
-            className="absolute -left-2 md:left-2 lg:-left-4 top-1/2 -translate-y-1/2 bg-card border border-border rounded-full p-3 md:p-4 shadow-xl hover:bg-primary hover:text-primary-foreground hover:scale-110 transition-all duration-300 z-20"
+            className="absolute left-2 md:left-10 lg:left-12 top-1/2 -translate-y-1/2 bg-card border border-border rounded-full p-3 md:p-4 shadow-xl hover:bg-primary hover:text-primary-foreground hover:scale-110 transition-all duration-300 z-20"
             aria-label="Anterior convenio"
           >
             <ChevronLeft size={24} className="md:w-7 md:h-7" />
           </button>
           <button
             onClick={nextSlide}
-            className="absolute -right-2 md:right-2 lg:-right-4 top-1/2 -translate-y-1/2 bg-card border border-border rounded-full p-3 md:p-4 shadow-xl hover:bg-primary hover:text-primary-foreground hover:scale-110 transition-all duration-300 z-20"
+            className="absolute right-2 md:right-10 lg:right-12 top-1/2 -translate-y-1/2 bg-card border border-border rounded-full p-3 md:p-4 shadow-xl hover:bg-primary hover:text-primary-foreground hover:scale-110 transition-all duration-300 z-20"
             aria-label="Siguiente convenio"
           >
             <ChevronRight size={24} className="md:w-7 md:h-7" />

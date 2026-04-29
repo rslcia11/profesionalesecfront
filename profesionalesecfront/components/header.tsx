@@ -48,6 +48,7 @@ export default function Header() {
     { label: "Inicio", href: "/" },
     { label: "Profesionales", href: "/profesionales" },
     { label: "Educación", href: "/conversatorios" },
+    { label: "Contacto", href: "/contacto" },
   ]
 
   const getRoleLink = () => {

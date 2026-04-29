@@ -77,9 +77,9 @@ export default function FeaturedProfessionals() {
   if (professionals.length === 0) return null
 
   return (
-    <section className="py-12 md:py-16 px-4 bg-gradient-to-b from-secondary/10 to-background">
+    <section className="py-8 md:py-10 px-4 bg-gradient-to-b from-secondary/10 to-background">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-10">
+        <div className="text-center mb-6">
           <h2 className="text-4xl md:text-5xl font-heading font-bold mb-4 text-foreground">Profesionales Destacados</h2>
           <p className="text-lg text-muted-foreground font-body max-w-2xl mx-auto">
             Los mejores profesionales verificados de Ecuador

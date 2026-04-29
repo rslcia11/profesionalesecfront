@@ -39,13 +39,14 @@ export default function Footer() {
   ]
 
   return (
-    <footer className="bg-black text-white py-6 px-4 text-xs">
+    <footer className="bg-black text-white py-4 px-4 text-xs">
       <div className="max-w-7xl mx-auto">
         {/* Top Section: Logo & Description */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 border-b border-gray-900 pb-4">
-          <div className="flex items-center gap-3 md:pl-20">
-            {/* Logo 1: logo + "PROFESIONALES ECUADOR" — footer */}
-            <img src="/logo-directorio.png" alt="Profesionales Ecuador" className="w-52 h-auto object-contain [filter:invert(1)]" />
+          <div className="flex flex-col items-center gap-2 md:pl-20">
+            {/* Logo Vertical: letras abajo */}
+            <img src="/logo-white.png" alt="P.ec" className="h-16 w-auto object-contain" />
+            <span className="text-[10px] tracking-[0.2em] font-light text-gray-400">DIRECTORIO DIGITAL</span>
           </div>
           <div className="flex gap-8 md:pr-20">
             <Link href="https://www.facebook.com/profile.php?id=61556825827660" target="_blank" className="hover:opacity-80 transition-opacity">
@@ -92,11 +93,11 @@ export default function Footer() {
             <div className="space-y-1">
               {professionalFAQs.map((faq, index) => (
                 <div key={index}>
-                  <button onClick={() => setOpenProfessional(openProfessional === index ? null : index)} className="text-left hover:text-white text-gray-500 flex items-center gap-1 w-full">
+                  <button onClick={() => setOpenProfessional(openProfessional === index ? null : index)} className="text-left hover:text-white text-gray-500 flex items-center justify-between gap-1 w-full text-[11px] md:text-xs">
                     <span className="truncate">{faq.question}</span>
-                    <ChevronDown size={10} className={`transform transition ${openProfessional === index ? 'rotate-180' : ''}`} />
+                    <ChevronDown size={12} className={`transform transition ${openProfessional === index ? 'rotate-180' : ''}`} />
                   </button>
-                  {openProfessional === index && <p className="text-[10px] text-gray-600 mt-1 pl-1">{faq.answer}</p>}
+                  {openProfessional === index && <p className="text-[11px] text-gray-400 mt-1 pl-1 bg-gray-900/50 p-2 rounded">{faq.answer}</p>}
                 </div>
               ))}
             </div>
@@ -108,11 +109,11 @@ export default function Footer() {
             <div className="space-y-1">
               {conversatorioFAQs.map((faq, index) => (
                 <div key={index}>
-                  <button onClick={() => setOpenConversatorio(openConversatorio === index ? null : index)} className="text-left hover:text-white text-gray-500 flex items-center gap-1 w-full">
+                  <button onClick={() => setOpenConversatorio(openConversatorio === index ? null : index)} className="text-left hover:text-white text-gray-500 flex items-center justify-between gap-1 w-full text-[11px] md:text-xs">
                     <span className="truncate">{faq.question}</span>
-                    <ChevronDown size={10} className={`transform transition ${openConversatorio === index ? 'rotate-180' : ''}`} />
+                    <ChevronDown size={12} className={`transform transition ${openConversatorio === index ? 'rotate-180' : ''}`} />
                   </button>
-                  {openConversatorio === index && <p className="text-[10px] text-gray-600 mt-1 pl-1">{faq.answer}</p>}
+                  {openConversatorio === index && <p className="text-[11px] text-gray-400 mt-1 pl-1 bg-gray-900/50 p-2 rounded">{faq.answer}</p>}
                 </div>
               ))}
             </div>

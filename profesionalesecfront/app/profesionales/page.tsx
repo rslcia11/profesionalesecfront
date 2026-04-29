@@ -126,8 +126,8 @@ export default function ProfessionalsPage() {
       <Header />
 
       {/* Hero Section */}
-      <section className="relative pt-28 pb-6 px-4 md:px-6 bg-gradient-to-b from-background via-background to-primary/5">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 pointer-events-none" />
+      <section className="relative pt-28 pb-6 px-4 md:px-6 bg-white">
+        <div className="absolute inset-0 bg-gray-50 pointer-events-none" />
 
         <div className="relative max-w-7xl mx-auto">
           <div className="text-center mb-6">
@@ -178,7 +178,7 @@ export default function ProfessionalsPage() {
 
                       {/* Verified Badge */}
                       {professional.verified && (
-                        <div className="absolute top-4 left-4 bg-primary/90 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
+                        <div className="absolute top-4 right-4 bg-primary/90 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg z-20">
                           <span className="text-xs font-bold text-primary-foreground">✓ Verificado</span>
                         </div>
                       )}
