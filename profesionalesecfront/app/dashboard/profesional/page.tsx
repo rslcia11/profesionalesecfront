@@ -320,13 +320,17 @@ export default function ProfesionalDashboard() {
     const token = localStorage.getItem("auth_token")
     if (!token || !perfil?.id) return
 
+    const tarifaNormalizada = perfilProfesionalForm.tarifa.trim()
+    const tarifaNumero = tarifaNormalizada === "" ? undefined : Number(tarifaNormalizada)
+    const tarifa = Number.isFinite(tarifaNumero) ? tarifaNumero : undefined
+
     try {
       setSavingPerfilProfesional(true)
       await profesionalApi.actualizarPerfil(
         {
           id: perfil.id,
           descripcion: perfilProfesionalForm.descripcion,
-          tarifa: perfilProfesionalForm.tarifa ? Number(perfilProfesionalForm.tarifa) : null,
+          tarifa,
           permitir_reagendar: perfilProfesionalForm.permitir_reagendar,
         },
         token,
