@@ -48,7 +48,7 @@ export default function ArteCulturaPage() {
     satisfaction: 95,
   }
 
-  const PROFESSION_ID = 8 // Arte y Cultura (placeholder)
+  const PROFESSION_ID = 12 // Arte y Cultura
   const { countsBySpecialty } = useSpecialtyCounts([PROFESSION_ID])
   const [apiSpecialties, setApiSpecialties] = useState<any[]>([])
 
@@ -68,57 +68,21 @@ export default function ArteCulturaPage() {
   }
 
   const serviceCategories = useMemo(() => {
-    if (apiSpecialties.length === 0) {
-      return Object.entries(editorialMeta).map(([name, meta]) => ({
-        id: name.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
-        name, description: meta.description, icon: meta.icon,
-      }))
-    }
-    return apiSpecialties.map(spec => {
-      const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: Palette }
-      return {
-        id: spec.nombre.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
-        name: spec.nombre, description: meta.description, icon: meta.icon,
-        count: countsBySpecialty.get(spec.id) || 0,
-      }
-    })
+    return apiSpecialties
+      .filter((spec) => spec.profesion_id)
+      .map((spec) => {
+        const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: Palette }
+        return {
+          id: spec.id,
+          name: spec.nombre,
+          description: meta.description,
+          icon: meta.icon,
+          professionId: spec.profesion_id,
+          specialtyId: spec.id,
+          count: countsBySpecialty.get(spec.id) || 0,
+        }
+      })
   }, [apiSpecialties, countsBySpecialty])
-
-  const blogPosts = [
-    {
-      id: "1",
-      slug: "tendencias-arte-contemporaneo",
-      title: "Tendencias del Arte Contemporáneo Ecuatoriano",
-      excerpt: "Explora las corrientes artísticas que están definiendo el arte nacional e internacional.",
-      image: "/contemporary-art-gallery.png",
-      date: "20 de enero de 2025",
-      readTime: "6 min",
-      author: "Roberto Aguirre",
-      role: "Crítico de Arte",
-    },
-    {
-      id: "2",
-      slug: "vivir-del-arte",
-      title: "Cómo Vivir del Arte en Ecuador",
-      excerpt: "Estrategias y consejos para artistas que buscan profesionalizar su carrera artística.",
-      image: "/artist-working-studio.jpg",
-      date: "14 de enero de 2025",
-      readTime: "8 min",
-      author: "Laura Sánchez",
-      role: "Gestora Cultural",
-    },
-    {
-      id: "3",
-      slug: "importancia-arte-cultura",
-      title: "La Importancia del Arte en la Sociedad",
-      excerpt: "Reflexión sobre el rol transformador del arte y la cultura en nuestras comunidades.",
-      image: "/cultural-art-community.jpg",
-      date: "9 de enero de 2025",
-      readTime: "5 min",
-      author: "Diego Torres",
-      role: "Antropólogo Cultural",
-    },
-  ]
 
   return (
     <main className="min-h-screen bg-background">
@@ -132,7 +96,6 @@ export default function ArteCulturaPage() {
         title="Disciplinas Artísticas"
         subtitle="Descubre talento ecuatoriano excepcional para tu proyecto o evento"
         categories={serviceCategories}
-        basePath="/arte-y-cultura"
       />
 
       <ProfessionalsCategoryList
@@ -141,7 +104,7 @@ export default function ArteCulturaPage() {
         description="Talento creativo verificado para tus proyectos culturales"
       />
 
-      <BlogSection posts={blogPosts} />
+      <BlogSection professionIds={[PROFESSION_ID]} />
 
       <Footer />
     </main>

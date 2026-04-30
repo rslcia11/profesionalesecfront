@@ -269,8 +269,8 @@ export default function AdminDashboard() {
       const articlesData = await articulosApi.listarTodos(token)
       setAdminArticulos(Array.isArray(articlesData) ? articlesData : [])
     } catch (error: any) {
-      const publicArticles = await articulosApi.listarPublicados().catch(() => [])
-      setAdminArticulos(Array.isArray(publicArticles) ? publicArticles : [])
+      const publicResult = await articulosApi.listarPublicados().catch(() => null)
+      setAdminArticulos(publicResult?.data ?? [])
     }
   }
 
@@ -688,7 +688,10 @@ export default function AdminDashboard() {
     try {
       await articulosApi.moderar(id, token)
       toast({ title: "Artículo moderado", description: "El artículo ha sido aprobado y publicado." })
-      const data = await articulosApi.listarTodos(token).catch(() => articulosApi.listarPublicados())
+      const data = await articulosApi.listarTodos(token).catch(async () => {
+        const r = await articulosApi.listarPublicados().catch(() => null)
+        return r?.data ?? []
+      })
       setAdminArticulos(Array.isArray(data) ? data : [])
     } catch (error) {
       toast({ title: "Error", description: "No se pudo moderar el artículo.", variant: "destructive" })
@@ -708,7 +711,10 @@ export default function AdminDashboard() {
     try {
       await articulosApi.archivar(id, token)
       toast({ title: "Artículo archivado", description: "El artículo ha sido archivado." })
-      const data = await articulosApi.listarTodos(token).catch(() => articulosApi.listarPublicados())
+      const data = await articulosApi.listarTodos(token).catch(async () => {
+        const r = await articulosApi.listarPublicados().catch(() => null)
+        return r?.data ?? []
+      })
       setAdminArticulos(Array.isArray(data) ? data : [])
     } catch (error) {
       toast({ title: "Error", description: "No se pudo archivar el artículo.", variant: "destructive" })
@@ -721,7 +727,10 @@ export default function AdminDashboard() {
     try {
       await articulosApi.crear(data as any, token)
       toast({ title: "Artículo Creado", description: "El artículo ha sido publicado exitosamente." })
-      const articlesData = await articulosApi.listarTodos(token).catch(() => articulosApi.listarPublicados())
+      const articlesData = await articulosApi.listarTodos(token).catch(async () => {
+        const r = await articulosApi.listarPublicados().catch(() => null)
+        return r?.data ?? []
+      })
       setAdminArticulos(Array.isArray(articlesData) ? articlesData : [])
       setIsArticleModalOpen(false)
     } catch (e) {
@@ -735,7 +744,10 @@ export default function AdminDashboard() {
     try {
       await articulosApi.actualizar(selectedArticle.id, data, token)
       toast({ title: "Artículo Actualizado", description: "Cambios guardados exitosamente." })
-      const articlesData = await articulosApi.listarTodos(token).catch(() => articulosApi.listarPublicados())
+      const articlesData = await articulosApi.listarTodos(token).catch(async () => {
+        const r = await articulosApi.listarPublicados().catch(() => null)
+        return r?.data ?? []
+      })
       setAdminArticulos(Array.isArray(articlesData) ? articlesData : [])
       setIsArticleModalOpen(false)
     } catch (e) {

@@ -1,62 +1,61 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { profesionalApi } from "@/lib/api"
 
 /**
- * Hook reutilizable para obtener conteos de profesionales verificados
- * agrupados por especialidad (especialidad_id) para una profesión dada.
+ * Trae conteos agregados de profesionales verificados por especialidad.
+ * Una sola query GROUP BY en la BD; payload mínimo.
  *
- * @param professionIds - IDs de las profesiones a filtrar
- * @returns { countsBySpecialty, totalByProfession, loading }
- *   - countsBySpecialty: Map<especialidad_id, number>
- *   - totalByProfession: número total de profesionales verificados en estas profesiones
- *   - loading: estado de carga
+ * @param professionIds - IDs de profesión para acotar (opcional)
+ * @returns { countsBySpecialty: Map<number, number>, totalByProfession: number, loading: boolean }
  */
 export function useSpecialtyCounts(professionIds: number[]) {
-    const [professionals, setProfessionals] = useState<any[]>([])
-    const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState<Record<string, number>>({})
+  const [loading, setLoading] = useState(true)
 
-    useEffect(() => {
-        let cancelled = false
-        async function fetch() {
-            try {
-                setLoading(true)
-                const response = await profesionalApi.obtenerVerificados()
-                const allData = Array.isArray(response)
-                    ? response
-                    : (response?.data && Array.isArray(response.data) ? response.data : [])
+  // Serializamos las dependencias para evitar refetch en cada render del padre.
+  const idsKey = professionIds.join(",")
 
-                if (!cancelled) {
-                    // Filtrar solo los de las profesiones indicadas
-                    const filtered = allData.filter(
-                        (p: any) => p.profesion_id !== undefined && professionIds.includes(p.profesion_id)
-                    )
-                    setProfessionals(filtered)
-                }
-            } catch (error) {
-                console.error("Error loading verified professionals:", error)
-                if (!cancelled) setProfessionals([])
-            } finally {
-                if (!cancelled) setLoading(false)
-            }
+  useEffect(() => {
+    let cancelled = false
+
+    async function fetchStats() {
+      setLoading(true)
+      try {
+        const data = await profesionalApi.obtenerStatsEspecialidades(professionIds)
+        if (!cancelled && data && typeof data === "object") {
+          setStats(data as Record<string, number>)
         }
-        fetch()
-        return () => { cancelled = true }
-    }, [JSON.stringify(professionIds)]) // eslint-disable-line react-hooks/exhaustive-deps
+      } catch (error) {
+        console.error("Error loading specialty counts:", error)
+        if (!cancelled) setStats({})
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
 
-    const countsBySpecialty = useMemo(() => {
-        const map = new Map<number, number>()
-        for (const pro of professionals) {
-            const specId = pro.especialidad_id
-            if (specId !== undefined && specId !== null) {
-                map.set(specId, (map.get(specId) || 0) + 1)
-            }
-        }
-        return map
-    }, [professionals])
+    fetchStats()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idsKey])
 
-    const totalByProfession = professionals.length
+  const countsBySpecialty = useMemo(() => {
+    const map = new Map<number, number>()
+    for (const [key, value] of Object.entries(stats)) {
+      const id = parseInt(key, 10)
+      if (Number.isInteger(id)) map.set(id, value)
+    }
+    return map
+  }, [stats])
 
-    return { countsBySpecialty, totalByProfession, loading }
+  const totalByProfession = useMemo(() => {
+    let total = 0
+    for (const v of countsBySpecialty.values()) total += v
+    return total
+  }, [countsBySpecialty])
+
+  return { countsBySpecialty, totalByProfession, loading }
 }

@@ -48,7 +48,7 @@ export default function EducacionPage() {
     satisfaction: 96,
   }
 
-  const PROFESSION_ID = 993 // Educación (placeholder)
+  const PROFESSION_ID = 14 // Educación
   const { countsBySpecialty } = useSpecialtyCounts([PROFESSION_ID])
   const [apiSpecialties, setApiSpecialties] = useState<any[]>([])
 
@@ -68,57 +68,21 @@ export default function EducacionPage() {
   }
 
   const serviceCategories = useMemo(() => {
-    if (apiSpecialties.length === 0) {
-      return Object.entries(editorialMeta).map(([name, meta]) => ({
-        id: name.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
-        name, description: meta.description, icon: meta.icon,
-      }))
-    }
-    return apiSpecialties.map(spec => {
-      const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: BookOpen }
-      return {
-        id: spec.nombre.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
-        name: spec.nombre, description: meta.description, icon: meta.icon,
-        count: countsBySpecialty.get(spec.id) || 0,
-      }
-    })
+    return apiSpecialties
+      .filter((spec) => spec.profesion_id)
+      .map((spec) => {
+        const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: BookOpen }
+        return {
+          id: spec.id,
+          name: spec.nombre,
+          description: meta.description,
+          icon: meta.icon,
+          professionId: spec.profesion_id,
+          specialtyId: spec.id,
+          count: countsBySpecialty.get(spec.id) || 0,
+        }
+      })
   }, [apiSpecialties, countsBySpecialty])
-
-  const blogPosts = [
-    {
-      id: "1",
-      slug: "metodologias-ensenanza-moderna",
-      title: "Metodologías de Enseñanza para el Siglo XXI",
-      excerpt: "Descubre las técnicas pedagógicas más efectivas para el aprendizaje en la era digital.",
-      image: "/modern-teaching-classroom.jpg",
-      date: "18 de enero de 2025",
-      readTime: "6 min",
-      author: "María González",
-      role: "Pedagoga Especializada",
-    },
-    {
-      id: "2",
-      slug: "educacion-virtual-efectiva",
-      title: "Cómo Implementar Educación Virtual Efectiva",
-      excerpt: "Estrategias y herramientas para maximizar el aprendizaje en entornos virtuales.",
-      image: "/online-education-technology.jpg",
-      date: "12 de enero de 2025",
-      readTime: "7 min",
-      author: "Carlos Ramírez",
-      role: "Experto en Tecnología Educativa",
-    },
-    {
-      id: "3",
-      slug: "desarrollo-integral-estudiantes",
-      title: "El Desarrollo Integral de los Estudiantes",
-      excerpt: "La importancia de educar más allá de lo académico: habilidades socioemocionales.",
-      image: "/student-development-classroom.jpg",
-      date: "8 de enero de 2025",
-      readTime: "5 min",
-      author: "Ana Martínez",
-      role: "Psicopedagoga",
-    },
-  ]
 
   return (
     <main className="min-h-screen bg-background">
@@ -132,7 +96,6 @@ export default function EducacionPage() {
         title="Especialidades Educativas"
         subtitle="Encuentra docentes calificados para todos los niveles educativos"
         categories={serviceCategories}
-        basePath="/educacion"
       />
 
       <ProfessionalsCategoryList
@@ -141,7 +104,7 @@ export default function EducacionPage() {
         description="Encuentra los mejores profesionales para tu formación académica"
       />
 
-      <BlogSection posts={blogPosts} />
+      <BlogSection professionIds={[PROFESSION_ID]} />
 
       <Footer />
     </main>

@@ -29,7 +29,7 @@ export default function OficiosPage() {
     },
   ]
 
-  const PROFESSION_ID = 99 // Oficios (placeholder)
+  const PROFESSION_ID = 16 // Oficios
   const { countsBySpecialty } = useSpecialtyCounts([PROFESSION_ID])
   const [apiSpecialties, setApiSpecialties] = useState<any[]>([])
 
@@ -54,20 +54,20 @@ export default function OficiosPage() {
   }
 
   const serviceCategories = useMemo(() => {
-    if (apiSpecialties.length === 0) {
-      return Object.entries(editorialMeta).map(([name, meta]) => ({
-        id: name.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
-        name, description: meta.description, icon: meta.icon,
-      }))
-    }
-    return apiSpecialties.map(spec => {
-      const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: Wrench }
-      return {
-        id: spec.nombre.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
-        name: spec.nombre, description: meta.description, icon: meta.icon,
-        count: countsBySpecialty.get(spec.id) || 0,
-      }
-    })
+    return apiSpecialties
+      .filter((spec) => spec.profesion_id)
+      .map((spec) => {
+        const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: Wrench }
+        return {
+          id: spec.id,
+          name: spec.nombre,
+          description: meta.description,
+          icon: meta.icon,
+          professionId: spec.profesion_id,
+          specialtyId: spec.id,
+          count: countsBySpecialty.get(spec.id) || 0,
+        }
+      })
   }, [apiSpecialties, countsBySpecialty])
 
   const featuredProfessional = {
@@ -87,45 +87,6 @@ export default function OficiosPage() {
     ],
   }
 
-  const blogPosts = [
-    {
-      id: "1",
-      slug: "fotografia-comercial-profesional",
-      title: "Cómo la Fotografía Profesional Impulsa tu Marca",
-      excerpt:
-        "Descubre por qué invertir en fotografía profesional es clave para destacar tu negocio en el mercado digital actual.",
-      image: "/commercial-photography-branding.jpg",
-      date: "15 de enero de 2025",
-      readTime: "6 min",
-      author: "Paul Pineda",
-      role: "Fotógrafo Profesional",
-    },
-    {
-      id: "2",
-      slug: "mantenimiento-hogar-consejos",
-      title: "Guía Completa de Mantenimiento del Hogar",
-      excerpt:
-        "Consejos de expertos en plomería, electricidad y carpintería para mantener tu hogar en perfectas condiciones.",
-      image: "/home-maintenance-guide.jpg",
-      date: "10 de enero de 2025",
-      readTime: "8 min",
-      author: "Carlos Ramírez",
-      role: "Plomero Certificado",
-    },
-    {
-      id: "3",
-      slug: "gastronomia-ecuatoriana-moderna",
-      title: "La Nueva Gastronomía Ecuatoriana",
-      excerpt:
-        "Chefs ecuatorianos están revolucionando la cocina tradicional con técnicas modernas y presentaciones innovadoras.",
-      image: "/modern-ecuadorian-cuisine.jpg",
-      date: "5 de enero de 2025",
-      readTime: "7 min",
-      author: "María González",
-      role: "Chef Ejecutiva",
-    },
-  ]
-
   return (
     <>
       <Header />
@@ -135,14 +96,13 @@ export default function OficiosPage() {
           title="Oficios Especializados"
           subtitle="Encuentra profesionales certificados en diversos oficios y servicios"
           categories={serviceCategories}
-          basePath="/oficios"
         />
         <ProfessionalsCategoryList
           professionIds={[PROFESSION_ID]}
           title="Profesionales en Oficios"
           description="Expertos calificados para cada necesidad de tu hogar o negocio"
         />
-        <BlogSection posts={blogPosts} />
+        <BlogSection professionIds={[PROFESSION_ID]} />
       </main>
       <Footer />
     </>

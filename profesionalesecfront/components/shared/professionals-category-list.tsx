@@ -97,7 +97,7 @@ export default function ProfessionalsCategoryList({
                         <p className="text-lg text-gray-500">
                             Aún no tenemos profesionales verificados visibles en esta categoría.
                         </p>
-                        <Link href="/top-profesionales" className="text-primary hover:underline mt-2 inline-block">
+                        <Link href="/profesionales" className="text-primary hover:underline mt-2 inline-block">
                             Ver todos los profesionales
                         </Link>
                     </div>
