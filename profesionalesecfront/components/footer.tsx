@@ -93,11 +93,22 @@ export default function Footer() {
             <div className="space-y-1">
               {professionalFAQs.map((faq, index) => (
                 <div key={index}>
-                  <button onClick={() => setOpenProfessional(openProfessional === index ? null : index)} className="text-left hover:text-white text-gray-500 flex items-center justify-between gap-1 w-full text-[11px] md:text-xs">
+                  <button
+                    onClick={() => setOpenProfessional(openProfessional === index ? null : index)}
+                    aria-expanded={openProfessional === index}
+                    className="text-left hover:text-white text-gray-500 flex items-center justify-between gap-1 w-full text-[11px] md:text-xs"
+                  >
                     <span className="truncate">{faq.question}</span>
                     <ChevronDown size={12} className={`transform transition ${openProfessional === index ? 'rotate-180' : ''}`} />
                   </button>
-                  {openProfessional === index && <p className="text-[11px] text-gray-400 mt-1 pl-1 bg-gray-900/50 p-2 rounded">{faq.answer}</p>}
+                  <div
+                    className={`grid overflow-hidden transition-[grid-template-rows,opacity,transform] duration-300 ease-out ${openProfessional === index ? 'grid-rows-[1fr] opacity-100 translate-y-0 mt-1' : 'grid-rows-[0fr] opacity-0 -translate-y-1'}`}
+                    aria-hidden={openProfessional !== index}
+                  >
+                    <p className="min-h-0 overflow-hidden text-[11px] md:text-xs leading-relaxed font-normal text-gray-400 pl-1 bg-gray-900/50 p-2 rounded">
+                      {faq.answer}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -109,11 +120,22 @@ export default function Footer() {
             <div className="space-y-1">
               {conversatorioFAQs.map((faq, index) => (
                 <div key={index}>
-                  <button onClick={() => setOpenConversatorio(openConversatorio === index ? null : index)} className="text-left hover:text-white text-gray-500 flex items-center justify-between gap-1 w-full text-[11px] md:text-xs">
+                  <button
+                    onClick={() => setOpenConversatorio(openConversatorio === index ? null : index)}
+                    aria-expanded={openConversatorio === index}
+                    className="text-left hover:text-white text-gray-500 flex items-center justify-between gap-1 w-full text-[11px] md:text-xs"
+                  >
                     <span className="truncate">{faq.question}</span>
                     <ChevronDown size={12} className={`transform transition ${openConversatorio === index ? 'rotate-180' : ''}`} />
                   </button>
-                  {openConversatorio === index && <p className="text-[11px] text-gray-400 mt-1 pl-1 bg-gray-900/50 p-2 rounded">{faq.answer}</p>}
+                  <div
+                    className={`grid overflow-hidden transition-[grid-template-rows,opacity,transform] duration-300 ease-out ${openConversatorio === index ? 'grid-rows-[1fr] opacity-100 translate-y-0 mt-1' : 'grid-rows-[0fr] opacity-0 -translate-y-1'}`}
+                    aria-hidden={openConversatorio !== index}
+                  >
+                    <p className="min-h-0 overflow-hidden text-[11px] md:text-xs leading-relaxed font-normal text-gray-400 pl-1 bg-gray-900/50 p-2 rounded">
+                      {faq.answer}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>

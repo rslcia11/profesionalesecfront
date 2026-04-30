@@ -208,21 +208,21 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
         {/* Navigation arrows - hidden on mobile */}
         <button
           onClick={handlePrev}
-          className={`hidden md:block absolute left-2 top-1/2 -translate-y-1/2 z-20 p-3 bg-primary hover:bg-primary/80 text-white rounded-full shadow-lg transition-all duration-500 ease-out ${isHoveringCarousel ? "opacity-100 scale-110" : "opacity-0 scale-90"
-            } active:scale-95 hover:shadow-2xl`}
+          className={`hidden md:block absolute left-2 top-1/2 -translate-y-1/2 z-20 p-3 md:p-4 bg-primary hover:bg-primary/80 text-white rounded-full shadow-lg hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-500 ease-out ${isHoveringCarousel ? "opacity-100" : "opacity-0"
+            }`}
           aria-label="Previous slide"
           disabled={isTransitioning}
         >
-          <ChevronLeft className="w-6 h-6" />
+          <ChevronLeft className="w-6 h-6 md:w-7 md:h-7" />
         </button>
         <button
           onClick={handleNext}
-          className={`hidden md:block absolute right-2 top-1/2 -translate-y-1/2 z-20 p-3 bg-primary hover:bg-primary/80 text-white rounded-full shadow-lg transition-all duration-500 ease-out ${isHoveringCarousel ? "opacity-100 scale-110" : "opacity-0 scale-90"
-            } active:scale-95 hover:shadow-2xl`}
+          className={`hidden md:block absolute right-2 top-1/2 -translate-y-1/2 z-20 p-3 md:p-4 bg-primary hover:bg-primary/80 text-white rounded-full shadow-lg hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-500 ease-out ${isHoveringCarousel ? "opacity-100" : "opacity-0"
+            }`}
           aria-label="Next slide"
           disabled={isTransitioning}
         >
-          <ChevronRight className="w-6 h-6" />
+          <ChevronRight className="w-6 h-6 md:w-7 md:h-7" />
         </button>
       </div>
       {/* Pagination dots - hidden on mobile */}

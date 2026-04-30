@@ -96,7 +96,7 @@ export default function Services() {
   ]
 
   return (
-    <section id="servicios" className="py-8 md:py-10 px-4 bg-background relative overflow-hidden">
+    <section id="servicios" className="pt-8 pb-4 md:pt-10 md:pb-6 px-4 bg-background relative overflow-hidden">
       {/* Subtle background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 right-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />

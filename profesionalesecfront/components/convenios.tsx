@@ -87,7 +87,7 @@ export default function Convenios() {
   // If no convenios or loading, show nothing (or could show a fallback)
   if (isLoading) {
     return (
-      <section className="py-8 md:py-10 px-4 bg-gradient-to-br from-background via-secondary/5 to-background relative overflow-hidden">
+      <section className="pt-2 pb-6 md:pt-6 md:pb-8 px-4 bg-gradient-to-br from-background via-secondary/5 to-background relative overflow-hidden">
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-6">
             <h2 className="text-4xl md:text-5xl font-heading font-bold mb-4 text-foreground">
@@ -132,7 +132,7 @@ export default function Convenios() {
   }
 
   return (
-    <section className="py-8 md:py-16 px-4 bg-gradient-to-br from-background via-secondary/5 to-background relative overflow-hidden">
+    <section className="pt-2 pb-6 md:pt-6 md:pb-10 px-4 bg-gradient-to-br from-background via-secondary/5 to-background relative overflow-hidden">
       {/* Background decorations */}
       <div className="absolute top-10 right-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 left-10 w-96 h-96 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
@@ -156,12 +156,16 @@ export default function Convenios() {
               return (
                 <div
                   key={`${convenio.id}-${idx}`}
-                  className={`bg-card border border-border rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 flex-col h-full ${
+                  className={`relative bg-card border border-border rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 flex-col h-full ${
                     idx === 1 ? "hidden md:flex" : "flex"
                   }`}
                 >
+                  <div className="absolute top-4 right-4 bg-primary text-primary-foreground p-4 rounded-full z-30 shadow-lg border-2 border-white">
+                    <IconComponent size={26} />
+                  </div>
+
                   {/* Banner Photo Section */}
-                  <div className="h-32 md:h-40 w-full relative">
+                  <div className="h-36 md:h-44 w-full relative">
                     <img 
                       src={convenio.bannerUrl || "/placeholder.svg"} 
                       alt="" 
@@ -173,21 +177,18 @@ export default function Convenios() {
                     <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
                   </div>
 
-                  <div className="p-6 md:p-8 lg:p-10 pt-0 -mt-16 relative z-10">
+                  <div className="p-6 md:p-8 lg:p-10 pt-0 -mt-28 relative z-10">
                   <div className="flex flex-col items-center text-center mb-6">
-                    <div className="relative group mt-2 mb-2">
+                    <div className="relative group -mt-2 mb-2">
                       <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl group-hover:blur-2xl transition-all" />
                       <img
                         src={convenio.logoUrl || "/placeholder.svg"}
                         alt={convenio.titulo}
-                        className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-card object-cover relative z-10 transform group-hover:scale-105 transition-transform duration-500 shadow-xl"
+                        className="w-36 h-36 md:w-44 md:h-44 rounded-full border-4 border-card object-cover relative z-10 transform group-hover:scale-105 transition-transform duration-500 shadow-xl"
                         onError={(e) => {
                           ;(e.target as HTMLImageElement).src = "/placeholder.svg"
                         }}
                       />
-                      <div className="absolute -bottom-2 -right-2 bg-primary text-primary-foreground p-3 rounded-full z-20 shadow-lg">
-                        <IconComponent size={20} />
-                      </div>
                     </div>
                   </div>
 
@@ -248,17 +249,17 @@ export default function Convenios() {
           {/* Navigation Buttons */}
           <button
             onClick={prevSlide}
-            className="absolute left-2 md:left-10 lg:left-12 top-1/2 -translate-y-1/2 bg-card border border-border rounded-full p-3 md:p-4 shadow-xl hover:bg-primary hover:text-primary-foreground hover:scale-110 transition-all duration-300 z-20"
+            className="absolute left-2 top-1/2 -translate-y-1/2 bg-card border border-border rounded-full p-3 md:p-4 shadow-xl hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors duration-300 z-20"
             aria-label="Anterior convenio"
           >
-            <ChevronLeft size={24} className="md:w-7 md:h-7" />
+            <ChevronLeft className="w-6 h-6 md:w-7 md:h-7" />
           </button>
           <button
             onClick={nextSlide}
-            className="absolute right-2 md:right-10 lg:right-12 top-1/2 -translate-y-1/2 bg-card border border-border rounded-full p-3 md:p-4 shadow-xl hover:bg-primary hover:text-primary-foreground hover:scale-110 transition-all duration-300 z-20"
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-card border border-border rounded-full p-3 md:p-4 shadow-xl hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors duration-300 z-20"
             aria-label="Siguiente convenio"
           >
-            <ChevronRight size={24} className="md:w-7 md:h-7" />
+            <ChevronRight className="w-6 h-6 md:w-7 md:h-7" />
           </button>
 
           {/* Dots indicator */}

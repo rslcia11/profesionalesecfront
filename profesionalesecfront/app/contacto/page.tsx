@@ -1,23 +1,147 @@
 "use client"
 
-import { useState } from "react"
+import { useState, type FormEvent } from "react"
 import { Mail, Phone, MapPin, Send, Loader2, CheckCircle2 } from "lucide-react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+interface FormData {
+  nombre: string
+  correo: string
+  asunto: string
+  mensaje: string
+}
+
+interface FormTouched {
+  nombre: boolean
+  correo: boolean
+  asunto: boolean
+  mensaje: boolean
+}
+
 export default function ContactoPage() {
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState("")
+  const [formData, setFormData] = useState<FormData>({
+    nombre: "",
+    correo: "",
+    asunto: "Soporte Técnico",
+    mensaje: "",
+  })
+  const [touched, setTouched] = useState<FormTouched>({
+    nombre: false,
+    correo: false,
+    asunto: false,
+    mensaje: false,
+  })
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const validateField = (field: keyof FormData, value: string): string => {
+    const trimmedValue = value.trim()
+
+    if (field === "nombre") {
+      if (!trimmedValue) return "El nombre es obligatorio"
+      if (trimmedValue.length < 2) return "El nombre debe tener al menos 2 caracteres"
+      return ""
+    }
+
+    if (field === "correo") {
+      if (!trimmedValue) return "El correo electrónico es obligatorio"
+      if (!EMAIL_REGEX.test(trimmedValue)) return "Ingresa un correo electrónico válido"
+      return ""
+    }
+
+    if (field === "asunto") {
+      if (!trimmedValue) return "El asunto es obligatorio"
+      if (trimmedValue.length < 3) return "El asunto debe tener al menos 3 caracteres"
+      return ""
+    }
+
+    if (!trimmedValue) return "El mensaje es obligatorio"
+    if (trimmedValue.length < 10) return "El mensaje debe tener al menos 10 caracteres"
+    return ""
+  }
+
+  const fieldErrors = {
+    nombre: validateField("nombre", formData.nombre),
+    correo: validateField("correo", formData.correo),
+    asunto: validateField("asunto", formData.asunto),
+    mensaje: validateField("mensaje", formData.mensaje),
+  }
+
+  const isFormValid = Object.values(fieldErrors).every((fieldError) => !fieldError)
+
+  const shouldShowFieldError = (field: keyof FormData) => {
+    if (field === "correo") {
+      return touched.correo || formData.correo.length > 0
+    }
+
+    return touched[field]
+  }
+
+  const handleFieldChange = (field: keyof FormData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+    if (error) setError("")
+  }
+
+  const handleFieldBlur = (field: keyof FormData) => {
+    setTouched((prev) => ({ ...prev, [field]: true }))
+  }
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+
+    const allTouched: FormTouched = {
+      nombre: true,
+      correo: true,
+      asunto: true,
+      mensaje: true,
+    }
+
+    setTouched(allTouched)
+
+    if (!isFormValid) {
+      setError("Revisa los campos marcados antes de enviar")
+      return
+    }
+
+    setError("")
     setLoading(true)
-    
-    // Simular envío de correo (puedes conectar esto a tu backend /api/contact)
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    setLoading(false)
-    setSubmitted(true)
+
+    try {
+      const response = await fetch("/api/contacto", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null)
+        throw new Error(payload?.error || "No se pudo enviar el mensaje")
+      }
+
+      setSubmitted(true)
+      setFormData({
+        nombre: "",
+        correo: "",
+        asunto: "Soporte Técnico",
+        mensaje: "",
+      })
+      setTouched({
+        nombre: false,
+        correo: false,
+        asunto: false,
+        mensaje: false,
+      })
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Error al enviar")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -121,31 +245,61 @@ export default function ContactoPage() {
                       <input 
                         required
                         type="text" 
+                        value={formData.nombre}
+                        onChange={(e) => handleFieldChange("nombre", e.target.value)}
+                        onBlur={() => handleFieldBlur("nombre")}
                         placeholder="Tu nombre"
-                        className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                        aria-invalid={shouldShowFieldError("nombre") && Boolean(fieldErrors.nombre)}
+                        aria-describedby={shouldShowFieldError("nombre") && fieldErrors.nombre ? "nombre-error" : undefined}
+                        className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all aria-[invalid=true]:border-red-500 aria-[invalid=true]:focus:ring-red-500/20"
                       />
+                      {shouldShowFieldError("nombre") && fieldErrors.nombre ? (
+                        <p id="nombre-error" className="text-sm text-red-500 font-medium">
+                          {fieldErrors.nombre}
+                        </p>
+                      ) : null}
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Correo Electrónico</label>
                       <input 
                         required
                         type="email" 
+                        value={formData.correo}
+                        onChange={(e) => handleFieldChange("correo", e.target.value)}
+                        onBlur={() => handleFieldBlur("correo")}
                         placeholder="tu@correo.com"
-                        className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                        aria-invalid={shouldShowFieldError("correo") && Boolean(fieldErrors.correo)}
+                        aria-describedby={shouldShowFieldError("correo") && fieldErrors.correo ? "correo-error" : undefined}
+                        className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all aria-[invalid=true]:border-red-500 aria-[invalid=true]:focus:ring-red-500/20"
                       />
+                      {shouldShowFieldError("correo") && fieldErrors.correo ? (
+                        <p id="correo-error" className="text-sm text-red-500 font-medium">
+                          {fieldErrors.correo}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Asunto</label>
                     <select 
-                      className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                      value={formData.asunto}
+                      onChange={(e) => handleFieldChange("asunto", e.target.value)}
+                      onBlur={() => handleFieldBlur("asunto")}
+                      aria-invalid={shouldShowFieldError("asunto") && Boolean(fieldErrors.asunto)}
+                      aria-describedby={shouldShowFieldError("asunto") && fieldErrors.asunto ? "asunto-error" : undefined}
+                      className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all aria-[invalid=true]:border-red-500 aria-[invalid=true]:focus:ring-red-500/20"
                     >
                       <option>Soporte Técnico</option>
                       <option>Información Profesional</option>
                       <option>Convenios / Alianzas</option>
                       <option>Otro</option>
                     </select>
+                    {shouldShowFieldError("asunto") && fieldErrors.asunto ? (
+                      <p id="asunto-error" className="text-sm text-red-500 font-medium">
+                        {fieldErrors.asunto}
+                      </p>
+                    ) : null}
                   </div>
 
                   <div className="space-y-2">
@@ -153,15 +307,29 @@ export default function ContactoPage() {
                     <textarea 
                       required
                       rows={5}
+                      value={formData.mensaje}
+                      onChange={(e) => handleFieldChange("mensaje", e.target.value)}
+                      onBlur={() => handleFieldBlur("mensaje")}
                       placeholder="¿En qué podemos ayudarte?"
-                      className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none"
+                      aria-invalid={shouldShowFieldError("mensaje") && Boolean(fieldErrors.mensaje)}
+                      aria-describedby={shouldShowFieldError("mensaje") && fieldErrors.mensaje ? "mensaje-error" : undefined}
+                      className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none aria-[invalid=true]:border-red-500 aria-[invalid=true]:focus:ring-red-500/20"
                     ></textarea>
+                    {shouldShowFieldError("mensaje") && fieldErrors.mensaje ? (
+                      <p id="mensaje-error" className="text-sm text-red-500 font-medium">
+                        {fieldErrors.mensaje}
+                      </p>
+                    ) : null}
                   </div>
 
+                  {error ? (
+                    <p className="text-sm text-red-500 font-medium">{error}</p>
+                  ) : null}
+
                   <button 
-                    disabled={loading}
+                    disabled={loading || !isFormValid}
                     type="submit"
-                    className="w-full py-4 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-primary/20 disabled:opacity-70"
+                    className="w-full py-4 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-primary/20 disabled:opacity-70 disabled:cursor-not-allowed"
                   >
                     {loading ? (
                       <Loader2 className="animate-spin" size={20} />

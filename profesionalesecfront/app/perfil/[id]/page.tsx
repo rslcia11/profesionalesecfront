@@ -155,6 +155,23 @@ export default function ProfessionalProfile() {
                                 </a>
                             )}
                         </div>
+
+                        {/* Servicios */}
+                        {professional.servicios && professional.servicios.length > 0 && (
+                            <div className="w-full mt-12">
+                                <h3 className="text-xl font-bold uppercase text-gray-800 mb-6 border-b pb-4">SERVICIOS</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                                    {professional.servicios.map((servicio: any) => (
+                                        <div key={servicio.servicio_id} className="flex items-center gap-3 group">
+                                            <img src="/logo-icono.png" alt="P.ec" className="h-10 w-auto object-contain shrink-0" />
+                                            <p className="text-gray-500 text-sm md:text-base border-l border-gray-100 pl-3 group-hover:text-black group-hover:border-black transition-all">
+                                                {servicio.descripcion}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -182,25 +199,6 @@ export default function ProfessionalProfile() {
                                 {bio}
                             </p>
                         </div>
-
-                        {/* Servicios */}
-                        {professional.servicios && professional.servicios.length > 0 && (
-                            <div className="mt-12">
-                                <h3 className="text-xl font-bold uppercase text-gray-800 mb-6 border-b pb-4">SERVICIOS</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                                    {professional.servicios.map((servicio: any) => (
-                                        <div key={servicio.servicio_id} className="flex items-center gap-3 group">
-                                            <img src="/logo-icono.png" alt="P.ec" className="h-10 w-auto object-contain shrink-0" />
-                                            <p className="text-gray-500 text-sm md:text-base border-l border-gray-100 pl-3 group-hover:text-black group-hover:border-black transition-all">
-                                                {servicio.descripcion}
-                                            </p>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-
 
                         {/* Contact Info (Moved here since Map is gone) */}
                         {/* Ubicación y Mapa */}

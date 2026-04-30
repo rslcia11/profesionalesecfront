@@ -296,8 +296,7 @@ export default function BookingForm({ professional, schedule }: BookingFormProps
 
             {/* Mensaje */}
             <div>
-                <input
-                    type="text"
+                <textarea
                     value={formData.comentario}
                     onChange={(e) => handleFieldChange("comentario", e.target.value)}
                     className="w-full border border-gray-200 rounded p-4 h-32 align-top focus:border-black focus:outline-none resize-none"

@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react"
 
 export default function ConnectingProfessionals() {
   return (
-    <section className="py-6 md:py-8 px-4 bg-background relative overflow-hidden">
+    <section className="pt-2 pb-6 md:pt-4 md:pb-8 px-4 bg-background relative overflow-hidden">
       <div className="max-w-6xl mx-auto relative z-10">
         <div className="text-center mb-8">
           <h2 className="text-4xl md:text-5xl font-heading font-bold mb-4 text-foreground">Conectando Profesionales</h2>
