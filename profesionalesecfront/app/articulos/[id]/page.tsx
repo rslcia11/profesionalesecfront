@@ -21,27 +21,29 @@ export default function ArticuloDetallePage() {
     const [notFound, setNotFound] = useState(false)
 
     useEffect(() => {
+        if (!id) return
+        let cancelled = false
         const loadArticulo = async () => {
             try {
-                // Fetch all published articles and find by ID
-                // (Backend doesn't have a GET /articulos/:id public endpoint)
-                const data = await articulosApi.listarPublicados()
-                const list = Array.isArray(data) ? data : []
-                const found = list.find((a: Articulo) => a.id.toString() === id)
-                if (found) {
-                    setArticulo(found)
+                const data = await articulosApi.obtenerPorId(id)
+                if (cancelled) return
+                if (data && (data as Articulo).id) {
+                    setArticulo(data as Articulo)
                 } else {
                     setNotFound(true)
                 }
             } catch (error) {
-                console.error("Error loading article:", error)
-                setNotFound(true)
+                if (!cancelled) {
+                    console.error("Error loading article:", error)
+                    setNotFound(true)
+                }
             } finally {
-                setLoading(false)
+                if (!cancelled) setLoading(false)
             }
         }
 
-        if (id) loadArticulo()
+        loadArticulo()
+        return () => { cancelled = true }
     }, [id])
 
     const formatDate = (dateStr: string) => {
@@ -190,20 +192,19 @@ export default function ArticuloDetallePage() {
                     </div>
                 )}
 
-                {/* Article Body */}
-                <div
-                    className="prose prose-lg max-w-none text-foreground/90 leading-relaxed animate-in fade-in slide-in-from-bottom-4 duration-700
-            prose-headings:text-foreground prose-headings:font-bold
-            prose-p:mb-4 prose-p:leading-relaxed
-            prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-            prose-strong:text-foreground
-            prose-img:rounded-xl prose-img:shadow-lg"
-                    dangerouslySetInnerHTML={{ __html: articulo.contenido }}
-                />
-
-                {/* If content is plain text (not HTML), render as paragraphs */}
-                {!articulo.contenido.includes("<") && (
-                    <div className="text-foreground/90 leading-relaxed whitespace-pre-wrap">
+                {/* Article Body — HTML cuando trae markup, texto plano con line breaks si no */}
+                {articulo.contenido?.includes("<") ? (
+                    <div
+                        className="prose prose-lg max-w-none text-foreground/90 leading-relaxed animate-in fade-in slide-in-from-bottom-4 duration-700
+              prose-headings:text-foreground prose-headings:font-bold
+              prose-p:mb-4 prose-p:leading-relaxed
+              prose-a:text-primary prose-a:no-underline hover:prose-a:underline
+              prose-strong:text-foreground
+              prose-img:rounded-xl prose-img:shadow-lg"
+                        dangerouslySetInnerHTML={{ __html: articulo.contenido }}
+                    />
+                ) : (
+                    <div className="text-foreground/90 leading-relaxed whitespace-pre-wrap text-lg animate-in fade-in slide-in-from-bottom-4 duration-700">
                         {articulo.contenido}
                     </div>
                 )}

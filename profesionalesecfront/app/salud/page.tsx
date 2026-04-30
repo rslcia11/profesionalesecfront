@@ -113,20 +113,20 @@ export default function SaludPage() {
   }
 
   const serviceCategories = useMemo(() => {
-    if (apiSpecialties.length === 0) {
-      return Object.entries(editorialMeta).map(([name, meta]) => ({
-        id: name.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
-        name, description: meta.description, icon: meta.icon,
-      }))
-    }
-    return apiSpecialties.map(spec => {
-      const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: Stethoscope }
-      return {
-        id: spec.nombre.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
-        name: spec.nombre, description: meta.description, icon: meta.icon,
-        count: countsBySpecialty.get(spec.id) || 0,
-      }
-    })
+    return apiSpecialties
+      .filter((spec) => spec.profesion_id)
+      .map((spec) => {
+        const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: Stethoscope }
+        return {
+          id: spec.id,
+          name: spec.nombre,
+          description: meta.description,
+          icon: meta.icon,
+          professionId: spec.profesion_id,
+          specialtyId: spec.id,
+          count: countsBySpecialty.get(spec.id) || 0,
+        }
+      })
   }, [apiSpecialties, countsBySpecialty])
 
   return (
@@ -143,7 +143,6 @@ export default function SaludPage() {
         title="Especialidades Médicas"
         subtitle="Encuentra el profesional de la salud que necesitas"
         categories={serviceCategories}
-        basePath="/salud"
       />
 
       {/* Real Professionals List */}
@@ -154,7 +153,7 @@ export default function SaludPage() {
       />
 
       {/* Blog Section */}
-      <BlogSection professionId={1} limit={3} />
+      <BlogSection professionIds={PROFESSION_IDS} />
 
       <Footer />
     </main>

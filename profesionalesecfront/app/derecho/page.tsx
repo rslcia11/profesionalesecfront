@@ -72,20 +72,20 @@ export default function DerechoPage() {
   }
 
   const serviceCategories = useMemo(() => {
-    if (apiSpecialties.length === 0) {
-      return Object.entries(editorialMeta).map(([name, meta]) => ({
-        id: name.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
-        name, description: meta.description, icon: meta.icon,
-      }))
-    }
-    return apiSpecialties.map(spec => {
-      const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: Scale }
-      return {
-        id: spec.nombre.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
-        name: spec.nombre, description: meta.description, icon: meta.icon,
-        count: countsBySpecialty.get(spec.id) || 0,
-      }
-    })
+    return apiSpecialties
+      .filter((spec) => spec.profesion_id)
+      .map((spec) => {
+        const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: Scale }
+        return {
+          id: spec.id,
+          name: spec.nombre,
+          description: meta.description,
+          icon: meta.icon,
+          professionId: spec.profesion_id,
+          specialtyId: spec.id,
+          count: countsBySpecialty.get(spec.id) || 0,
+        }
+      })
   }, [apiSpecialties, countsBySpecialty])
   return (
     <main className="min-h-screen bg-background">
@@ -101,7 +101,6 @@ export default function DerechoPage() {
         title="Especialidades Legales"
         subtitle="Encuentra el abogado especializado que necesitas para tu caso"
         categories={serviceCategories}
-        basePath="/derecho"
       />
 
       {/* Real Professionals List */}
@@ -112,7 +111,7 @@ export default function DerechoPage() {
       />
 
       {/* Blog Section */}
-      <BlogSection professionId={3} limit={3} />
+      <BlogSection professionIds={[PROFESSION_ID]} />
 
       <Footer />
     </main>

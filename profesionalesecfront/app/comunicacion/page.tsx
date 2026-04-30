@@ -42,7 +42,7 @@ export default function ComunicacionPage() {
     },
   ]
 
-  const PROFESSION_ID = 992 // Comunicación (placeholder)
+  const PROFESSION_ID = 13 // Comunicación
   const { countsBySpecialty } = useSpecialtyCounts([PROFESSION_ID])
   const [apiSpecialties, setApiSpecialties] = useState<any[]>([])
 
@@ -68,20 +68,20 @@ export default function ComunicacionPage() {
   }
 
   const serviceCategories = useMemo(() => {
-    if (apiSpecialties.length === 0) {
-      return Object.entries(editorialMeta).map(([name, meta]) => ({
-        id: name.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
-        name, description: meta.description, icon: meta.icon,
-      }))
-    }
-    return apiSpecialties.map(spec => {
-      const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: Mic }
-      return {
-        id: spec.nombre.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
-        name: spec.nombre, description: meta.description, icon: meta.icon,
-        count: countsBySpecialty.get(spec.id) || 0,
-      }
-    })
+    return apiSpecialties
+      .filter((spec) => spec.profesion_id)
+      .map((spec) => {
+        const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: Mic }
+        return {
+          id: spec.id,
+          name: spec.nombre,
+          description: meta.description,
+          icon: meta.icon,
+          professionId: spec.profesion_id,
+          specialtyId: spec.id,
+          count: countsBySpecialty.get(spec.id) || 0,
+        }
+      })
   }, [apiSpecialties, countsBySpecialty])
 
   const featuredProfessional = {
@@ -101,42 +101,6 @@ export default function ComunicacionPage() {
     ],
   }
 
-  const blogPosts = [
-    {
-      id: "1",
-      slug: "futuro-periodismo-digital",
-      title: "El Futuro del Periodismo Digital en Ecuador",
-      excerpt: "Cómo las nuevas tecnologías están transformando la manera de hacer periodismo en el país.",
-      image: "/digital-journalism-future.jpg",
-      date: "15 de noviembre de 2024",
-      readTime: "6 min",
-      author: "Carlos Mendoza",
-      role: "Periodista Digital",
-    },
-    {
-      id: "2",
-      slug: "estrategias-comunicacion-corporativa",
-      title: "Estrategias Efectivas de Comunicación Corporativa",
-      excerpt: "Guía completa para construir una estrategia de comunicación que fortalezca tu empresa.",
-      image: "/corporate-communication-strategy.jpg",
-      date: "10 de noviembre de 2024",
-      readTime: "7 min",
-      author: "Ana Rojas",
-      role: "Consultora en Comunicación",
-    },
-    {
-      id: "3",
-      slug: "social-media-tendencias-2025",
-      title: "Social Media: Tendencias 2025",
-      excerpt: "Las principales tendencias en redes sociales que dominarán el próximo año.",
-      image: "/social-media-trends-2025.jpg",
-      date: "5 de noviembre de 2024",
-      readTime: "5 min",
-      author: "Diego Torres",
-      role: "Social Media Manager",
-    },
-  ]
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -149,7 +113,6 @@ export default function ComunicacionPage() {
         title="Especialidades en Comunicación"
         subtitle="Profesionales expertos en todas las áreas de la comunicación moderna"
         categories={serviceCategories}
-        basePath="/comunicacion"
       />
 
       {/* Featured Professional */}
@@ -160,7 +123,7 @@ export default function ComunicacionPage() {
       />
 
       {/* Blog Section */}
-      <BlogSection posts={blogPosts} />
+      <BlogSection professionIds={[PROFESSION_ID]} />
 
       <Footer />
     </div>

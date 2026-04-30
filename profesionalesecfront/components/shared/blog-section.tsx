@@ -1,15 +1,19 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { BookOpen, Quote, ArrowRight } from "lucide-react"
 import { articulosApi, type Articulo } from "@/lib/api"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
-interface BlogPost {
-  id: string
-  slug: string
+interface BlogSectionProps {
+  professionIds?: number[]
+  limit?: number
+}
+
+interface BlogCard {
+  id: number
   title: string
   excerpt: string
   image: string
@@ -19,14 +23,14 @@ interface BlogPost {
   role: string
 }
 
-interface BlogSectionProps {
-  posts?: BlogPost[]
-  dynamic?: boolean
-  limit?: number
-  professionId?: number
+function pickRoleFromAutor(autor: Articulo["autor"]): string {
+  const perfil = autor?.perfiles_profesionales?.[0]
+  if (perfil?.especialidad?.nombre) return perfil.especialidad.nombre
+  if (perfil?.profesion?.nombre) return perfil.profesion.nombre
+  return "Profesional verificado"
 }
 
-function mapArticuloToPost(a: Articulo): BlogPost {
+function articuloToCard(a: Articulo): BlogCard {
   const words = a.contenido?.split(/\s+/).length || 0
   const minutes = Math.max(1, Math.ceil(words / 200))
   let dateStr = ""
@@ -35,53 +39,54 @@ function mapArticuloToPost(a: Articulo): BlogPost {
   } catch {
     dateStr = a.fecha_publicacion
   }
+  const fallbackExcerpt = a.contenido ? a.contenido.substring(0, 150) + "..." : ""
   return {
-    id: a.id.toString(),
-    slug: a.id.toString(),
+    id: a.id,
     title: a.titulo,
-    excerpt: a.resumen || a.contenido?.substring(0, 150) + "...",
+    excerpt: a.resumen || fallbackExcerpt,
     image: a.imagen_url || "",
     date: dateStr,
     readTime: `${minutes} min`,
     author: a.autor?.nombre || "Profesional",
-    role: "Profesional verificado",
+    role: pickRoleFromAutor(a.autor),
   }
 }
 
-export default function BlogSection({ posts, dynamic = true, limit = 3, professionId }: BlogSectionProps) {
-  const [displayPosts, setDisplayPosts] = useState<BlogPost[]>(posts || [])
+export default function BlogSection({ professionIds, limit = 3 }: BlogSectionProps) {
+  const [posts, setPosts] = useState<BlogCard[]>([])
   const [loaded, setLoaded] = useState(false)
 
+  // Serializamos para evitar refetch en cada render del padre.
+  const idsKey = useMemo(() => (professionIds ?? []).join(","), [professionIds])
+
   useEffect(() => {
-    if (!dynamic) {
-      setLoaded(true)
-      return
-    }
+    let cancelled = false
 
-    const loadArticles = async () => {
+    async function load() {
       try {
-        const data = await articulosApi.listarPublicados()
-        if (Array.isArray(data) && data.length > 0) {
-          let filtered = data;
-
-          if (professionId) {
-            filtered = data.filter(a => a.autor?.perfil_profesional?.profesion_id === professionId);
-          }
-
-          setDisplayPosts(filtered.slice(0, limit).map(mapArticuloToPost))
-        }
+        const result = await articulosApi.listarPublicados({
+          profesionIds: professionIds && professionIds.length > 0 ? professionIds : undefined,
+          limit,
+        })
+        if (cancelled) return
+        setPosts(result.data.map(articuloToCard))
       } catch (error) {
-        console.error("Error loading articles in section:", error)
+        console.error("Error loading articles:", error)
+        if (!cancelled) setPosts([])
       } finally {
-        setLoaded(true)
+        if (!cancelled) setLoaded(true)
       }
     }
 
-    loadArticles()
-  }, [dynamic, limit, professionId])
+    load()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idsKey, limit])
 
-  // Don't render section if no posts at all
-  if (loaded && displayPosts.length === 0) return null
+  // No renderizar la sección si no hay artículos reales — regla "solo lo que existe".
+  if (loaded && posts.length === 0) return null
 
   return (
     <section className="max-w-7xl mx-auto px-4 md:px-6 py-16 md:py-20 bg-background">
@@ -97,18 +102,17 @@ export default function BlogSection({ posts, dynamic = true, limit = 3, professi
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-        {displayPosts.map((post, index) => (
+        {posts.map((post, index) => (
           <Link
             key={post.id}
-            href={`/articulos/${post.slug}`}
+            href={`/articulos/${post.id}`}
             className="group bg-card rounded-2xl overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 animate-in fade-in slide-in-from-bottom-6"
             style={{ animationDelay: `${index * 100}ms` }}
           >
-            {/* Image */}
             <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary/5 to-accent/5">
               {post.image ? (
                 <img
-                  src={post.image || "/placeholder.svg"}
+                  src={post.image}
                   alt={post.title}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                 />
@@ -119,15 +123,12 @@ export default function BlogSection({ posts, dynamic = true, limit = 3, professi
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent opacity-60" />
 
-              {/* Quote Icon */}
               <div className="absolute top-4 right-4 bg-primary/90 backdrop-blur-sm p-2 rounded-full">
                 <Quote className="text-primary-foreground" size={20} />
               </div>
             </div>
 
-            {/* Content */}
             <div className="p-6">
-              {/* Meta Info */}
               <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
                 <span>{post.date}</span>
                 <span>{post.readTime} lectura</span>
@@ -139,14 +140,16 @@ export default function BlogSection({ posts, dynamic = true, limit = 3, professi
 
               <p className="text-sm text-muted-foreground leading-relaxed mb-4 line-clamp-3">{post.excerpt}</p>
 
-              {/* Author Info */}
               <div className="pt-4 border-t border-border/50">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-semibold text-foreground">{post.author}</p>
                     <p className="text-xs text-muted-foreground">{post.role}</p>
                   </div>
-                  <button className="group/btn p-2 bg-primary/10 text-primary rounded-full hover:bg-primary hover:text-primary-foreground transition-all">
+                  <button
+                    className="group/btn p-2 bg-primary/10 text-primary rounded-full hover:bg-primary hover:text-primary-foreground transition-all"
+                    aria-label="Leer artículo"
+                  >
                     <ArrowRight size={16} className="group-hover/btn:translate-x-0.5 transition-transform" />
                   </button>
                 </div>
@@ -156,7 +159,6 @@ export default function BlogSection({ posts, dynamic = true, limit = 3, professi
         ))}
       </div>
 
-      {/* View All Button */}
       <div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-1000">
         <Link
           href="/articulos"

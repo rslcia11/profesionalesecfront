@@ -48,23 +48,14 @@ export default function DisenoYConstruccionPage() {
     satisfaction: 97,
   }
 
-  // Esta página ya usaba [4, 8] en su CategoryList, así que usaremos ambas.
-  // 4 y 8 corresponden posiblemente a Diseño y Arquitectura / Construcción Civil
-  const PROFESSION_IDS = [4, 8]
-  const { countsBySpecialty } = useSpecialtyCounts(PROFESSION_IDS)
+  const PROFESSION_ID = 4 // Diseño y Construcción
+  const { countsBySpecialty } = useSpecialtyCounts([PROFESSION_ID])
   const [apiSpecialties, setApiSpecialties] = useState<any[]>([])
 
   useEffect(() => {
-    // Para esta página vamos a traer especialidades de ambas profesiones si es posible,
-    // o simplemente usamos 4 como base para los catálogos.
-    Promise.all(PROFESSION_IDS.map(id => catalogosApi.obtenerEspecialidades(id)))
-      .then(results => {
-        const combined = results.flatMap(data => Array.isArray(data) ? data : [])
-        // Filtrar duplicados por id si existen
-        const unique = Array.from(new Map(combined.map(item => [item.id, item])).values())
-        setApiSpecialties(unique)
-      })
-      .catch(() => setApiSpecialties([]))
+    catalogosApi.obtenerEspecialidades(PROFESSION_ID).then(data => {
+      setApiSpecialties(Array.isArray(data) ? data : [])
+    }).catch(() => setApiSpecialties([]))
   }, [])
 
   const editorialMeta: Record<string, { description: string; icon: any }> = {
@@ -77,57 +68,21 @@ export default function DisenoYConstruccionPage() {
   }
 
   const serviceCategories = useMemo(() => {
-    if (apiSpecialties.length === 0) {
-      return Object.entries(editorialMeta).map(([name, meta]) => ({
-        id: name.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
-        name, description: meta.description, icon: meta.icon,
-      }))
-    }
-    return apiSpecialties.map(spec => {
-      const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: Building2 }
-      return {
-        id: spec.nombre.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
-        name: spec.nombre, description: meta.description, icon: meta.icon,
-        count: countsBySpecialty.get(spec.id) || 0,
-      }
-    })
+    return apiSpecialties
+      .filter((spec) => spec.profesion_id)
+      .map((spec) => {
+        const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: Building2 }
+        return {
+          id: spec.id,
+          name: spec.nombre,
+          description: meta.description,
+          icon: meta.icon,
+          professionId: spec.profesion_id,
+          specialtyId: spec.id,
+          count: countsBySpecialty.get(spec.id) || 0,
+        }
+      })
   }, [apiSpecialties, countsBySpecialty])
-
-  const blogPosts = [
-    {
-      id: "1",
-      slug: "arquitectura-sostenible-ecuador",
-      title: "Arquitectura Sostenible en Ecuador",
-      excerpt: "Descubre cómo implementar prácticas sostenibles en tus proyectos de construcción.",
-      image: "/placeholder.svg?height=400&width=600",
-      date: "22 de enero de 2025",
-      readTime: "7 min",
-      author: "Sofía Paredes",
-      role: "Arquitecta Sostenible",
-    },
-    {
-      id: "2",
-      slug: "tendencias-diseno-interiores",
-      title: "Tendencias de Diseño de Interiores 2025",
-      excerpt: "Las últimas tendencias en diseño de interiores que transformarán tus espacios.",
-      image: "/placeholder.svg?height=400&width=600",
-      date: "16 de enero de 2025",
-      readTime: "6 min",
-      author: "Andrea Moreno",
-      role: "Diseñadora de Interiores",
-    },
-    {
-      id: "3",
-      slug: "claves-construccion-exitosa",
-      title: "Claves para una Construcción Exitosa",
-      excerpt: "Aspectos fundamentales que debes considerar antes de iniciar tu proyecto constructivo.",
-      image: "/placeholder.svg?height=400&width=600",
-      date: "11 de enero de 2025",
-      readTime: "8 min",
-      author: "Ing. Roberto Castro",
-      role: "Ingeniero Civil",
-    },
-  ]
 
   return (
     <main className="min-h-screen bg-background">
@@ -141,16 +96,15 @@ export default function DisenoYConstruccionPage() {
         title="Especialidades en Diseño y Construcción"
         subtitle="Encuentra profesionales verificados para tu proyecto arquitectónico"
         categories={serviceCategories}
-        basePath="/diseno-y-construccion"
       />
 
       <ProfessionalsCategoryList
-        professionIds={[4, 8]}
+        professionIds={[PROFESSION_ID]}
         title="Arquitectos y Constructores"
         description="Diseña y construye tus sueños con expertos verificados"
       />
 
-      <BlogSection posts={blogPosts} />
+      <BlogSection professionIds={[PROFESSION_ID]} />
 
       <Footer />
     </main>

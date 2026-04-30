@@ -56,27 +56,21 @@ export default function SaludMentalPage() {
     "Terapia Familiar": { description: "Fortalecimiento de vínculos y comunicación familiar", icon: Home },
   }
 
-  // Generar categorías dinámicas desde API + editorial
   const serviceCategories = useMemo(() => {
-    if (apiSpecialties.length === 0) {
-      // Fallback: usar editorial sin conteos
-      return Object.entries(editorialMeta).map(([name, meta]) => ({
-        id: name.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
-        name,
-        description: meta.description,
-        icon: meta.icon,
-      }))
-    }
-    return apiSpecialties.map(spec => {
-      const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: Brain }
-      return {
-        id: spec.nombre.toLowerCase().replace(/\s+/g, "-").replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u"),
-        name: spec.nombre,
-        description: meta.description,
-        icon: meta.icon,
-        count: countsBySpecialty.get(spec.id) || 0,
-      }
-    })
+    return apiSpecialties
+      .filter((spec) => spec.profesion_id)
+      .map((spec) => {
+        const meta = editorialMeta[spec.nombre] || { description: spec.nombre, icon: Brain }
+        return {
+          id: spec.id,
+          name: spec.nombre,
+          description: meta.description,
+          icon: meta.icon,
+          professionId: spec.profesion_id,
+          specialtyId: spec.id,
+          count: countsBySpecialty.get(spec.id) || 0,
+        }
+      })
   }, [apiSpecialties, countsBySpecialty])
 
   const featuredProfessional = {
@@ -97,45 +91,6 @@ export default function SaludMentalPage() {
       "Con una pasión arraigada por el bienestar emocional y la salud mental, la Psi. Cl. Erika Noriega se especializa en la atención psicológica en temas de ruptura amorosa, duelo, estrés, depresión y ansiedad. Su enfoque terapéutico se centra en proporcionar un ambiente seguro y de apoyo donde los clientes puedan explorar sus sentimientos más profundos.",
   }
 
-  const blogPosts = [
-    {
-      id: "1",
-      slug: "terapia-crisis-mental-health",
-      title: "La Importancia de la Terapia en Tiempos de Crisis",
-      excerpt:
-        "Descubre cómo la terapia psicológica puede ser tu mejor aliada durante momentos difíciles y por qué buscar ayuda profesional es un acto de fortaleza.",
-      image: "/therapy-crisis-mental-health.jpg",
-      author: "Dra. María López",
-      role: "Psicóloga Clínica",
-      date: "15 de noviembre de 2024",
-      readTime: "6 min",
-    },
-    {
-      id: "2",
-      slug: "mindfulness-stress-reduction",
-      title: "Técnicas de Mindfulness para el Estrés Diario",
-      excerpt:
-        "Aprende técnicas prácticas de atención plena que puedes incorporar en tu rutina diaria para reducir el estrés y mejorar tu bienestar emocional.",
-      image: "/mindfulness-stress-reduction.jpg",
-      author: "Ps. Carlos Mendoza",
-      role: "Psicólogo Cognitivo",
-      date: "10 de noviembre de 2024",
-      readTime: "5 min",
-    },
-    {
-      id: "3",
-      slug: "mental-health-warning-signs",
-      title: "Señales de Advertencia de Problemas de Salud Mental",
-      excerpt:
-        "Conoce las señales tempranas que indican que tú o un ser querido podrían necesitar apoyo psicológico profesional y cómo actuar a tiempo.",
-      image: "/mental-health-warning-signs.jpg",
-      author: "Dra. Ana Rodríguez",
-      role: "Psiquiatra",
-      date: "5 de noviembre de 2024",
-      readTime: "7 min",
-    },
-  ]
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -145,14 +100,13 @@ export default function SaludMentalPage() {
           title="Especialidades en Salud Mental"
           subtitle="Profesionales comprometidos con tu bienestar emocional y psicológico"
           categories={serviceCategories}
-          basePath="/salud-mental"
         />
         <ProfessionalsCategoryList
           professionIds={[6]}
           title="Psicólogos y Terapeutas"
           description="Profesionales de la salud mental verificados y comprometidos"
         />
-        <BlogSection posts={blogPosts} />
+        <BlogSection professionIds={[PROFESSION_ID]} />
       </main>
       <Footer />
     </div>

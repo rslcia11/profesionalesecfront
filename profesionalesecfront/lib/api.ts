@@ -57,6 +57,14 @@ export interface CambiarContrasenaData {
   nueva_contrasena: string
 }
 
+export interface PerfilProfesionalSummary {
+  id: number
+  profesion_id: number
+  especialidad_id?: number
+  profesion?: { id: number; nombre: string }
+  especialidad?: { id: number; nombre: string }
+}
+
 export interface Articulo {
   id: number
   usuario_id: number
@@ -64,6 +72,7 @@ export interface Articulo {
   contenido: string
   resumen?: string
   imagen_url?: string
+  pdf_url?: string
   estado: "borrador" | "publicado" | "archivado"
   fecha_publicacion: string
   created_at: string
@@ -73,10 +82,7 @@ export interface Articulo {
     nombre: string
     correo: string
     foto_url?: string
-    perfil_profesional?: {
-      profesion_id: number
-      especialidad_id?: number
-    }
+    perfiles_profesionales?: PerfilProfesionalSummary[]
   }
 }
 
@@ -353,13 +359,8 @@ export const authApi = {
 export const catalogosApi = {
   async obtenerProfesiones() { return fetchApi("/catalogos/profesiones"); },
   async obtenerEspecialidades(profesion_id?: number) {
-    // The backend does not properly filter by profesion_id via query parameter
-    // So we fetch all and filter locally
-    const data = await fetchApi(`/catalogos/especialidades`);
-    if (profesion_id && Array.isArray(data)) {
-      return data.filter((item: any) => item.profesion_id === profesion_id || item.profesiones_id === profesion_id);
-    }
-    return data;
+    const query = profesion_id ? `?profesion_id=${profesion_id}` : ""
+    return fetchApi(`/catalogos/especialidades${query}`);
   },
   async obtenerProvincias() { return fetchApi("/catalogos/provincias"); },
   async obtenerCiudades(provincia_id?: number) {
@@ -439,6 +440,13 @@ export const profesionalApi = {
 
   async buscarCercanos(lat: number, lng: number, radio: number = 10) {
     return fetchApi(`/profesionales/cercanos?lat=${lat}&lng=${lng}&radio=${radio}`);
+  },
+
+  async obtenerStatsEspecialidades(profesionIds?: number[]) {
+    const query = profesionIds && profesionIds.length > 0
+      ? `?profesion_ids=${profesionIds.join(",")}`
+      : ""
+    return fetchApi(`/profesionales/stats/especialidades${query}`)
   },
 
   async obtenerPublico(slug: string) {
@@ -898,10 +906,59 @@ export const multimediaApi = {
   }
 }
 
+export interface PageMeta {
+  totalItems: number
+  totalPages: number
+  currentPage: number
+  itemsPerPage: number
+}
+
+export interface PaginatedArticulos {
+  data: Articulo[]
+  meta: PageMeta
+}
+
+const EMPTY_PAGINATED_ARTICULOS: PaginatedArticulos = {
+  data: [],
+  meta: { totalItems: 0, totalPages: 1, currentPage: 1, itemsPerPage: 0 },
+}
+
 // Articulos API
 export const articulosApi = {
-  async listarPublicados() {
-    return fetchApi("/articulos");
+  async listarPublicados(opts: {
+    profesionIds?: number[]
+    limit?: number
+    page?: number
+    keyword?: string
+  } = {}): Promise<PaginatedArticulos> {
+    const params = new URLSearchParams()
+    if (opts.profesionIds && opts.profesionIds.length > 0) {
+      params.set("profesion_ids", opts.profesionIds.join(","))
+    }
+    if (opts.limit && opts.limit > 0) params.set("limit", String(opts.limit))
+    if (opts.page && opts.page > 0) params.set("page", String(opts.page))
+    if (opts.keyword) params.set("keyword", opts.keyword)
+    const qs = params.toString()
+    const result = await fetchApi(`/articulos${qs ? `?${qs}` : ""}`)
+    // Resiliencia: si el back devuelve un array plano (legacy), lo wrappeamos.
+    if (Array.isArray(result)) {
+      return {
+        data: result as Articulo[],
+        meta: {
+          totalItems: result.length,
+          totalPages: 1,
+          currentPage: 1,
+          itemsPerPage: result.length,
+        },
+      }
+    }
+    if (result && typeof result === "object" && Array.isArray((result as any).data)) {
+      return result as PaginatedArticulos
+    }
+    return EMPTY_PAGINATED_ARTICULOS
+  },
+  async obtenerPorId(id: number | string) {
+    return fetchApi(`/articulos/${id}`)
   },
   async listarMios(token: string) {
     return fetchApi("/articulos/mios", { headers: authHeader(token) });
