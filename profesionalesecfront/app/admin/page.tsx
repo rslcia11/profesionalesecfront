@@ -1,7 +1,7 @@
 "use client"
 import { useRouter } from "next/navigation"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -65,6 +65,7 @@ import dynamic from "next/dynamic"
 const LocationMap = dynamic(() => import("@/components/shared/location-map"), { ssr: false })
 import { useAnimatedConfirm, AnimatedConfirm } from "@/components/shared/animated-confirm"
 import ArticleFormModal from "@/components/article-form-modal"
+import ProfessionManagementDialog from "@/components/admin/profession-management-dialog"
 
 type Ponencia = {
   id: number
@@ -134,6 +135,10 @@ export default function AdminDashboard() {
   const [ponencias, setPonencias] = useState<Ponencia[]>([])
   const [perfilesPendientes, setPerfilesPendientes] = useState<PerfilPendiente[]>([])
   const [processingProfiles, setProcessingProfiles] = useState<Record<number, "approving" | "rejecting" | null>>({})
+  const [lastProfilesRefreshAt, setLastProfilesRefreshAt] = useState<Date | null>(null)
+  const profilesRefreshInFlightRef = useRef(false)
+  const profilesSignatureRef = useRef<string>("")
+  const mountedRef = useRef(true)
 
   const [planes, setPlanes] = useState<Plan[]>([
     {
@@ -196,6 +201,89 @@ export default function AdminDashboard() {
     })
   }
 
+  const mapProfilesFromApi = useCallback((profiles: any[] = []) => {
+    return profiles.map((p: any) => {
+      const estado = adminApi.normalizeProfileStatus(p)
+
+      return {
+        id: p.id,
+        usuario_id: p.usuario_id,
+        verificado: p.verificado,
+        estado,
+        nombre: p.usuario?.nombre || "Sin nombre",
+        correo: p.usuario?.correo || "",
+        telefono: p.telefono || p.usuario?.telefono || "No disponible (API)",
+        cedula: p.cedula || p.usuario?.cedula || p.usuario?.identificacion || p.usuario?.dni || p.usuario?.nro_identificacion || p.usuario?.cedula_identidad || "No disponible (API)",
+        profesion: p.profesion ? p.profesion.nombre : "Sin profesión",
+        especialidad: p.especialidad ? p.especialidad.nombre : "Sin especialidad",
+        ciudad: p.ciudad ? p.ciudad.nombre : "",
+        provincia: p.ciudad?.provincia ? p.ciudad.provincia.nombre : "",
+        tarifa: p.tarifa ? `$${p.tarifa}` : (p.tarifa_hora ? `$${p.tarifa_hora}` : "No definida"),
+        fecha_registro: p.usuario?.creado_en || new Date().toISOString(),
+        descripcion: p.descripcion || "Sin descripción",
+        documentos: p.documentos || [],
+        comprobante_pago_url: p.comprobante_pago_url || null,
+        foto_url: formatUrl(p.foto_url || p.usuario?.foto_url || p.usuario?.foto || p.usuario?.avatar || p.usuario?.imagen_url),
+        direccion_texto: (p.calle_principal || p.direccion?.calle_principal)
+          ? `${p.calle_principal || p.direccion?.calle_principal} ${(p.referencia || p.direccion?.referencia) ? `(${p.referencia || p.direccion?.referencia})` : ""}`
+          : "No registrada",
+        link_maps: (p.lat && p.lng) || (p.latitud && p.longitud)
+          ? `https://www.google.com/maps?q=${p.lat || p.latitud},${p.lng || p.longitud}`
+          : p.direccion?.link_maps || null,
+        perfil_estado: { estado },
+      }
+    })
+  }, [])
+
+  const getProfilesSignature = useCallback((profiles: PerfilPendiente[]) => {
+    // Firma estable para evitar setState si el snapshot visible no cambió.
+    return JSON.stringify(
+      [...profiles]
+        .sort((a, b) => a.id - b.id)
+        .map((p) => ({
+          id: p.id,
+          estado: p.estado,
+          verificado: p.verificado,
+          nombre: p.nombre,
+          correo: p.correo,
+          telefono: p.telefono,
+          profesion: p.profesion,
+          fecha_registro: p.fecha_registro,
+          perfil_estado: p.perfil_estado?.estado,
+        })),
+    )
+  }, [])
+
+  const applyProfilesSnapshot = useCallback((rawProfiles: any[]) => {
+    const normalizedProfiles = mapProfilesFromApi(rawProfiles)
+    const nextSignature = getProfilesSignature(normalizedProfiles)
+
+    if (nextSignature !== profilesSignatureRef.current) {
+      profilesSignatureRef.current = nextSignature
+      setPerfilesPendientes(normalizedProfiles)
+    }
+
+    setLastProfilesRefreshAt(new Date())
+  }, [getProfilesSignature, mapProfilesFromApi])
+
+  const refreshProfiles = useCallback(async () => {
+    const token = localStorage.getItem("auth_token")
+    if (!token || profilesRefreshInFlightRef.current) return
+
+    profilesRefreshInFlightRef.current = true
+
+    try {
+      const profilesResponse = await adminApi.getAllProfiles(token)
+      const profiles = adminApi.normalizeProfilesResponse(profilesResponse)
+      if (!mountedRef.current) return
+      applyProfilesSnapshot(profiles)
+    } catch (error) {
+      // Polling silencioso: evitar ruido visual por errores transitorios.
+    } finally {
+      profilesRefreshInFlightRef.current = false
+    }
+  }, [applyProfilesSnapshot])
+
   const loadData = async () => {
     const token = localStorage.getItem("auth_token")
     if (!token) return
@@ -213,47 +301,7 @@ export default function AdminDashboard() {
     try {
       const stats = await adminApi.getStats(token)
       setPonencias(stats.ponencias)
-
-      // Map backend data to frontend structure
-      const mappedProfiles = stats.profesionales.map((p: any) => {
-        const getEstado = (estadoId: number): "aprobado" | "rechazado" | "pendiente" => {
-          switch (estadoId) {
-            case 3: return "aprobado";
-            case 4: return "rechazado";
-            default: return "pendiente";
-          }
-        };
-        const estado = getEstado(p.estado_id);
-
-          return {
-            id: p.id,
-            usuario_id: p.usuario_id,
-            verificado: p.verificado,
-            estado,
-            nombre: p.usuario?.nombre || "Sin nombre",
-            correo: p.usuario?.correo || "",
-            telefono: p.telefono || p.usuario?.telefono || "No disponible (API)",
-            cedula: p.cedula || p.usuario?.cedula || p.usuario?.identificacion || p.usuario?.dni || p.usuario?.nro_identificacion || p.usuario?.cedula_identidad || "No disponible (API)",
-            profesion: p.profesion ? p.profesion.nombre : "Sin profesión",
-            especialidad: p.especialidad ? p.especialidad.nombre : "Sin especialidad",
-            ciudad: p.ciudad ? p.ciudad.nombre : "",
-            provincia: p.ciudad?.provincia ? p.ciudad.provincia.nombre : "",
-            tarifa: p.tarifa ? `$${p.tarifa}` : (p.tarifa_hora ? `$${p.tarifa_hora}` : "No definida"),
-            fecha_registro: p.usuario?.creado_en || new Date().toISOString(),
-            descripcion: p.descripcion || "Sin descripción",
-            documentos: p.documentos || [],
-            comprobante_pago_url: p.comprobante_pago_url || null,
-            foto_url: formatUrl(p.foto_url || p.usuario?.foto_url || p.usuario?.foto || p.usuario?.avatar || p.usuario?.imagen_url),
-            direccion_texto: (p.calle_principal || p.direccion?.calle_principal)
-              ? `${p.calle_principal || p.direccion?.calle_principal} ${(p.referencia || p.direccion?.referencia) ? `(${p.referencia || p.direccion?.referencia})` : ""}`
-              : "No registrada",
-            link_maps: (p.lat && p.lng) || (p.latitud && p.longitud)
-              ? `https://www.google.com/maps?q=${p.lat || p.latitud},${p.lng || p.longitud}`
-              : p.direccion?.link_maps || null,
-            perfil_estado: { estado },
-          };
-        })
-        setPerfilesPendientes(mappedProfiles)
+      applyProfilesSnapshot(adminApi.normalizeProfilesResponse(stats.profesionales))
 
         setPlanes(stats.planes)
       } catch (error) {
@@ -275,9 +323,51 @@ export default function AdminDashboard() {
     }
   }
 
+  const refreshProfesionesCatalogo = async () => {
+    try {
+      const profs = await catalogosApi.obtenerProfesiones()
+      setProfesiones(Array.isArray(profs) ? profs : [])
+    } catch (error) {
+      console.error("Error refreshing professions catalog:", error)
+      toast({
+        title: "Error",
+        description: "No se pudo refrescar el catálogo de profesiones.",
+        variant: "destructive",
+      })
+    }
+  }
+
   useEffect(() => {
     loadData()
+    return () => {
+      mountedRef.current = false
+    }
   }, [])
+
+  useEffect(() => {
+    if (activeTab !== "perfiles") return
+
+    refreshProfiles()
+
+    const intervalId = window.setInterval(() => {
+      refreshProfiles()
+    }, 3000)
+
+    const refetchOnFocus = () => {
+      if (document.visibilityState === "visible") {
+        refreshProfiles()
+      }
+    }
+
+    window.addEventListener("focus", refetchOnFocus)
+    document.addEventListener("visibilitychange", refetchOnFocus)
+
+    return () => {
+      window.clearInterval(intervalId)
+      window.removeEventListener("focus", refetchOnFocus)
+      document.removeEventListener("visibilitychange", refetchOnFocus)
+    }
+  }, [activeTab, refreshProfiles])
 
   // Dialog states
   const [isUploading, setIsUploading] = useState(false)
@@ -338,8 +428,8 @@ export default function AdminDashboard() {
       if (!token) return
 
       await adminApi.approveProfile(id, token)
-      setPerfilesPendientes(
-        perfilesPendientes.map((p) =>
+      setPerfilesPendientes((prev) =>
+        prev.map((p) =>
           p.id === id ? { ...p, estado: "aprobado", perfil_estado: { estado: "aprobado" }, verificado: true } : p,
         ),
       )
@@ -362,8 +452,8 @@ export default function AdminDashboard() {
       if (!token) return
 
       await adminApi.rejectProfile(id, token)
-      setPerfilesPendientes(
-        perfilesPendientes.map((p) =>
+      setPerfilesPendientes((prev) =>
+        prev.map((p) =>
           p.id === id ? { ...p, estado: "rechazado", perfil_estado: { estado: "rechazado" }, verificado: false } : p,
         ),
       )
@@ -1177,11 +1267,24 @@ export default function AdminDashboard() {
             {/* PROFESIONALES TAB */}
             <TabsContent value="perfiles" className="space-y-4">
               <div className="animate-in fade-in duration-300">
-                <div className="mb-6">
-                  <h2 className="text-2xl font-semibold mb-1">Gestión de Profesionales</h2>
-                  <p className="text-sm text-gray-500">
-                    Administra todos los perfiles profesionales registrados
-                  </p>
+                <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h2 className="text-2xl font-semibold mb-1">Gestión de Profesionales</h2>
+                    <p className="text-sm text-gray-500">
+                      Administra todos los perfiles profesionales registrados
+                    </p>
+                    {lastProfilesRefreshAt && (
+                      <p className="text-xs text-gray-400 mt-1">
+                        Actualizado: {format(lastProfilesRefreshAt, "HH:mm:ss", { locale: es })}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <ProfessionManagementDialog
+                      profesiones={profesiones}
+                      onRefreshProfesiones={refreshProfesionesCatalogo}
+                    />
+                  </div>
                 </div>
 
                 <div className="flex space-x-2 p-1 bg-muted/50 rounded-lg w-fit mb-4">

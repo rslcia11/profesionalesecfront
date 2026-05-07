@@ -37,6 +37,42 @@ export default function BookingForm({ professional, schedule }: BookingFormProps
     const [availabilityWarning, setAvailabilityWarning] = useState<string | null>(null)
     const { toast } = useToast()
 
+    const parseLocalDate = (dateStr: string) => {
+        const [year, month, day] = dateStr.split("-").map(Number)
+        return new Date(year, month - 1, day)
+    }
+
+    const buildLocalDateTime = (dateStr: string, timeStr: string) => {
+        const [hours, minutes] = timeStr.split(":").map(Number)
+        const date = parseLocalDate(dateStr)
+        date.setHours(hours, minutes || 0, 0, 0)
+        return date
+    }
+
+    const getDateTimeValidationError = (fecha: string, hora: string) => {
+        if (!fecha) return "Debes seleccionar una fecha para tu cita."
+
+        const now = new Date()
+        const today = new Date(now)
+        today.setHours(0, 0, 0, 0)
+
+        const selectedDate = parseLocalDate(fecha)
+        selectedDate.setHours(0, 0, 0, 0)
+
+        if (selectedDate < today) {
+            return "No puedes agendar citas en fechas pasadas."
+        }
+
+        if (hora) {
+            const selectedDateTime = buildLocalDateTime(fecha, hora)
+            if (selectedDateTime < now) {
+                return "No puedes seleccionar una hora pasada para el día de hoy."
+            }
+        }
+
+        return null
+    }
+
     // Real-time validation
     const validateAvailability = (fecha: string, hora: string) => {
         if (!schedule || !fecha || !hora) {
@@ -102,12 +138,21 @@ export default function BookingForm({ professional, schedule }: BookingFormProps
         
         const startIdx = matrixDayIndex * 24;
         const endIdx = startIdx + 24;
+        const now = new Date();
+        const todayDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const isTodaySelected = formData.fecha_cita === todayDateStr;
         
         const hours: { value: string, label: string }[] = [];
         for (let i = startIdx; i < endIdx; i++) {
             if (schedule[i] === true) {
                 const hourNum = i - startIdx;
                 const formattedHour = `${String(hourNum).padStart(2, '0')}:00`;
+                if (isTodaySelected) {
+                    const slotDateTime = buildLocalDateTime(formData.fecha_cita, formattedHour);
+                    if (slotDateTime < now) {
+                        continue;
+                    }
+                }
                 
                 const ampm_start = hourNum >= 12 ? 'pm' : 'am';
                 const hour12_start = hourNum % 12 || 12;
@@ -127,6 +172,13 @@ export default function BookingForm({ professional, schedule }: BookingFormProps
     const handleFieldChange = (field: string, value: string) => {
         const newFormData = { ...formData, [field]: value }
         setFormData(newFormData)
+
+        if (field === "fecha_cita" || field === "hora_cita") {
+            const fecha = field === "fecha_cita" ? value : formData.fecha_cita
+            const hora = field === "hora_cita" ? value : formData.hora_cita
+            const dateTimeError = getDateTimeValidationError(fecha, hora)
+            setError(dateTimeError)
+        }
         
         if (field === "fecha_cita" || field === "hora_cita") {
             validateAvailability(
@@ -138,8 +190,20 @@ export default function BookingForm({ professional, schedule }: BookingFormProps
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        setLoading(true)
         setError(null)
+
+        const dateTimeError = getDateTimeValidationError(formData.fecha_cita, formData.hora_cita)
+        if (dateTimeError) {
+            setError(dateTimeError)
+            toast({
+                title: "Fecha u hora inválida",
+                description: dateTimeError,
+                variant: "destructive",
+            })
+            return
+        }
+
+        setLoading(true)
 
         try {
             await citasApi.agendarPublico({
@@ -258,6 +322,7 @@ export default function BookingForm({ professional, schedule }: BookingFormProps
                                         // Update the date, and reset the time since the new day has different slots
                                         const newFormData = { ...formData, fecha_cita: dateStr, hora_cita: "" };
                                         setFormData(newFormData);
+                                        setError(getDateTimeValidationError(dateStr, ""));
                                         validateAvailability(dateStr, "");
                                     }
                                 }}

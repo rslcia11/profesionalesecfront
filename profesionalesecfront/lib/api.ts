@@ -364,9 +364,30 @@ export const authApi = {
 // Catalogos API
 export const catalogosApi = {
   async obtenerProfesiones() { return fetchApi("/catalogos/profesiones"); },
+  async crearProfesion(data: { nombre: string }, token: string) {
+    return fetchApi("/catalogos/profesiones", {
+      method: "POST",
+      headers: authHeader(token),
+      body: JSON.stringify(data),
+    });
+  },
+  async actualizarProfesion(id: number, data: { nombre: string }, token: string) {
+    return fetchApi(`/catalogos/profesiones/${id}`, {
+      method: "PUT",
+      headers: authHeader(token),
+      body: JSON.stringify(data),
+    });
+  },
   async obtenerEspecialidades(profesion_id?: number) {
     const query = profesion_id ? `?profesion_id=${profesion_id}` : ""
     return fetchApi(`/catalogos/especialidades${query}`);
+  },
+  async crearEspecialidad(data: { nombre: string; profesion_id: number }, token: string) {
+    return fetchApi("/catalogos/especialidades", {
+      method: "POST",
+      headers: authHeader(token),
+      body: JSON.stringify(data),
+    });
   },
   async obtenerProvincias() { return fetchApi("/catalogos/provincias"); },
   async obtenerCiudades(provincia_id?: number) {
@@ -746,6 +767,66 @@ export const publicidadApi = {
 // Admin Stats & Users
 // Admin API
 export const adminApi = {
+  normalizeProfileStatus(raw: any): "pendiente" | "aprobado" | "rechazado" {
+    const rawEstado = (
+      raw?.estado_perfil ??
+      raw?.perfil_estado?.estado ??
+      raw?.estado ??
+      raw?.estado_nombre ??
+      raw?.estado_texto ??
+      raw?.status
+    )
+
+    if (typeof rawEstado === "string") {
+      const normalized = rawEstado
+        .toLowerCase()
+        .trim()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+
+      if (["aprobado", "aprobada", "approved"].includes(normalized)) return "aprobado"
+      if (["rechazado", "rechazada", "denegado", "denegada", "rejected"].includes(normalized)) return "rechazado"
+      if (["pendiente", "revision", "en_revision", "en revision", "por_revisar", "pending"].includes(normalized)) return "pendiente"
+    }
+
+    const estadoId = Number(raw?.estado_id ?? raw?.perfil_estado_id ?? raw?.estadoPerfilId)
+    if (estadoId === 3) return "aprobado"
+    if (estadoId === 4) return "rechazado"
+
+    if (typeof raw?.verificado === "boolean") {
+      return raw.verificado ? "aprobado" : "pendiente"
+    }
+
+    return "pendiente"
+  },
+
+  normalizeProfilesResponse(raw: any): any[] {
+    if (Array.isArray(raw)) return [...raw]
+    if (!raw || typeof raw !== "object") return []
+
+    const candidateKeys = [
+      "profesionales",
+      "profiles",
+      "items",
+      "rows",
+      "results",
+      "data",
+    ] as const
+
+    for (const key of candidateKeys) {
+      const value = (raw as any)[key]
+      if (Array.isArray(value)) return [...value]
+      if (value && typeof value === "object") {
+        for (const nestedKey of candidateKeys) {
+          const nestedValue = (value as any)[nestedKey]
+          if (Array.isArray(nestedValue)) return [...nestedValue]
+        }
+      }
+    }
+
+    return []
+  },
+
   // Stats Facade (for Dashboard compatibility)
   async getStats(token: string) {
     const [ponenciasRes, profesionalesRes, planesRes] = await Promise.allSettled([
@@ -761,7 +842,7 @@ export const adminApi = {
 
     return {
       ponencias: Array.isArray(ponenciasData) ? ponenciasData : (ponenciasData.ponencias || []),
-      profesionales: Array.isArray(profesionalesData) ? profesionalesData : [],
+      profesionales: this.normalizeProfilesResponse(profesionalesData),
       planes: Array.isArray(planesData) ? planesData : (planesData.planes || [])
     }
   },
@@ -790,7 +871,8 @@ export const adminApi = {
 
   // Profiles Management
   async getAllProfiles(token: string) {
-    return fetchApi("/profesionales", { headers: authHeader(token) });
+    const raw = await fetchApi("/profesionales", { headers: authHeader(token) });
+    return this.normalizeProfilesResponse(raw);
   },
 
   async approveProfile(id: number, token: string) {
