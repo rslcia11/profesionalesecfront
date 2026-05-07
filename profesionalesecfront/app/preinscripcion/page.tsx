@@ -169,9 +169,9 @@ export default function PreinscripcionPage() {
           {selectedPlan === "paid" && (
             <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-lg">
-                <h3 className="text-2xl font-bold mb-6 text-center text-gray-900">Métodos de Pago Disponibles</h3>
+                <h3 className="text-2xl font-bold mb-6 text-center text-gray-900">Pago por Transferencia</h3>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid md:grid-cols-1 gap-6">
                   <div className="bg-gray-50 border border-gray-300 rounded-xl p-6 hover:border-blue-500 transition-all duration-300 group">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
@@ -190,23 +190,6 @@ export default function PreinscripcionPage() {
                     </Link>
                   </div>
 
-                  <div className="bg-gray-50 border border-gray-300 rounded-xl p-6 hover:border-blue-500 transition-all duration-300 group">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
-                        <CreditCard className="text-blue-600" size={24} />
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-gray-900">Tarjeta de Crédito/Débito</h4>
-                        <p className="text-sm text-gray-600">Completa el formulario y realiza el pago</p>
-                      </div>
-                    </div>
-                    <Link
-                      href="/crear-perfil?plan=priority&payment=card"
-                      className="w-full block text-center py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-500 transition-all"
-                    >
-                      Continuar con Tarjeta
-                    </Link>
-                  </div>
                 </div>
               </div>
             </div>

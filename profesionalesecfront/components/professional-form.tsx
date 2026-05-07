@@ -79,6 +79,7 @@ interface FormData {
   linkedin_url: string
   x_url: string
   yt_url: string
+  paymentProof: File | null
 }
 
 interface CatalogItem {
@@ -105,7 +106,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
   const plan = searchParams.get("plan") // Get plan from URL
 
   const [currentStep, setCurrentStep] = useState(0)
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"bank" | "card" | "paypal" | null>(null)
+  const [comprobantePagoUrl, setComprobantePagoUrl] = useState<string | null>(null)
   const [formData, setFormData] = useState<FormData>({
     fullName: "",
     cedula: "", // Added cedula field
@@ -148,6 +149,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
     linkedin_url: "",
     x_url: "",
     yt_url: "",
+    paymentProof: null,
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [touched, setTouched] = useState<FormTouched>({})
@@ -275,6 +277,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
     { title: "Ubicación", description: "Dónde trabajas" },
     { title: "Documentos", description: "Verifica tu identidad" },
     { title: "Preferencias", description: "Configuración final" },
+    ...(plan === "priority" ? [{ title: "Comprobante", description: "Sube tu comprobante de transferencia" }] : []),
   ]
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -395,9 +398,11 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
 
   const handleFileChange = (name: string, file: File | null) => {
     if (file) {
-      const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+      const allowedTypes = name === "paymentProof"
+        ? ["image/jpeg", "image/png", "image/webp", "image/jpg", "application/pdf"]
+        : ["image/jpeg", "image/png", "image/webp", "image/jpg"];
       if (!allowedTypes.includes(file.type)) {
-        setErrors(prev => ({ ...prev, [name]: "Formato no soportado (solo .png, .jpg, .jpeg, .webp)" }));
+        setErrors(prev => ({ ...prev, [name]: name === "paymentProof" ? "Formato no soportado (solo .png, .jpg, .jpeg, .webp, .pdf)" : "Formato no soportado (solo .png, .jpg, .jpeg, .webp)" }));
         setFormData(prev => ({ ...prev, [name]: null }));
         return;
       }
@@ -425,6 +430,10 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
       } else {
         setProfileImagePreview(null);
       }
+    }
+
+    if (name === "paymentProof") {
+      setComprobantePagoUrl(null)
     }
   }
 
@@ -519,6 +528,9 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
       case "tags":
         if (!value.trim()) error = "Al menos una palabra clave requerida"
         break
+      case "paymentProof":
+        if (plan === "priority" && !value) error = "Debes subir el comprobante de pago"
+        break
     }
 
     setErrors(prev => ({
@@ -562,6 +574,9 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
       case 4:
         currentFieldsToValidate.push("tags")
         break
+      case 5:
+        if (plan === "priority") currentFieldsToValidate.push("paymentProof")
+        break
     }
 
     let isValid = true
@@ -597,20 +612,8 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
       try {
         let token = localStorage.getItem("auth_token")
 
-        // Step 1: Upload profile image directly to Cloudinary (unsigned, no auth needed)
-        let fotoUrl = ""
-        if (formData.profileImage) {
-          try {
-            console.log("[v0] Uploading profile image to Cloudinary")
-            fotoUrl = await uploadToCloudinary(formData.profileImage)
-            console.log("[v0] Profile image uploaded, URL:", fotoUrl)
-          } catch (uploadError) {
-            console.warn("Could not upload profile image:", uploadError)
-          }
-        }
-
         if (!isAdditionalProfile) {
-          // Step 2: Register user with auth API (now with foto_url)
+          // Step 1: Register user first to validate duplicate email/cedula before uploading payment proof
           const registerData = {
             nombre: formData.fullName,
             correo: formData.email,
@@ -618,7 +621,6 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
             cedula: formData.cedula,
             telefono: formData.phone,
             rol_id: 2, // Always 2 for professionals
-            foto_url: fotoUrl, // Include the uploaded photo URL
           }
 
           console.log("[v0] Registering user:", registerData)
@@ -633,7 +635,32 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
           console.log("[v0] Using existing token for additional profile")
         }
 
-        // Step 3: Create professional profile (without foto_url since it's now in the user)
+        // Step 2: Upload profile image after registration/session validation
+        let fotoUrl = ""
+        if (formData.profileImage) {
+          try {
+            console.log("[v0] Uploading profile image to Cloudinary")
+            fotoUrl = await uploadToCloudinary(formData.profileImage)
+            console.log("[v0] Profile image uploaded, URL:", fotoUrl)
+          } catch (uploadError) {
+            console.warn("Could not upload profile image:", uploadError)
+          }
+        }
+
+        // Step 3: Upload payment proof after register check. Reuse previous upload URL for retries.
+        let comprobanteUrl: string | null = comprobantePagoUrl
+        if (plan === "priority") {
+          if (!formData.paymentProof && !comprobantePagoUrl) {
+            throw new Error("COMPROBANTE_REQUERIDO: Debes subir un comprobante de transferencia.")
+          }
+          if (!comprobanteUrl && formData.paymentProof) {
+            const uploadRes = await profesionalApi.subirComprobantePago(formData.paymentProof)
+            comprobanteUrl = uploadRes.url
+            setComprobantePagoUrl(uploadRes.url)
+          }
+        }
+
+        // Step 4: Create professional profile
         const perfilData: any = {
           profesion_id: Number(formData.profession),
           especialidad_id: Number(formData.specialty),
@@ -658,6 +685,8 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
           show_phone: formData.showPhone,
           show_email: formData.showEmail,
           foto_url: fotoUrl, // Include foto_url directly in creation request
+          plan,
+          comprobante_pago_url: comprobanteUrl || undefined,
         }
 
         console.log("[v0] Creating professional profile:", perfilData)
@@ -667,7 +696,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
         if (!perfilId) throw new Error("No se pudo obtener el ID del perfil creado")
         console.log("[v0] Professional profile created with ID:", perfilId)
 
-        // Step 4: Sync user record in 'usuarios' table (only for new users)
+        // Step 5: Sync user record in 'usuarios' table (only for new users)
         if (!isAdditionalProfile) {
           try {
             const userUpdateData = {
@@ -682,7 +711,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
           }
         }
 
-        // Step 5: Save Availability Schedule using perfilId
+        // Step 6: Save Availability Schedule using perfilId
         console.log("[v0] Saving availability matrix for profile:", perfilId)
         try {
           await horariosApi.actualizar({ perfilId, matriz: formData.matrix }, token)
@@ -691,7 +720,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
           console.error("[v0] Error saving availability matrix:", horarioError)
         }
 
-        // Step 6: Upload other verification documents using perfilId
+        // Step 7: Upload other verification documents using perfilId
         const otherDocs = [
           { file: formData.identityFront, type: "cedula_frontal" },
           { file: formData.identityBack, type: "cedula_posterior" },
@@ -707,7 +736,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
             }))
         ])
 
-        // Step 7: Process Services linked to perfilId
+        // Step 8: Process Services linked to perfilId
         if (formData.services.length > 0) {
           console.log("[v0] Creating professional services for profile:", perfilId)
           const { serviciosApi } = await import("@/lib/api")
@@ -743,6 +772,12 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
               emailInputRef.current.focus()
             }
           }, 500) // 500ms to allow the slide animation to finish
+
+          toast({
+            title: "Correo ya registrado",
+            description: "Ingresa un correo diferente para continuar. Tu comprobante y los demás datos se conservaron.",
+            variant: "destructive",
+          })
         } else if (errorMsg.includes("cedula") || errorMsg.includes("cédula")) {
           // Specific handler for duplicate ID (cedula)
           setErrors(prev => ({ 
@@ -1604,6 +1639,45 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
     </div>
   )
 
+  const renderPaymentProof = () => (
+    <div className="space-y-6">
+      <div>
+        <h2 className="font-oswald text-2xl font-bold text-foreground mb-4">Comprobante de transferencia</h2>
+        <p className="text-muted-foreground">Este paso es obligatorio para activar el plan prioritario.</p>
+      </div>
+
+      <div className="p-4 rounded-xl border bg-blue-50 border-blue-200 text-sm text-blue-900 space-y-1">
+        <p><span className="font-semibold">Banco:</span> Banco del Pacífico</p>
+        <p><span className="font-semibold">Cuenta:</span> 1234567890</p>
+        <p><span className="font-semibold">Titular:</span> Profesionales.ec</p>
+        <p><span className="font-semibold">Monto:</span> $10 USD</p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-muted-foreground mb-2">Sube el comprobante (JPG, PNG, WEBP o PDF, máx 5MB)</label>
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/jpg,image/webp,application/pdf"
+          onChange={(e) => handleFileChange("paymentProof", e.target.files?.[0] || null)}
+          className="hidden"
+          id="paymentProof"
+        />
+        <label
+          htmlFor="paymentProof"
+          className={`flex items-center justify-center w-full h-32 border-2 border-dashed ${errors.paymentProof ? "border-red-400" : formData.paymentProof ? "border-green-500 bg-green-500/10" : "border-border"} rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group`}
+        >
+          <div className="flex flex-col items-center justify-center">
+            {formData.paymentProof ? <CheckCircle2 className="size-8 text-green-500 mb-2" /> : <Upload className="size-8 text-primary mb-2" />}
+            <p className={`text-sm ${formData.paymentProof ? "text-green-600 font-medium" : "text-muted-foreground"}`}>
+              {formData.paymentProof ? formData.paymentProof.name : "Sube tu comprobante"}
+            </p>
+          </div>
+        </label>
+        {errors.paymentProof && <p className="text-red-400 text-sm mt-1">{errors.paymentProof}</p>}
+      </div>
+    </div>
+  )
+
 
   return (
     <div className="min-h-screen bg-background py-12 px-4">
@@ -1685,6 +1759,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
             {currentStep === 2 && renderLocation()}
             {currentStep === 3 && renderDocuments()}
             {currentStep === 4 && renderPreferences()}
+            {plan === "priority" && currentStep === 5 && renderPaymentProof()}
           </div>
         </div>
 
@@ -1741,87 +1816,10 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
               {plan === "priority" ? (
                 <>
                   <p className="font-arimo text-muted-foreground mb-6">
-                    Has elegido la opción de registro prioritario. Para completar tu inscripción, realiza el pago de
-                    <span className="font-bold text-primary"> $10 USD</span> a través de uno de los siguientes métodos:
+                    Has elegido la opción de registro prioritario. Hemos recibido tu comprobante de transferencia y tu perfil será revisado con prioridad.
                   </p>
-
-                  {!selectedPaymentMethod ? (
-                    <div className="space-y-3 mb-6">
-                      <button
-                        onClick={() => setSelectedPaymentMethod("bank")}
-                        className="w-full px-6 py-4 bg-primary/10 hover:bg-primary/20 border border-primary/30 rounded-xl text-foreground font-semibold transition-all hover:shadow-lg"
-                      >
-                        Transferencia Bancaria
-                      </button>
-                      <button
-                        onClick={() => setSelectedPaymentMethod("card")}
-                        className="w-full px-6 py-4 bg-primary/10 hover:bg-primary/20 border border-primary/30 rounded-xl text-foreground font-semibold transition-all hover:shadow-lg"
-                      >
-                        Tarjeta de Crédito/Débito (Payphone)
-                      </button>
-                      <button
-                        onClick={() => setSelectedPaymentMethod("paypal")}
-                        className="w-full px-6 py-4 bg-primary/10 hover:bg-primary/20 border border-primary/30 rounded-xl text-foreground font-semibold transition-all hover:shadow-lg"
-                      >
-                        PayPal
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="bg-muted/50 rounded-xl p-6 mb-6 text-left">
-                      {selectedPaymentMethod === "bank" && (
-                        <div>
-                          <h4 className="font-bold text-foreground mb-4 text-center">Transferencia Bancaria</h4>
-                          <div className="text-sm text-muted-foreground space-y-1">
-                            <p>
-                              <span className="font-medium">Banco:</span> Banco del Pacífico
-                            </p>
-                            <p>
-                              <span className="font-medium">Cuenta:</span> 1234567890
-                            </p>
-                            <p>
-                              <span className="font-medium">Titular:</span> Profesionales.ec
-                            </p>
-                            <p>
-                              <span className="font-medium">Tipo:</span> Cuenta Corriente
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {selectedPaymentMethod === "card" && (
-                        <div>
-                          <h4 className="font-bold text-foreground mb-4 text-center">Tarjeta de Crédito/Débito</h4>
-                          <p className="text-sm text-muted-foreground mb-4 text-center">
-                            Haz clic en el botón para ir a Payphone y completar tu pago de forma segura
-                          </p>
-                          <a
-                            href="https://payphone.app/pay/profesionales-ec"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold text-center hover:bg-primary/90 transition-all"
-                          >
-                            Ir a Payphone
-                          </a>
-                        </div>
-                      )}
-
-                      {selectedPaymentMethod === "paypal" && (
-                        <div>
-                          <h4 className="font-bold text-foreground mb-4 text-center">PayPal</h4>
-                          <div className="text-sm text-muted-foreground space-y-2">
-                            <p className="text-center">Envía el pago a:</p>
-                            <p className="text-center font-semibold text-foreground text-lg">pagos@profesionales.ec</p>
-                          </div>
-                        </div>
-                      )}
-
-                      <button
-                        onClick={() => setSelectedPaymentMethod(null)}
-                        className="mt-4 w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        ← Elegir otro método
-                      </button>
-                    </div>
+                  {comprobantePagoUrl && (
+                    <a href={comprobantePagoUrl} target="_blank" rel="noopener noreferrer" className="inline-block text-primary underline mb-4">Ver comprobante cargado</a>
                   )}
 
                   <p className="text-sm text-muted-foreground mb-6 bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">

@@ -242,6 +242,7 @@ export default function AdminDashboard() {
             fecha_registro: p.usuario?.creado_en || new Date().toISOString(),
             descripcion: p.descripcion || "Sin descripción",
             documentos: p.documentos || [],
+            comprobante_pago_url: p.comprobante_pago_url || null,
             foto_url: formatUrl(p.foto_url || p.usuario?.foto_url || p.usuario?.foto || p.usuario?.avatar || p.usuario?.imagen_url),
             direccion_texto: (p.calle_principal || p.direccion?.calle_principal)
               ? `${p.calle_principal || p.direccion?.calle_principal} ${(p.referencia || p.direccion?.referencia) ? `(${p.referencia || p.direccion?.referencia})` : ""}`
@@ -665,7 +666,8 @@ export default function AdminDashboard() {
             ciudad: detailedProfile.ciudad?.nombre || detailedProfile.ciudad || prev.ciudad,
             provincia: detailedProfile.ciudad?.provincia?.nombre || detailedProfile.provincia || prev.provincia,
             // Ensure documents are mapped even if field names vary
-            documentos: detailedProfile.documentos || detailedProfile.PerfilDocumentos || detailedProfile.perfil_documentos || prev.documentos || []
+            documentos: detailedProfile.documentos || detailedProfile.PerfilDocumentos || detailedProfile.perfil_documentos || prev.documentos || [],
+            comprobante_pago_url: detailedProfile.comprobante_pago_url || prev.comprobante_pago_url || null,
           }))
         }
       } catch (error) {
@@ -1960,10 +1962,10 @@ export default function AdminDashboard() {
           </Dialog>
 
           <Dialog open={isProfileDetailsOpen} onOpenChange={setIsProfileDetailsOpen}>
-            <DialogContent className="bg-white border-gray-200 max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-                  {selectedProfile?.nombre}
+            <DialogContent className="bg-white border-gray-200 w-[95vw] sm:w-[92vw] md:w-[88vw] lg:w-[80vw] lg:max-w-5xl max-h-[90vh] overflow-x-hidden overflow-y-auto p-4 sm:p-6">
+              <DialogHeader className="min-w-0">
+                <DialogTitle className="text-2xl font-bold flex flex-wrap items-center gap-2 min-w-0">
+                  <span className="min-w-0 break-words [overflow-wrap:anywhere]">{selectedProfile?.nombre}</span>
                   {selectedProfile && getEstadoBadge(selectedProfile.estado)}
                 </DialogTitle>
                 <DialogDescription className="text-gray-500 text-lg">
@@ -1972,50 +1974,50 @@ export default function AdminDashboard() {
               </DialogHeader>
 
               {selectedProfile && (
-                <div className="grid gap-6 py-4">
+                <div className="grid gap-6 py-4 min-w-0 overflow-x-hidden">
                   {/* Info Personal */}
                   <Card className="bg-gray-50 border-none shadow-none">
-                    <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex items-center gap-2">
+                    <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 min-w-0">
                         <FileText className="h-4 w-4 text-gray-500" />
                         <span className="font-semibold text-gray-700">Cédula:</span>
-                        <span>{selectedProfile.cedula}</span>
+                        <span className="min-w-0 break-words [overflow-wrap:anywhere]">{selectedProfile.cedula}</span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2 min-w-0">
                         <FileText className="h-4 w-4 text-gray-500" />
                         <span className="font-semibold text-gray-700">Correo:</span>
-                        <span>{selectedProfile.correo}</span>
+                        <span className="min-w-0 break-words [overflow-wrap:anywhere]">{selectedProfile.correo}</span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2 min-w-0">
                         <FileText className="h-4 w-4 text-gray-500" />
                         <span className="font-semibold text-gray-700">Teléfono:</span>
-                        <span>{selectedProfile.telefono || "No registrado"}</span>
+                        <span className="min-w-0 break-words [overflow-wrap:anywhere]">{selectedProfile.telefono || "No registrado"}</span>
                       </div>
-                      <div className="flex items-start gap-2 col-span-1 md:col-span-2">
+                      <div className="flex items-start gap-2 col-span-1 md:col-span-2 min-w-0">
                         <MapPin className="h-4 w-4 text-gray-500 mt-1" />
-                        <div className="flex flex-col">
+                        <div className="flex flex-col min-w-0">
                           <span className="font-semibold text-gray-700">Ubicación:</span>
-                          <span>
+                          <span className="break-words [overflow-wrap:anywhere]">
                             {selectedProfile.ciudad}
                             {selectedProfile.provincia ? `, ${selectedProfile.provincia}` : ""}
                           </span>
-                          <span className="text-sm text-gray-500">{selectedProfile.direccion_texto}</span>
+                          <span className="text-sm text-gray-500 break-words [overflow-wrap:anywhere]">{selectedProfile.direccion_texto}</span>
                           {selectedProfile.link_maps && (
-                            <a href={selectedProfile.link_maps} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-sm">
+                            <a href={selectedProfile.link_maps} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-sm break-words [overflow-wrap:anywhere]">
                               Ver en Google Maps
                             </a>
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2 min-w-0">
                         <DollarSign className="h-4 w-4 text-gray-500" />
                         <span className="font-semibold text-gray-700">Tarifa:</span>
-                        <span>{selectedProfile.tarifa}</span>
+                        <span className="min-w-0 break-words [overflow-wrap:anywhere]">{selectedProfile.tarifa}</span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2 min-w-0">
                         <Clock className="h-4 w-4 text-gray-500" />
                         <span className="font-semibold text-gray-700">Fecha Registro:</span>
-                        <span>{format(new Date(selectedProfile.fecha_registro), "dd/MM/yyyy HH:mm")}</span>
+                        <span className="min-w-0 break-words [overflow-wrap:anywhere]">{format(new Date(selectedProfile.fecha_registro), "dd/MM/yyyy HH:mm")}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-gray-700">Verificado:</span>
@@ -2030,39 +2032,39 @@ export default function AdminDashboard() {
                   {(selectedProfile.facebook_url || selectedProfile.instagram_url || selectedProfile.tiktok_url || selectedProfile.linkedin_url || selectedProfile.x_url || selectedProfile.yt_url) && (
                     <div>
                       <h3 className="font-semibold mb-3 text-lg">Redes Sociales</h3>
-                      <div className="flex flex-wrap gap-4">
+                      <div className="flex flex-wrap gap-3 min-w-0">
                         {selectedProfile.facebook_url && (
-                          <a href={selectedProfile.facebook_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors">
+                          <a href={selectedProfile.facebook_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors min-w-0 max-w-full">
                             <Facebook className="h-4 w-4" />
                             <span className="text-sm font-medium">Facebook</span>
                           </a>
                         )}
                         {selectedProfile.instagram_url && (
-                          <a href={selectedProfile.instagram_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-pink-50 text-pink-700 rounded-lg border border-pink-100 hover:bg-pink-100 transition-colors">
+                          <a href={selectedProfile.instagram_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-pink-50 text-pink-700 rounded-lg border border-pink-100 hover:bg-pink-100 transition-colors min-w-0 max-w-full">
                             <Instagram className="h-4 w-4" />
                             <span className="text-sm font-medium">Instagram</span>
                           </a>
                         )}
                         {selectedProfile.x_url && (
-                          <a href={selectedProfile.x_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
+                          <a href={selectedProfile.x_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors min-w-0 max-w-full">
                             <div className="h-4 w-4 flex items-center justify-center font-bold text-[10px] border border-gray-700 rounded-sm leading-none">X</div>
                             <span className="text-sm font-medium">Twitter / X</span>
                           </a>
                         )}
                         {selectedProfile.linkedin_url && (
-                          <a href={selectedProfile.linkedin_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-800 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors">
+                          <a href={selectedProfile.linkedin_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-800 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors min-w-0 max-w-full">
                             <Linkedin className="h-4 w-4" />
                             <span className="text-sm font-medium">LinkedIn</span>
                           </a>
                         )}
                         {selectedProfile.tiktok_url && (
-                          <a href={selectedProfile.tiktok_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-gray-50 text-gray-900 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
+                          <a href={selectedProfile.tiktok_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-gray-50 text-gray-900 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors min-w-0 max-w-full">
                             <Music className="h-4 w-4" />
                             <span className="text-sm font-medium">TikTok</span>
                           </a>
                         )}
                         {selectedProfile.yt_url && (
-                          <a href={selectedProfile.yt_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-700 rounded-lg border border-red-100 hover:bg-red-100 transition-colors">
+                          <a href={selectedProfile.yt_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-700 rounded-lg border border-red-100 hover:bg-red-100 transition-colors min-w-0 max-w-full">
                             <Youtube className="h-4 w-4" />
                             <span className="text-sm font-medium">YouTube</span>
                           </a>
@@ -2080,11 +2082,28 @@ export default function AdminDashboard() {
                   </div>
 
                   {/* Documentos */}
+                  {selectedProfile.comprobante_pago_url && (
+                    <div>
+                      <h3 className="font-semibold mb-2 text-lg">Comprobante de Pago</h3>
+                      <a
+                        href={formatUrl(selectedProfile.comprobante_pago_url) || "#"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 border rounded-lg bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                      >
+                        <FileText className="h-4 w-4" />
+                        Ver comprobante de pago
+                      </a>
+                    </div>
+                  )}
+
                   <div>
                     <h3 className="font-semibold mb-2 text-lg">Documentos de Verificación ({selectedProfile.documentos?.length || 0})</h3>
                     {selectedProfile.documentos && selectedProfile.documentos.length > 0 ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {selectedProfile.documentos.map((doc: any, index: number) => (
+                        {[...selectedProfile.documentos]
+                          .sort((a: any, b: any) => (a?.tipo === "comprobante_pago" ? -1 : 0) - (b?.tipo === "comprobante_pago" ? -1 : 0))
+                          .map((doc: any, index: number) => (
                           <a
                             key={index}
                             href={formatUrl(doc.url) || "#"}
@@ -2096,7 +2115,7 @@ export default function AdminDashboard() {
                               <FileText className="h-5 w-5" />
                             </div>
                             <div className="flex flex-col overflow-hidden">
-                              <span className="font-medium text-gray-900 truncate">{doc.tipo || "Documento"}</span>
+                              <span className="font-medium text-gray-900 truncate">{doc.tipo === "comprobante_pago" ? "Comprobante de pago" : (doc.tipo || "Documento")}</span>
                               <span className="text-xs text-gray-500">Clic para ver</span>
                             </div>
                           </a>
@@ -2118,7 +2137,7 @@ export default function AdminDashboard() {
                   )}
 
                   {/* Acciones Footer */}
-                  <div className="flex gap-3 justify-end mt-6 pt-6 border-t">
+                  <div className="flex flex-wrap gap-3 justify-start sm:justify-end mt-6 pt-6 border-t">
                     <Button variant="outline" onClick={() => setIsProfileDetailsOpen(false)}>
                       Cerrar
                     </Button>
@@ -2127,11 +2146,13 @@ export default function AdminDashboard() {
                       variant="outline"
                       onClick={() => toggleDestacadoPerfil(selectedProfile.id)}
                       className={selectedProfile.is_featured
-                        ? "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
-                        : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                        ? "group border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-700"
+                        : "group border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-600"
                       }
                     >
-                      <Star className={`mr-2 h-4 w-4 ${selectedProfile.is_featured ? "fill-amber-400 text-amber-400" : ""}`} />
+                      <Star
+                        className={`mr-2 h-4 w-4 ${selectedProfile.is_featured ? "fill-amber-400 text-amber-400" : "fill-transparent text-gray-500 group-hover:fill-amber-400 group-hover:text-amber-400"}`}
+                      />
                       {selectedProfile.is_featured ? "Quitar Destacado" : "Marcar Destacado"}
                     </Button>
                     {selectedProfile.estado !== "aprobado" && (

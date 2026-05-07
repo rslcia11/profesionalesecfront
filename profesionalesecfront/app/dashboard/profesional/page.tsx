@@ -36,13 +36,16 @@ import {
   Settings,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { citasApi, usuarioApi, articulosApi, profesionalApi, authApi, type Articulo } from "@/lib/api"
+import { citasApi, usuarioApi, articulosApi, profesionalApi, authApi, multimediaApi, type Articulo } from "@/lib/api"
 import ArticleFormModal from "@/components/article-form-modal"
 import ServicesManager from "@/components/services-manager"
 import ScheduleManager from "@/components/schedule-manager"
 import SocialMediaManager from "@/components/social-media-manager"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+
+const PROFILE_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024
+const PROFILE_IMAGE_ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"]
 
 export default function ProfesionalDashboard() {
   const [activeTab, setActiveTab] = useState("dashboard")
@@ -79,8 +82,12 @@ export default function ProfesionalDashboard() {
     confirmar_nueva: "",
   })
   const [savingPersonal, setSavingPersonal] = useState(false)
+  const [uploadingProfileImage, setUploadingProfileImage] = useState(false)
   const [savingPerfilProfesional, setSavingPerfilProfesional] = useState(false)
   const [savingPassword, setSavingPassword] = useState(false)
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null)
+  const [profileImagePreview, setProfileImagePreview] = useState<string>("")
+  const [profileImageError, setProfileImageError] = useState<string>("")
 
   const getClienteTelefono = (cita: any): string | null => {
     const candidates = [
@@ -195,6 +202,17 @@ export default function ProfesionalDashboard() {
   }, [user])
 
   useEffect(() => {
+    if (!profileImageFile) return
+
+    const objectUrl = URL.createObjectURL(profileImageFile)
+    setProfileImagePreview(objectUrl)
+
+    return () => {
+      URL.revokeObjectURL(objectUrl)
+    }
+  }, [profileImageFile])
+
+  useEffect(() => {
     setPerfilProfesionalForm({
       descripcion: perfil?.descripcion || "",
       tarifa: perfil?.tarifa != null ? String(perfil.tarifa) : "",
@@ -298,21 +316,71 @@ export default function ProfesionalDashboard() {
 
     try {
       setSavingPersonal(true)
+      setProfileImageError("")
+
+      let fotoUrl = perfilForm.foto_url.trim()
+
+      if (profileImageFile) {
+        setUploadingProfileImage(true)
+        const uploaded = await multimediaApi.subir(profileImageFile, "profiles", token)
+        const uploadedUrl = uploaded?.url
+
+        if (!uploadedUrl) {
+          throw new Error("No se pudo obtener la URL de la imagen subida")
+        }
+
+        fotoUrl = uploadedUrl
+      }
+
       await usuarioApi.actualizarPerfil(
         {
           nombre: perfilForm.nombre.trim(),
           telefono: perfilForm.telefono.trim(),
-          foto_url: perfilForm.foto_url.trim(),
+          foto_url: fotoUrl,
         },
         token,
       )
+
+      setProfileImageFile(null)
+      setProfileImagePreview("")
+
       toast({ title: "Datos personales actualizados" })
       await loadData()
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "No se pudo actualizar", variant: "destructive" })
+      const message = error.message || "No se pudo actualizar"
+      setProfileImageError(message)
+      toast({ title: "Error", description: message, variant: "destructive" })
     } finally {
+      setUploadingProfileImage(false)
       setSavingPersonal(false)
     }
+  }
+
+  const handleProfileImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    setProfileImageError("")
+
+    if (!file) {
+      setProfileImageFile(null)
+      setProfileImagePreview("")
+      return
+    }
+
+    if (!PROFILE_IMAGE_ACCEPTED_TYPES.includes(file.type)) {
+      setProfileImageFile(null)
+      setProfileImagePreview("")
+      setProfileImageError("Formato inválido. Usa JPG, PNG o WEBP.")
+      return
+    }
+
+    if (file.size > PROFILE_IMAGE_MAX_SIZE_BYTES) {
+      setProfileImageFile(null)
+      setProfileImagePreview("")
+      setProfileImageError("La imagen supera el límite de 5MB.")
+      return
+    }
+
+    setProfileImageFile(file)
   }
 
   const handleGuardarPerfilProfesional = async (e: React.FormEvent) => {
@@ -398,7 +466,7 @@ export default function ProfesionalDashboard() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex flex-col md:flex-row md:items-center gap-4">
               <div>
-                <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                <h1 className="text-4xl font-bold mb-2 text-blue-600">
                   Dashboard Profesional
                 </h1>
                 <p className="text-gray-600 text-lg">
@@ -887,11 +955,27 @@ export default function ProfesionalDashboard() {
                     <Input id="telefono" value={perfilForm.telefono} onChange={(e) => setPerfilForm((prev) => ({ ...prev, telefono: e.target.value }))} />
                   </div>
                   <div className="md:col-span-2">
-                    <Label htmlFor="foto">URL Foto</Label>
-                    <Input id="foto" value={perfilForm.foto_url} onChange={(e) => setPerfilForm((prev) => ({ ...prev, foto_url: e.target.value }))} />
+                    <Label htmlFor="foto">Foto de perfil</Label>
+                    <div className="mt-2 flex flex-col gap-3">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={profileImagePreview || perfilForm.foto_url || "/logo-icono.png"}
+                          alt="Vista previa foto de perfil"
+                          className="h-16 w-16 rounded-full object-cover border"
+                        />
+                        <div className="text-sm text-muted-foreground">
+                          <p>Sube una nueva imagen (JPG, PNG o WEBP).</p>
+                          <p>Tamaño máximo: 5MB.</p>
+                        </div>
+                      </div>
+                      <Input id="foto" type="file" accept="image/png,image/jpeg,image/webp" onChange={handleProfileImageChange} />
+                      {profileImageError ? <p className="text-sm text-red-600">{profileImageError}</p> : null}
+                    </div>
                   </div>
                   <div className="md:col-span-2">
-                    <Button type="submit" disabled={savingPersonal}>{savingPersonal ? "Guardando..." : "Guardar datos personales"}</Button>
+                    <Button type="submit" disabled={savingPersonal || uploadingProfileImage}>
+                      {uploadingProfileImage ? "Subiendo imagen..." : savingPersonal ? "Guardando..." : "Guardar datos personales"}
+                    </Button>
                   </div>
                 </form>
               </CardContent>

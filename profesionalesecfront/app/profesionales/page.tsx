@@ -14,7 +14,7 @@ import {
 } from "@/components/professionals-filters"
 import { formatUrl } from "@/lib/utils"
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api"
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api"
 const PAGE_SIZE = 12
 
 type PageMeta = { totalItems: number; totalPages: number; currentPage: number }
@@ -53,7 +53,11 @@ function filtersToParams(filters: FilterState): URLSearchParams {
   if (filters.province) sp.set("provincia_id", filters.province)
   if (filters.city) sp.set("ciudad_id", filters.city)
   if (filters.verifiedOnly) sp.set("verificados", "true")
-  if (filters.sortBy && filters.sortBy !== "featured") sp.set("orden", filters.sortBy)
+  // price-low / price-high se ordenan en frontend; no deben enviarse al backend
+  // porque el API de verificados puede no soportar esos valores y responder 500.
+  if (filters.sortBy && filters.sortBy !== "featured" && filters.sortBy !== "price-low" && filters.sortBy !== "price-high") {
+    sp.set("orden", filters.sortBy)
+  }
   return sp
 }
 
@@ -103,6 +107,7 @@ function ProfessionalsPageInner() {
   const [professionals, setProfessionals] = useState<ProfessionalCard[]>([])
   const [meta, setMeta] = useState<PageMeta>({ totalItems: 0, totalPages: 1, currentPage: 1 })
   const [loading, setLoading] = useState(true)
+  const [requestError, setRequestError] = useState<string | null>(null)
 
   const writeUrl = useCallback(
     (next: { filters?: FilterState; page?: number }) => {
@@ -140,6 +145,7 @@ function ProfessionalsPageInner() {
 
     const run = async () => {
       setLoading(true)
+      setRequestError(null)
       try {
         const params = filtersToParams(filters)
         params.set("limit", String(PAGE_SIZE))
@@ -168,6 +174,7 @@ function ProfessionalsPageInner() {
           console.error("Error fetching professionals:", error)
           setProfessionals([])
           setMeta({ totalItems: 0, totalPages: 1, currentPage: 1 })
+          setRequestError("No se pudieron cargar los profesionales en este momento. Intenta nuevamente en unos minutos.")
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -227,6 +234,12 @@ function ProfessionalsPageInner() {
       </section>
 
       <section className="max-w-7xl mx-auto px-4 md:px-6 pb-16">
+        {requestError && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            {requestError}
+          </div>
+        )}
+
         {professionals.length > 0 ? (
           <div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
