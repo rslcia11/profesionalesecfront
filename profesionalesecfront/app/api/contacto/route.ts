@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3001"
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3000"
 
 const contactSchema = z.object({
   nombre: z.string().min(2, "Nombre inválido").max(120),

@@ -36,7 +36,7 @@ export default function Convenios() {
         setIsLoading(true)
         setError(null)
 
-        const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api"
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || "/api"
         const response = await fetch(`${backendUrl}/convenios?limit=10&offset=0`)
 
         if (!response.ok) {

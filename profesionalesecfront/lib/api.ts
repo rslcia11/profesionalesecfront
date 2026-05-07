@@ -1,4 +1,4 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api"
 
 // --- Interfaces ---
 
@@ -44,6 +44,12 @@ export interface PerfilProfesionalData {
   permitir_reagendar?: boolean
   tarifa?: number
   tarifa_hora?: number // Added for compatibility with admin view
+  plan?: string
+  comprobante_pago_url?: string
+}
+
+export interface ComprobanteTemporalResponse {
+  url: string
 }
 
 export interface UbicacionData {
@@ -377,6 +383,23 @@ export const profesionalApi = {
       headers: authHeader(token),
       body: JSON.stringify(data),
     });
+  },
+
+  async subirComprobantePago(archivo: File): Promise<ComprobanteTemporalResponse> {
+    const formData = new FormData()
+    formData.append("archivo", archivo)
+
+    const res = await fetch(`${API_URL}/profesionales/comprobante-pago`, {
+      method: "POST",
+      body: formData,
+    })
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }))
+      throw new Error(err.error || err.message || "Error al subir comprobante")
+    }
+
+    return res.json()
   },
 
   async obtenerMiPerfil(token: string, id?: number) {
