@@ -255,7 +255,7 @@ function ProfessionalsPageInner() {
                       alt={professional.name}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent opacity-60" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-40" />
                     {professional.verified && (
                       <div className="absolute top-4 right-4 bg-primary/90 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg z-20">
                         <span className="text-xs font-bold text-primary-foreground">✓ Verificado</span>
