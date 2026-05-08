@@ -136,6 +136,7 @@ export default function AdminDashboard() {
   const [perfilesPendientes, setPerfilesPendientes] = useState<PerfilPendiente[]>([])
   const [processingProfiles, setProcessingProfiles] = useState<Record<number, "approving" | "rejecting" | null>>({})
   const [lastProfilesRefreshAt, setLastProfilesRefreshAt] = useState<Date | null>(null)
+  const [profilesAnimationKey, setProfilesAnimationKey] = useState(0)
   const profilesRefreshInFlightRef = useRef(false)
   const profilesSignatureRef = useRef<string>("")
   const mountedRef = useRef(true)
@@ -219,11 +220,18 @@ export default function AdminDashboard() {
         ciudad: p.ciudad ? p.ciudad.nombre : "",
         provincia: p.ciudad?.provincia ? p.ciudad.provincia.nombre : "",
         tarifa: p.tarifa ? `$${p.tarifa}` : (p.tarifa_hora ? `$${p.tarifa_hora}` : "No definida"),
-        fecha_registro: p.usuario?.creado_en || new Date().toISOString(),
+        fecha_registro: p.usuario?.creado_en || p.creado_en || p.created_at || p.fecha_registro || "",
         descripcion: p.descripcion || "Sin descripción",
         documentos: p.documentos || [],
         comprobante_pago_url: p.comprobante_pago_url || null,
         foto_url: formatUrl(p.foto_url || p.usuario?.foto_url || p.usuario?.foto || p.usuario?.avatar || p.usuario?.imagen_url),
+        is_featured: p.is_featured ?? p.destacado ?? false,
+        facebook_url: p.facebook_url || "",
+        instagram_url: p.instagram_url || "",
+        tiktok_url: p.tiktok_url || "",
+        linkedin_url: p.linkedin_url || "",
+        x_url: p.x_url || "",
+        yt_url: p.yt_url || "",
         direccion_texto: (p.calle_principal || p.direccion?.calle_principal)
           ? `${p.calle_principal || p.direccion?.calle_principal} ${(p.referencia || p.direccion?.referencia) ? `(${p.referencia || p.direccion?.referencia})` : ""}`
           : "No registrada",
@@ -236,39 +244,76 @@ export default function AdminDashboard() {
   }, [])
 
   const getProfilesSignature = useCallback((profiles: PerfilPendiente[]) => {
-    // Firma estable para evitar setState si el snapshot visible no cambió.
+    // Firma estable solo con campos visibles: evita falsos cambios por identidad u orden de objetos.
     return JSON.stringify(
       [...profiles]
         .sort((a, b) => a.id - b.id)
-        .map((p) => ({
-          id: p.id,
-          estado: p.estado,
-          verificado: p.verificado,
-          nombre: p.nombre,
-          correo: p.correo,
-          telefono: p.telefono,
-          profesion: p.profesion,
-          fecha_registro: p.fecha_registro,
-          perfil_estado: p.perfil_estado?.estado,
+        .map((profile: any) => ({
+          id: profile.id,
+          usuario_id: profile.usuario_id ?? null,
+          verificado: profile.verificado,
+          estado: profile.estado,
+          nombre: profile.nombre,
+          correo: profile.correo,
+          telefono: profile.telefono,
+          cedula: profile.cedula,
+          profesion: profile.profesion,
+          especialidad: profile.especialidad,
+          ciudad: profile.ciudad,
+          provincia: profile.provincia,
+          tarifa: profile.tarifa,
+          fecha_registro: profile.fecha_registro,
+          descripcion: profile.descripcion,
+          comprobante_pago_url: profile.comprobante_pago_url,
+          foto_url: profile.foto_url,
+          direccion_texto: profile.direccion_texto,
+          link_maps: profile.link_maps,
+          is_featured: profile.is_featured ?? false,
+          facebook_url: profile.facebook_url,
+          instagram_url: profile.instagram_url,
+          tiktok_url: profile.tiktok_url,
+          linkedin_url: profile.linkedin_url,
+          x_url: profile.x_url,
+          yt_url: profile.yt_url,
+          documentos: Array.isArray(profile.documentos)
+            ? profile.documentos
+              .map((documento: any) => ({
+                id: documento?.id ?? null,
+                tipo: documento?.tipo ?? documento?.tipo_documento ?? "",
+                url: documento?.url ?? documento?.archivo_url ?? documento?.documento_url ?? "",
+                estado: documento?.estado ?? "",
+              }))
+              .sort((a: any, b: any) => `${a.id}-${a.tipo}-${a.url}`.localeCompare(`${b.id}-${b.tipo}-${b.url}`))
+            : [],
         })),
     )
   }, [])
 
-  const applyProfilesSnapshot = useCallback((rawProfiles: any[]) => {
+  const formatProfileDate = (date: string, outputFormat: string) => {
+    if (!date) return "No disponible"
+    const parsedDate = new Date(date)
+    if (Number.isNaN(parsedDate.getTime())) return "No disponible"
+    return format(parsedDate, outputFormat, { locale: es })
+  }
+
+  const applyProfilesSnapshot = useCallback((rawProfiles: any[], animateOnChange = false) => {
     const normalizedProfiles = mapProfilesFromApi(rawProfiles)
     const nextSignature = getProfilesSignature(normalizedProfiles)
+    const hasPreviousSnapshot = profilesSignatureRef.current !== ""
 
     if (nextSignature !== profilesSignatureRef.current) {
       profilesSignatureRef.current = nextSignature
       setPerfilesPendientes(normalizedProfiles)
+      setLastProfilesRefreshAt(new Date())
+      if (animateOnChange && hasPreviousSnapshot) {
+        setProfilesAnimationKey((key) => key + 1)
+      }
     }
-
-    setLastProfilesRefreshAt(new Date())
   }, [getProfilesSignature, mapProfilesFromApi])
 
   const refreshProfiles = useCallback(async () => {
     const token = localStorage.getItem("auth_token")
-    if (!token || profilesRefreshInFlightRef.current) return
+    if (!token || profilesRefreshInFlightRef.current || document.visibilityState !== "visible") return
 
     profilesRefreshInFlightRef.current = true
 
@@ -276,7 +321,7 @@ export default function AdminDashboard() {
       const profilesResponse = await adminApi.getAllProfiles(token)
       const profiles = adminApi.normalizeProfilesResponse(profilesResponse)
       if (!mountedRef.current) return
-      applyProfilesSnapshot(profiles)
+      applyProfilesSnapshot(profiles, true)
     } catch (error) {
       // Polling silencioso: evitar ruido visual por errores transitorios.
     } finally {
@@ -1307,7 +1352,10 @@ export default function AdminDashboard() {
                   ))}
                 </div>
 
-                <div className="grid gap-4">
+                <div
+                  key={profilesAnimationKey}
+                  className="grid gap-4 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-700"
+                >
                   {filteredProfiles.length === 0 ? (
                     <Card className="bg-white border-gray-200">
                       <CardContent className="flex flex-col items-center justify-center py-12">
@@ -1347,7 +1395,7 @@ export default function AdminDashboard() {
                             <div className="flex items-center gap-2 text-sm">
                               <Clock className="h-4 w-4 text-gray-500" />
                               <span className="text-gray-500">Registro:</span>
-                              <span>{format(new Date(perfil.fecha_registro), "dd/MM/yyyy")}</span>
+                              <span>{formatProfileDate(perfil.fecha_registro, "dd/MM/yyyy")}</span>
                             </div>
                           </div>
                           <div className="flex gap-3">
@@ -2120,7 +2168,7 @@ export default function AdminDashboard() {
                       <div className="flex flex-wrap items-center gap-2 min-w-0">
                         <Clock className="h-4 w-4 text-gray-500" />
                         <span className="font-semibold text-gray-700">Fecha Registro:</span>
-                        <span className="min-w-0 break-words [overflow-wrap:anywhere]">{format(new Date(selectedProfile.fecha_registro), "dd/MM/yyyy HH:mm")}</span>
+                        <span className="min-w-0 break-words [overflow-wrap:anywhere]">{formatProfileDate(selectedProfile.fecha_registro, "dd/MM/yyyy HH:mm")}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-gray-700">Verificado:</span>

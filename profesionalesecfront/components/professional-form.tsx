@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { CheckCircle2, ChevronLeft, ChevronRight, Home, Upload, Eye, EyeOff, PartyPopper, Loader2, Facebook, Instagram, Linkedin, Twitter, Music, Youtube } from "lucide-react"
 import { Check, X } from "lucide-react" // Declared the Check variable
-import { authApi, profesionalApi, catalogosApi, saveToken, usuarioApi, horariosApi } from "@/lib/api"
+import { authApi, profesionalApi, catalogosApi, saveToken, removeToken, usuarioApi, horariosApi } from "@/lib/api"
 import ScheduleGrid from "@/components/schedule-grid"
 
 
@@ -747,6 +747,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
           )
         }
 
+        removeToken()
         setIsLoading(false)
         setShowSuccessModal(true)
       } catch (error: any) {

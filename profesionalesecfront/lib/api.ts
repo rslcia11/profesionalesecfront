@@ -1165,5 +1165,7 @@ export const getToken = (): string | null => {
 export const removeToken = () => {
   if (typeof window !== "undefined") {
     localStorage.removeItem("auth_token")
+    localStorage.removeItem("refresh_token")
+    localStorage.removeItem("refreshToken")
   }
 }
