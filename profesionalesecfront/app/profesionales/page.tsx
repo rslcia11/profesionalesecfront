@@ -10,7 +10,9 @@ import PageLoader from "@/components/page-loader"
 import {
   ProfessionalsFilters,
   EMPTY_FILTERS,
+  SORT_OPTIONS,
   type FilterState,
+  type SortOption,
 } from "@/components/professionals-filters"
 import { formatUrl } from "@/lib/utils"
 
@@ -27,10 +29,139 @@ interface ProfessionalCard {
   location: string
   image: string
   price: string
+  priceValue: number | null
   unit: string
   experience: string
   verified: boolean
+  featured: boolean
   description?: string
+}
+
+interface ProvinceLike {
+  id?: number | string
+  nombre?: string
+  name?: string
+}
+
+interface CityLike {
+  nombre?: string
+  provincia_id?: number | string
+  province_id?: number | string
+  provincia?: ProvinceLike
+  province?: ProvinceLike
+}
+
+interface ProfessionalApiItem {
+  id?: number
+  slug?: string
+  usuario?: {
+    nombre?: string
+    foto_url?: string
+  }
+  especialidad?: {
+    nombre?: string
+  }
+  profesion?: {
+    nombre?: string
+  }
+  tarifa?: number | string | null
+  tarifa_hora?: number | string | null
+  verificado?: boolean
+  is_featured?: unknown
+  destacado?: unknown
+  featured?: unknown
+  es_destacado?: unknown
+  plan?: { slug?: unknown; nombre?: unknown } | string | null
+  plan_slug?: unknown
+  descripcion?: string
+  provincia_id?: number | string
+  province_id?: number | string
+  provincia?: ProvinceLike | string
+  province?: ProvinceLike | string
+  ciudad?: CityLike
+  city?: CityLike
+}
+
+const TRUE_LIKE_VALUES = new Set(["true", "1", "yes", "si", "sí", "priority", "destacado", "featured"])
+const SORT_VALUES: readonly SortOption[] = Object.values(SORT_OPTIONS)
+
+function normalizeSortBy(value: string | null): SortOption {
+  if (value && (SORT_VALUES as readonly string[]).includes(value)) return value as SortOption
+  return SORT_OPTIONS.FEATURED
+}
+
+function isTrueLike(value: unknown): boolean {
+  if (typeof value === "boolean") return value
+  if (typeof value === "number") return value > 0
+  if (typeof value === "string") return TRUE_LIKE_VALUES.has(normalizeLocationValue(value))
+  if (typeof value === "object" && value !== null) {
+    const candidate = value as { slug?: unknown; nombre?: unknown; name?: unknown; tipo?: unknown }
+    return [candidate.slug, candidate.nombre, candidate.name, candidate.tipo].some(isTrueLike)
+  }
+  return false
+}
+
+function parseOptionalNumber(value: unknown): number | null {
+  if (typeof value === "number") return Number.isFinite(value) ? value : null
+  if (typeof value !== "string") return null
+
+  const normalized = value.trim().replace(/[^\d.,-]/g, "")
+  const lastDot = normalized.lastIndexOf(".")
+  const lastComma = normalized.lastIndexOf(",")
+  const onlyDotAsThousands = lastDot > -1 && lastComma === -1 && /^-?\d{1,3}(\.\d{3})+$/.test(normalized)
+  const onlyCommaAsThousands = lastComma > -1 && lastDot === -1 && /^-?\d{1,3}(,\d{3})+$/.test(normalized)
+  if (onlyDotAsThousands || onlyCommaAsThousands) {
+    const parsed = parseFloat(normalized.replace(/[.,]/g, ""))
+    return Number.isFinite(parsed) ? parsed : null
+  }
+
+  const decimalSeparator = lastComma > lastDot ? "," : "."
+  const normalizedNumber = normalized
+    .replace(decimalSeparator === "," ? /\./g : /,/g, "")
+    .replace(decimalSeparator, ".")
+  const parsed = parseFloat(normalizedNumber)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function normalizeLocationValue(value: unknown): string {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+}
+
+function matchesProvinceFilter(professional: ProfessionalApiItem, provinceFilter: string): boolean {
+  if (!provinceFilter) return true
+
+  const normalizedFilter = normalizeLocationValue(provinceFilter)
+  const candidateIds = [
+    professional.provincia_id,
+    professional.province_id,
+    professional.ciudad?.provincia_id,
+    professional.ciudad?.province_id,
+    professional.city?.provincia_id,
+    professional.city?.province_id,
+    typeof professional.provincia === "object" ? professional.provincia.id : undefined,
+    typeof professional.province === "object" ? professional.province.id : undefined,
+    professional.ciudad?.provincia?.id,
+    professional.ciudad?.province?.id,
+    professional.city?.provincia?.id,
+    professional.city?.province?.id,
+  ]
+
+  if (candidateIds.some((id) => String(id ?? "") === provinceFilter)) return true
+
+  const candidateNames = [
+    typeof professional.provincia === "string" ? professional.provincia : professional.provincia?.nombre,
+    typeof professional.province === "string" ? professional.province : professional.province?.name ?? professional.province?.nombre,
+    professional.ciudad?.provincia?.nombre,
+    professional.ciudad?.province?.name ?? professional.ciudad?.province?.nombre,
+    professional.city?.provincia?.nombre,
+    professional.city?.province?.name ?? professional.city?.province?.nombre,
+  ]
+
+  return candidateNames.some((name) => normalizeLocationValue(name) === normalizedFilter)
 }
 
 function urlToFilters(sp: URLSearchParams): FilterState {
@@ -41,11 +172,12 @@ function urlToFilters(sp: URLSearchParams): FilterState {
     province: sp.get("provincia_id") ?? "",
     city: sp.get("ciudad_id") ?? "",
     verifiedOnly: sp.get("verificados") === "true",
-    sortBy: sp.get("orden") ?? "featured",
+    sortBy: normalizeSortBy(sp.get("orden")),
   }
 }
 
-function filtersToParams(filters: FilterState): URLSearchParams {
+function filtersToParams(filters: FilterState, options: { includeClientSort?: boolean } = {}): URLSearchParams {
+  const includeClientSort = options.includeClientSort ?? true
   const sp = new URLSearchParams()
   if (filters.keyword) sp.set("keyword", filters.keyword)
   if (filters.profession) sp.set("profesion_id", filters.profession)
@@ -53,18 +185,19 @@ function filtersToParams(filters: FilterState): URLSearchParams {
   if (filters.province) sp.set("provincia_id", filters.province)
   if (filters.city) sp.set("ciudad_id", filters.city)
   if (filters.verifiedOnly) sp.set("verificados", "true")
-  // price-low / price-high se ordenan en frontend; no deben enviarse al backend
-  // porque el API de verificados puede no soportar esos valores y responder 500.
-  if (filters.sortBy && filters.sortBy !== "featured" && filters.sortBy !== "price-low" && filters.sortBy !== "price-high") {
+  // El orden por precio vive en la URL para controlar el Select, pero no se manda al API.
+  if (filters.sortBy && filters.sortBy !== SORT_OPTIONS.FEATURED && includeClientSort) {
     sp.set("orden", filters.sortBy)
   }
   return sp
 }
 
-function mapProfessional(p: any): ProfessionalCard {
-  const tarifa = p.tarifa_hora ?? p.tarifa
+function mapProfessional(p: ProfessionalApiItem): ProfessionalCard {
+  const visibleTarifa = p.tarifa_hora ?? p.tarifa
+  const price = visibleTarifa != null ? `$${visibleTarifa}` : "A convenir"
+  const priceValue = parseOptionalNumber(price)
   return {
-    id: p.id,
+    id: Number(p.id),
     slug: p.slug,
     name: p.usuario?.nombre || "Usuario",
     specialty: p.especialidad?.nombre || p.profesion?.nombre || "Profesional",
@@ -72,23 +205,42 @@ function mapProfessional(p: any): ProfessionalCard {
       ? `${p.ciudad.nombre}${p.ciudad.provincia?.nombre ? `, ${p.ciudad.provincia.nombre}` : ""}`
       : "Ecuador",
     image: formatUrl(p.usuario?.foto_url) || "/logo-black.png",
-    price: tarifa ? `$${tarifa}` : "A convenir",
+    price: priceValue !== null ? price : "A convenir",
+    priceValue,
     unit: "hora",
     experience: "Experiencia verificada",
     verified: Boolean(p.verificado),
+    featured: [
+      p.is_featured,
+      p.destacado,
+      p.featured,
+      p.es_destacado,
+      p.plan,
+      p.plan_slug,
+      typeof p.plan === "object" ? p.plan?.slug : undefined,
+      typeof p.plan === "object" ? p.plan?.nombre : undefined,
+    ].some(isTrueLike),
     description: p.descripcion,
   }
 }
 
+function isPriceSort(sortBy: string): boolean {
+  return sortBy === SORT_OPTIONS.PRICE_LOW || sortBy === SORT_OPTIONS.PRICE_HIGH
+}
+
 function sortClientSide(list: ProfessionalCard[], sortBy: string): ProfessionalCard[] {
-  if (sortBy !== "price-low" && sortBy !== "price-high") return list
-  const parsePrice = (price: string) => {
-    const n = parseFloat(price.replace(/[^\d.]/g, ""))
-    return Number.isFinite(n) ? n : Number.POSITIVE_INFINITY
+  if (sortBy === SORT_OPTIONS.FEATURED) {
+    return [...list].sort((a, b) => Number(b.featured) - Number(a.featured))
   }
+  if (sortBy !== SORT_OPTIONS.PRICE_LOW && sortBy !== SORT_OPTIONS.PRICE_HIGH) return list
+
   return [...list].sort((a, b) => {
-    const diff = parsePrice(a.price) - parsePrice(b.price)
-    return sortBy === "price-low" ? diff : -diff
+    if (a.priceValue === null && b.priceValue === null) return 0
+    if (a.priceValue === null) return 1
+    if (b.priceValue === null) return -1
+
+    const diff = a.priceValue - b.priceValue
+    return sortBy === SORT_OPTIONS.PRICE_LOW ? diff : -diff
   })
 }
 
@@ -147,27 +299,47 @@ function ProfessionalsPageInner() {
       setLoading(true)
       setRequestError(null)
       try {
-        const params = filtersToParams(filters)
-        params.set("limit", String(PAGE_SIZE))
-        params.set("page", String(page))
+        const params = filtersToParams(filters, { includeClientSort: false })
+        const priceSort = isPriceSort(filters.sortBy)
+        params.set("limit", String(priceSort ? 1 : PAGE_SIZE))
+        params.set("page", String(priceSort ? 1 : page))
 
         const res = await fetch(`${API_BASE}/profesionales/verificados?${params.toString()}`, {
           signal: controller.signal,
         })
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        const data = await res.json()
+        let data = await res.json()
         if (cancelled) return
 
-        const raw = Array.isArray(data) ? data : data?.data ?? []
-        const mapped = sortClientSide(raw.map(mapProfessional), filters.sortBy)
+        if (priceSort) {
+          const totalItems = Number(data?.meta?.totalItems ?? 0)
+          if (totalItems > 1) {
+            const allParams = filtersToParams(filters, { includeClientSort: false })
+            allParams.set("limit", String(totalItems))
+            allParams.set("page", "1")
+            const allRes = await fetch(`${API_BASE}/profesionales/verificados?${allParams.toString()}`, {
+              signal: controller.signal,
+            })
+            if (!allRes.ok) throw new Error(`HTTP ${allRes.status}`)
+            data = await allRes.json()
+            if (cancelled) return
+          }
+        }
 
-        setProfessionals(mapped)
+        const raw = Array.isArray(data) ? data : data?.data ?? []
+        const filteredRaw = raw.filter((item: ProfessionalApiItem) => matchesProvinceFilter(item, filters.province))
+        const mapped = sortClientSide(filteredRaw.map(mapProfessional), filters.sortBy)
+        const visibleProfessionals = priceSort ? mapped.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : mapped
+
+        setProfessionals(visibleProfessionals)
         setMeta(
-          data?.meta ?? {
-            totalItems: mapped.length,
-            totalPages: 1,
-            currentPage: 1,
-          },
+          data?.meta && filteredRaw.length === raw.length && !priceSort
+            ? data.meta
+            : {
+                totalItems: mapped.length,
+                totalPages: Math.max(1, Math.ceil(mapped.length / PAGE_SIZE)),
+                currentPage: page,
+              },
         )
       } catch (error: any) {
         if (error?.name !== "AbortError" && !cancelled) {
