@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { MapPin, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react"
+import { MapPin, ArrowRight, ChevronLeft, ChevronRight, Star } from "lucide-react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import PageLoader from "@/components/page-loader"
@@ -32,7 +32,6 @@ interface ProfessionalCard {
   priceValue: number | null
   unit: string
   experience: string
-  verified: boolean
   featured: boolean
   description?: string
 }
@@ -209,7 +208,6 @@ function mapProfessional(p: ProfessionalApiItem): ProfessionalCard {
     priceValue,
     unit: "hora",
     experience: "Experiencia verificada",
-    verified: Boolean(p.verificado),
     featured: [
       p.is_featured,
       p.destacado,
@@ -428,9 +426,10 @@ function ProfessionalsPageInner() {
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-40" />
-                    {professional.verified && (
-                      <div className="absolute top-4 right-4 bg-primary/90 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg z-20">
-                        <span className="text-xs font-bold text-primary-foreground">✓ Verificado</span>
+                    {professional.featured && (
+                      <div className="absolute top-4 right-4 bg-white text-black backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg z-20">
+                        <Star size={14} className="fill-yellow-400 text-yellow-400" aria-hidden="true" />
+                        <span className="text-xs font-bold">Destacado</span>
                       </div>
                     )}
                   </div>
