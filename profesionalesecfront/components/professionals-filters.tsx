@@ -1,11 +1,8 @@
 "use client"
 
-import type React from "react"
 import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Filter } from "lucide-react"
 import { catalogosApi } from "@/lib/api"
@@ -19,6 +16,14 @@ interface CatalogItem {
   provincia?: { id: number; nombre: string }
 }
 
+export const SORT_OPTIONS = {
+  FEATURED: "featured",
+  PRICE_HIGH: "price-high",
+  PRICE_LOW: "price-low",
+} as const
+
+export type SortOption = (typeof SORT_OPTIONS)[keyof typeof SORT_OPTIONS]
+
 export interface FilterState {
   keyword: string
   profession: string
@@ -26,7 +31,7 @@ export interface FilterState {
   province: string
   city: string
   verifiedOnly: boolean
-  sortBy: string
+  sortBy: SortOption
 }
 
 export const EMPTY_FILTERS: FilterState = {
@@ -36,7 +41,7 @@ export const EMPTY_FILTERS: FilterState = {
   province: "",
   city: "",
   verifiedOnly: false,
-  sortBy: "featured",
+  sortBy: SORT_OPTIONS.FEATURED,
 }
 
 interface FilterProps {
@@ -222,26 +227,16 @@ export function ProfessionalsFilters({ filters, onFiltersChange }: FilterProps) 
 
         {/* Segunda fila */}
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center flex-wrap">
-          <div className="flex items-center gap-3">
-            <Checkbox
-              id="verified"
-              checked={filters.verifiedOnly}
-              onCheckedChange={(checked) => update({ verifiedOnly: Boolean(checked) })}
-            />
-            <Label htmlFor="verified" className="text-sm text-foreground cursor-pointer select-none">
-              Solo verificados
-            </Label>
-          </div>
-
           <div className="relative flex-1 min-w-[200px]">
-            <Select value={filters.sortBy} onValueChange={(value) => update({ sortBy: value })}>
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ordenar por</span>
+            <Select value={filters.sortBy} onValueChange={(value) => update({ sortBy: value as SortOption })}>
               <SelectTrigger className="w-full px-4 py-2 bg-card border border-border/50 rounded-lg text-sm">
                 <SelectValue placeholder="Ordenar por" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="featured">Destacados</SelectItem>
-                <SelectItem value="price-low">Precio: Menor a Mayor</SelectItem>
-                <SelectItem value="price-high">Precio: Mayor a Menor</SelectItem>
+                <SelectItem value={SORT_OPTIONS.PRICE_HIGH}>Precio: mayor a menor</SelectItem>
+                <SelectItem value={SORT_OPTIONS.PRICE_LOW}>Precio: menor a mayor</SelectItem>
+                <SelectItem value={SORT_OPTIONS.FEATURED}>Destacados primero</SelectItem>
               </SelectContent>
             </Select>
           </div>

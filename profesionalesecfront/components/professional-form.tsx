@@ -4,15 +4,16 @@ import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { CheckCircle2, ChevronLeft, ChevronRight, Home, Upload, Eye, EyeOff, PartyPopper, Loader2, Facebook, Instagram, Linkedin, Twitter, Music, Youtube } from "lucide-react"
+import { CheckCircle2, ChevronLeft, ChevronRight, Home, Upload, Eye, EyeOff, PartyPopper, Loader2, Facebook, Instagram, Linkedin, Twitter, Music, Youtube, Copy } from "lucide-react"
 import { Check, X } from "lucide-react" // Declared the Check variable
-import { authApi, profesionalApi, catalogosApi, saveToken, usuarioApi, horariosApi } from "@/lib/api"
+import { authApi, profesionalApi, catalogosApi, saveToken, removeToken, usuarioApi, horariosApi } from "@/lib/api"
 import ScheduleGrid from "@/components/schedule-grid"
 
 
 import LocationMap from "@/components/shared/location-map"
 import { getAddressFromCoordinates, getCoordinatesFromAddress } from "@/lib/geocoding"
 import { useToast } from "@/hooks/use-toast"
+import { PROFILE_IMAGE_ACCEPTED_TYPES, PROFILE_IMAGE_MAX_SIZE_BYTES, PROFILE_IMAGE_MAX_SIZE_MB } from "@/constants/profile-upload"
 
 const workModes = ["Presencial", "Virtual", "Ambas modalidades"]
 const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
@@ -100,6 +101,77 @@ interface ProfessionalFormProps {
   isAdditionalProfile?: boolean
 }
 
+interface BankAccountDetail {
+  label: string
+  value: string
+}
+
+interface BankAccount {
+  bankName: string
+  details: BankAccountDetail[]
+}
+
+const COPYABLE_BANK_DETAIL_LABELS = [
+  "Número Cuenta",
+  "RUC/Identificación",
+  "Correo",
+] as const
+
+const isCopyableBankDetail = (label: string) => COPYABLE_BANK_DETAIL_LABELS.some((copyableLabel) => copyableLabel === label)
+
+const PRIORITY_BANK_ACCOUNTS: BankAccount[] = [
+  {
+    bankName: "Banco Pichincha",
+    details: [
+      { label: "Tipo de cuenta", value: "Cuenta de ahorro transaccional" },
+      { label: "Número Cuenta", value: "2210137123" },
+      { label: "RUC/Identificación", value: "1103959464" },
+      { label: "Titular", value: "Juan Diego Estrada Fierro" },
+      { label: "Correo", value: "jdestradafier@gmail.com" },
+    ],
+  },
+  {
+    bankName: "Produbanco",
+    details: [
+      { label: "Tipo de cuenta", value: "Cuenta Digital" },
+      { label: "Número Cuenta", value: "20007421840" },
+      { label: "RUC/Identificación", value: "1103959464" },
+      { label: "Titular", value: "Juan Diego Estrada" },
+      { label: "Correo", value: "jdestradafier@gmail.com" },
+    ],
+  },
+  {
+    bankName: "Banco de Loja",
+    details: [
+      { label: "Tipo de cuenta", value: "Cuenta de ahorros cuenta activa" },
+      { label: "Número Cuenta", value: "2903648491" },
+      { label: "RUC/Identificación", value: "1103959464" },
+      { label: "Titular", value: "ESTRADA FIERRO, JUAN DIEGO" },
+      { label: "Correo", value: "jdestradafier@gmail.com" },
+    ],
+  },
+  {
+    bankName: "Banco Guayaquil",
+    details: [
+      { label: "Tipo de cuenta", value: "Ahorro" },
+      { label: "Número Cuenta", value: "0044243143" },
+      { label: "RUC/Identificación", value: "1103959464" },
+      { label: "Titular", value: "Estrada Fierro Juan Diego" },
+      { label: "Correo", value: "jdestradafier@gmail.com" },
+    ],
+  },
+  {
+    bankName: "Banco del Austro",
+    details: [
+      { label: "Tipo de cuenta", value: "Cuenta de ahorros" },
+      { label: "Número Cuenta", value: "0011825443" },
+      { label: "RUC/Identificación", value: "1103959464" },
+      { label: "Titular", value: "ESTRADA FIERRO JUAN DIEGO" },
+      { label: "Correo", value: "jdestradafier@gmail.com" },
+    ],
+  },
+]
+
 export default function ProfessionalForm({ isAdditionalProfile = false }: ProfessionalFormProps) {
   const { toast } = useToast()
   const searchParams = useSearchParams()
@@ -160,7 +232,9 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
   const [tagInput, setTagInput] = useState("")
   const [serviceInput, setServiceInput] = useState("") // New state for service input
   const [isLoading, setIsLoading] = useState(false)
+  const [copiedBankDetailKey, setCopiedBankDetailKey] = useState<string | null>(null)
   const isAddressManuallyEdited = useRef(false)
+  const copiedBankDetailTimeoutRef = useRef<number | null>(null)
   const emailInputRef = useRef<HTMLInputElement>(null)
   const cedulaInputRef = useRef<HTMLInputElement>(null)
   // Catalogs State
@@ -169,6 +243,44 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
   const [provinces, setProvinces] = useState<CatalogItem[]>([])
   const [cities, setCities] = useState<CatalogItem[]>([])
   const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null)
+
+  const copyTextToClipboard = async (value: string) => {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value)
+      return
+    }
+
+    const textArea = document.createElement("textarea")
+    textArea.value = value
+    textArea.setAttribute("readonly", "")
+    textArea.style.position = "fixed"
+    textArea.style.opacity = "0"
+    document.body.appendChild(textArea)
+    textArea.select()
+    document.execCommand("copy")
+    document.body.removeChild(textArea)
+  }
+
+  const handleCopyBankDetail = async (key: string, value: string) => {
+    try {
+      await copyTextToClipboard(value)
+      setCopiedBankDetailKey(key)
+
+      if (copiedBankDetailTimeoutRef.current) {
+        window.clearTimeout(copiedBankDetailTimeoutRef.current)
+      }
+
+      copiedBankDetailTimeoutRef.current = window.setTimeout(() => {
+        setCopiedBankDetailKey(null)
+      }, 1600)
+    } catch {
+      toast({
+        title: "No se pudo copiar",
+        description: "Selecciona el texto manualmente e intenta de nuevo.",
+        variant: "destructive",
+      })
+    }
+  }
 
   // Load initial catalogs and existing user data if needed
   useEffect(() => {
@@ -206,6 +318,12 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
     }
     loadInitialData()
   }, [isAdditionalProfile])
+
+  useEffect(() => () => {
+    if (copiedBankDetailTimeoutRef.current) {
+      window.clearTimeout(copiedBankDetailTimeoutRef.current)
+    }
+  }, [])
 
   // Prompt for location on step 2
   useEffect(() => {
@@ -400,16 +518,16 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
     if (file) {
       const allowedTypes = name === "paymentProof"
         ? ["image/jpeg", "image/png", "image/webp", "image/jpg", "application/pdf"]
-        : ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+        : PROFILE_IMAGE_ACCEPTED_TYPES;
       if (!allowedTypes.includes(file.type)) {
         setErrors(prev => ({ ...prev, [name]: name === "paymentProof" ? "Formato no soportado (solo .png, .jpg, .jpeg, .webp, .pdf)" : "Formato no soportado (solo .png, .jpg, .jpeg, .webp)" }));
         setFormData(prev => ({ ...prev, [name]: null }));
         return;
       }
       
-      const maxSize = 5 * 1024 * 1024; // 5 MB
+      const maxSize = name === "paymentProof" ? 5 * 1024 * 1024 : PROFILE_IMAGE_MAX_SIZE_BYTES;
       if (file.size > maxSize) {
-        setErrors(prev => ({ ...prev, [name]: "El archivo no debe pesar más de 5MB" }));
+        setErrors(prev => ({ ...prev, [name]: `El archivo no debe pesar más de ${name === "paymentProof" ? 5 : PROFILE_IMAGE_MAX_SIZE_MB}MB` }));
         setFormData(prev => ({ ...prev, [name]: null }));
         return;
       }
@@ -747,6 +865,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
           )
         }
 
+        removeToken()
         setIsLoading(false)
         setShowSuccessModal(true)
       } catch (error: any) {
@@ -967,7 +1086,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
           )}
         </div>
         {errors.profileImage && <p className="text-red-400 text-sm mt-3 font-medium animate-pulse">{errors.profileImage}</p>}
-        <p className="text-[10px] text-gray-400 mt-4 text-center max-w-[200px]">Recomendado: Imagen cuadrada, formato JPG o PNG. Máx 5MB.</p>
+        <p className="text-[10px] text-gray-400 mt-4 text-center max-w-[200px]">Recomendado: Imagen cuadrada, formato JPG o PNG. Máx {PROFILE_IMAGE_MAX_SIZE_MB}MB.</p>
       </div>
     </div>
   )
@@ -1646,11 +1765,51 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
         <p className="text-muted-foreground">Este paso es obligatorio para activar el plan prioritario.</p>
       </div>
 
-      <div className="p-4 rounded-xl border bg-blue-50 border-blue-200 text-sm text-blue-900 space-y-1">
-        <p><span className="font-semibold">Banco:</span> Banco del Pacífico</p>
-        <p><span className="font-semibold">Cuenta:</span> 1234567890</p>
-        <p><span className="font-semibold">Titular:</span> Profesionales.ec</p>
-        <p><span className="font-semibold">Monto:</span> $10 USD</p>
+      <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-blue-950 shadow-sm dark:border-blue-900 dark:bg-blue-950/20 dark:text-blue-50">
+        <div className="mb-4">
+          <p className="text-xs font-bold uppercase tracking-wide text-blue-700 dark:text-blue-300">Cuentas disponibles</p>
+          <p className="mt-1 text-sm text-blue-900/80 dark:text-blue-100/80">
+            Realiza la transferencia a cualquiera de estas cuentas y luego sube tu comprobante.
+          </p>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          {PRIORITY_BANK_ACCOUNTS.map((account) => (
+            <div key={account.bankName} className="rounded-xl border border-blue-200 bg-white/80 p-4 shadow-sm dark:border-blue-900 dark:bg-slate-950/40">
+              <h3 className="mb-3 font-oswald text-lg font-bold text-blue-950 dark:text-blue-50">{account.bankName}</h3>
+              <dl className="space-y-2 text-sm">
+                {account.details.map((detail) => {
+                  const detailKey = `${account.bankName}-${detail.label}`
+                  const canCopyDetail = isCopyableBankDetail(detail.label)
+                  const wasCopied = copiedBankDetailKey === detailKey
+
+                  return (
+                    <div key={detailKey} className="flex flex-col gap-0.5 sm:flex-row sm:justify-between sm:gap-4">
+                      <dt className="font-semibold text-blue-800 dark:text-blue-200">{detail.label}</dt>
+                      <dd className="break-words text-blue-950 sm:text-right dark:text-blue-50">
+                        {canCopyDetail ? (
+                          <button
+                            type="button"
+                            onClick={() => handleCopyBankDetail(detailKey, detail.value)}
+                            aria-label={`Copiar ${detail.label} de ${account.bankName}: ${detail.value}`}
+                            className="group inline-flex max-w-full items-center justify-start gap-1.5 rounded-md text-left font-medium transition-colors hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white sm:justify-end sm:text-right dark:hover:text-blue-200 dark:focus:ring-offset-slate-950"
+                          >
+                            <span className="break-words">{detail.value}</span>
+                            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blue-700 transition-colors group-hover:bg-blue-200 dark:bg-blue-900/60 dark:text-blue-100 dark:group-hover:bg-blue-800">
+                              {wasCopied ? "Copiado" : <><Copy className="size-3" aria-hidden="true" /> Copiar</>}
+                            </span>
+                          </button>
+                        ) : (
+                          detail.value
+                        )}
+                      </dd>
+                    </div>
+                  )
+                })}
+              </dl>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div>

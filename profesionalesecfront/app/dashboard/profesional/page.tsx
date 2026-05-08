@@ -43,9 +43,7 @@ import ScheduleManager from "@/components/schedule-manager"
 import SocialMediaManager from "@/components/social-media-manager"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-
-const PROFILE_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024
-const PROFILE_IMAGE_ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"]
+import { PROFILE_IMAGE_ACCEPTED_TYPES, PROFILE_IMAGE_MAX_SIZE_BYTES, PROFILE_IMAGE_MAX_SIZE_MB } from "@/constants/profile-upload"
 
 export default function ProfesionalDashboard() {
   const [activeTab, setActiveTab] = useState("dashboard")
@@ -322,7 +320,7 @@ export default function ProfesionalDashboard() {
 
       if (profileImageFile) {
         setUploadingProfileImage(true)
-        const uploaded = await multimediaApi.subir(profileImageFile, "profiles", token)
+        const uploaded = await multimediaApi.subirFotoPerfil(profileImageFile, token)
         const uploadedUrl = uploaded?.url
 
         if (!uploadedUrl) {
@@ -376,7 +374,7 @@ export default function ProfesionalDashboard() {
     if (file.size > PROFILE_IMAGE_MAX_SIZE_BYTES) {
       setProfileImageFile(null)
       setProfileImagePreview("")
-      setProfileImageError("La imagen supera el límite de 5MB.")
+      setProfileImageError(`La imagen supera el límite de ${PROFILE_IMAGE_MAX_SIZE_MB}MB.`)
       return
     }
 
@@ -965,7 +963,7 @@ export default function ProfesionalDashboard() {
                         />
                         <div className="text-sm text-muted-foreground">
                           <p>Sube una nueva imagen (JPG, PNG o WEBP).</p>
-                          <p>Tamaño máximo: 5MB.</p>
+                          <p>Tamaño máximo: {PROFILE_IMAGE_MAX_SIZE_MB}MB.</p>
                         </div>
                       </div>
                       <Input id="foto" type="file" accept="image/png,image/jpeg,image/webp" onChange={handleProfileImageChange} />

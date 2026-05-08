@@ -991,6 +991,24 @@ export const usuarioApi = {
 
 // Multimedia API
 export const multimediaApi = {
+  async subirFotoPerfil(archivo: File, token: string): Promise<{ url: string, public_id: string, format: string }> {
+    const formData = new FormData()
+    formData.append("archivo", archivo)
+
+    const res = await fetch(`${API_URL}/multimedia/profile-image`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error || err.message || "Error al subir foto de perfil");
+    }
+    const data = await res.json();
+    return data.data;
+  },
+
   async subir(archivo: File, folder = "conversatorios", token: string): Promise<{ url: string, public_id: string, format: string }> {
     const formData = new FormData()
     formData.append("archivo", archivo)
@@ -1165,5 +1183,7 @@ export const getToken = (): string | null => {
 export const removeToken = () => {
   if (typeof window !== "undefined") {
     localStorage.removeItem("auth_token")
+    localStorage.removeItem("refresh_token")
+    localStorage.removeItem("refreshToken")
   }
 }
