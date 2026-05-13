@@ -1,0 +1,7 @@
+<svg width="1200" height="1200" viewBox="0 0 1200 1200" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="placeholderTitle placeholderDesc">
+  <title id="placeholderTitle">Logo de Profesionales.ec</title>
+  <desc id="placeholderDesc">Placeholder que reutiliza el mismo logo blanco del navbar de Profesionales.ec sobre fondo oscuro.</desc>
+  <rect width="1200" height="1200" fill="#09090B"/>
+  <rect x="72" y="72" width="1056" height="1056" rx="56" fill="#18181B" stroke="#27272A" stroke-width="8"/>
+  <image href="/logo-white.png" x="180" y="180" width="840" height="840" preserveAspectRatio="xMidYMid meet"/>
+</svg>
