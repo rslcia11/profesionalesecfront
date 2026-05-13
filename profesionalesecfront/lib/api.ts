@@ -86,7 +86,7 @@ export interface Articulo {
   autor?: {
     id: number
     nombre: string
-    correo: string
+    correo?: string
     foto_url?: string
     perfiles_profesionales?: PerfilProfesionalSummary[]
   }
@@ -159,6 +159,29 @@ export interface Plan {
   duracion_dias: number
   descripcion?: string
   activo: boolean
+}
+
+export interface BankAccount {
+  id: number
+  bank_name: string
+  account_type: string
+  account_number: string
+  holder_identifier: string
+  holder_name: string
+  email: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface BankAccountPayload {
+  bank_name: string
+  account_type: string
+  account_number: string
+  holder_identifier: string
+  holder_name: string
+  email?: string | null
+  is_active?: boolean
 }
 
 export interface Ponencia {
@@ -764,6 +787,40 @@ export const publicidadApi = {
   async listar() { return fetchApi("/publicidades/listar"); }
 }
 
+export const bankAccountsApi = {
+  async listPublic(): Promise<BankAccount[]> {
+    return fetchApi("/bank-accounts")
+  },
+
+  async listAdmin(token: string): Promise<BankAccount[]> {
+    return fetchApi("/bank-accounts/admin", { headers: authHeader(token) })
+  },
+
+  async create(data: BankAccountPayload, token: string): Promise<BankAccount> {
+    return fetchApi("/bank-accounts", {
+      method: "POST",
+      headers: authHeader(token),
+      body: JSON.stringify(data),
+    })
+  },
+
+  async update(id: number, data: BankAccountPayload, token: string): Promise<BankAccount> {
+    return fetchApi(`/bank-accounts/${id}`, {
+      method: "PUT",
+      headers: authHeader(token),
+      body: JSON.stringify(data),
+    })
+  },
+
+  async updateStatus(id: number, is_active: boolean, token: string): Promise<BankAccount> {
+    return fetchApi(`/bank-accounts/${id}/status`, {
+      method: "PATCH",
+      headers: authHeader(token),
+      body: JSON.stringify({ is_active }),
+    })
+  },
+}
+
 // Admin Stats & Users
 // Admin API
 export const adminApi = {
@@ -1050,6 +1107,7 @@ const EMPTY_PAGINATED_ARTICULOS: PaginatedArticulos = {
 export const articulosApi = {
   async listarPublicados(opts: {
     profesionIds?: number[]
+    profileSlug?: string
     limit?: number
     page?: number
     keyword?: string
@@ -1058,6 +1116,7 @@ export const articulosApi = {
     if (opts.profesionIds && opts.profesionIds.length > 0) {
       params.set("profesion_ids", opts.profesionIds.join(","))
     }
+    if (opts.profileSlug) params.set("perfil_slug", opts.profileSlug)
     if (opts.limit && opts.limit > 0) params.set("limit", String(opts.limit))
     if (opts.page && opts.page > 0) params.set("page", String(opts.page))
     if (opts.keyword) params.set("keyword", opts.keyword)

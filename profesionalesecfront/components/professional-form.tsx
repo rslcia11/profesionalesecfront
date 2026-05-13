@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { CheckCircle2, ChevronLeft, ChevronRight, Home, Upload, Eye, EyeOff, PartyPopper, Loader2, Facebook, Instagram, Linkedin, Twitter, Music, Youtube, Copy } from "lucide-react"
 import { Check, X } from "lucide-react" // Declared the Check variable
-import { authApi, profesionalApi, catalogosApi, saveToken, removeToken, usuarioApi, horariosApi } from "@/lib/api"
+import { authApi, profesionalApi, catalogosApi, saveToken, removeToken, usuarioApi, horariosApi, bankAccountsApi, type BankAccount as ApiBankAccount } from "@/lib/api"
 import ScheduleGrid from "@/components/schedule-grid"
 
 
@@ -106,7 +106,7 @@ interface BankAccountDetail {
   value: string
 }
 
-interface BankAccount {
+interface PriorityBankAccount {
   bankName: string
   details: BankAccountDetail[]
 }
@@ -119,58 +119,18 @@ const COPYABLE_BANK_DETAIL_LABELS = [
 
 const isCopyableBankDetail = (label: string) => COPYABLE_BANK_DETAIL_LABELS.some((copyableLabel) => copyableLabel === label)
 
-const PRIORITY_BANK_ACCOUNTS: BankAccount[] = [
-  {
-    bankName: "Banco Pichincha",
+const mapPriorityBankAccounts = (accounts: ApiBankAccount[]): PriorityBankAccount[] => {
+  return accounts.map((account) => ({
+    bankName: account.bank_name,
     details: [
-      { label: "Tipo de cuenta", value: "Cuenta de ahorro transaccional" },
-      { label: "Número Cuenta", value: "2210137123" },
-      { label: "RUC/Identificación", value: "1103959464" },
-      { label: "Titular", value: "Juan Diego Estrada Fierro" },
-      { label: "Correo", value: "jdestradafier@gmail.com" },
+      { label: "Tipo de cuenta", value: account.account_type },
+      { label: "Número Cuenta", value: account.account_number },
+      { label: "RUC/Identificación", value: account.holder_identifier },
+      { label: "Titular", value: account.holder_name },
+      { label: "Correo", value: account.email || "No registrado" },
     ],
-  },
-  {
-    bankName: "Produbanco",
-    details: [
-      { label: "Tipo de cuenta", value: "Cuenta Digital" },
-      { label: "Número Cuenta", value: "20007421840" },
-      { label: "RUC/Identificación", value: "1103959464" },
-      { label: "Titular", value: "Juan Diego Estrada" },
-      { label: "Correo", value: "jdestradafier@gmail.com" },
-    ],
-  },
-  {
-    bankName: "Banco de Loja",
-    details: [
-      { label: "Tipo de cuenta", value: "Cuenta de ahorros cuenta activa" },
-      { label: "Número Cuenta", value: "2903648491" },
-      { label: "RUC/Identificación", value: "1103959464" },
-      { label: "Titular", value: "ESTRADA FIERRO, JUAN DIEGO" },
-      { label: "Correo", value: "jdestradafier@gmail.com" },
-    ],
-  },
-  {
-    bankName: "Banco Guayaquil",
-    details: [
-      { label: "Tipo de cuenta", value: "Ahorro" },
-      { label: "Número Cuenta", value: "0044243143" },
-      { label: "RUC/Identificación", value: "1103959464" },
-      { label: "Titular", value: "Estrada Fierro Juan Diego" },
-      { label: "Correo", value: "jdestradafier@gmail.com" },
-    ],
-  },
-  {
-    bankName: "Banco del Austro",
-    details: [
-      { label: "Tipo de cuenta", value: "Cuenta de ahorros" },
-      { label: "Número Cuenta", value: "0011825443" },
-      { label: "RUC/Identificación", value: "1103959464" },
-      { label: "Titular", value: "ESTRADA FIERRO JUAN DIEGO" },
-      { label: "Correo", value: "jdestradafier@gmail.com" },
-    ],
-  },
-]
+  }))
+}
 
 export default function ProfessionalForm({ isAdditionalProfile = false }: ProfessionalFormProps) {
   const { toast } = useToast()
@@ -233,6 +193,9 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
   const [serviceInput, setServiceInput] = useState("") // New state for service input
   const [isLoading, setIsLoading] = useState(false)
   const [copiedBankDetailKey, setCopiedBankDetailKey] = useState<string | null>(null)
+  const [priorityBankAccounts, setPriorityBankAccounts] = useState<PriorityBankAccount[]>([])
+  const [isLoadingPriorityBankAccounts, setIsLoadingPriorityBankAccounts] = useState(false)
+  const [priorityBankAccountsError, setPriorityBankAccountsError] = useState<string | null>(null)
   const isAddressManuallyEdited = useRef(false)
   const copiedBankDetailTimeoutRef = useRef<number | null>(null)
   const emailInputRef = useRef<HTMLInputElement>(null)
@@ -324,6 +287,37 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
       window.clearTimeout(copiedBankDetailTimeoutRef.current)
     }
   }, [])
+
+  useEffect(() => {
+    if (plan !== "priority") return
+
+    let isMounted = true
+
+    const loadPriorityBankAccounts = async () => {
+      setIsLoadingPriorityBankAccounts(true)
+      setPriorityBankAccountsError(null)
+
+      try {
+        const accounts = await bankAccountsApi.listPublic()
+        if (!isMounted) return
+        setPriorityBankAccounts(mapPriorityBankAccounts(Array.isArray(accounts) ? accounts : []))
+      } catch (error) {
+        if (!isMounted) return
+        setPriorityBankAccounts([])
+        setPriorityBankAccountsError("No pudimos cargar las cuentas bancarias en este momento.")
+      } finally {
+        if (isMounted) {
+          setIsLoadingPriorityBankAccounts(false)
+        }
+      }
+    }
+
+    loadPriorityBankAccounts()
+
+    return () => {
+      isMounted = false
+    }
+  }, [plan])
 
   // Prompt for location on step 2
   useEffect(() => {
@@ -1774,13 +1768,27 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
-          {PRIORITY_BANK_ACCOUNTS.map((account) => (
+          {isLoadingPriorityBankAccounts ? (
+            <div className="col-span-full flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white/80 p-6 text-sm text-blue-900 dark:border-blue-900 dark:bg-slate-950/40 dark:text-blue-50">
+              <Loader2 className="size-4 animate-spin" />
+              Cargando cuentas bancarias...
+            </div>
+          ) : priorityBankAccountsError ? (
+            <div className="col-span-full rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/20 dark:text-red-200">
+              {priorityBankAccountsError}
+            </div>
+          ) : priorityBankAccounts.length === 0 ? (
+            <div className="col-span-full rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-200">
+              No hay cuentas bancarias activas disponibles en este momento.
+            </div>
+          ) : (
+            priorityBankAccounts.map((account) => (
             <div key={account.bankName} className="rounded-xl border border-blue-200 bg-white/80 p-4 shadow-sm dark:border-blue-900 dark:bg-slate-950/40">
               <h3 className="mb-3 font-oswald text-lg font-bold text-blue-950 dark:text-blue-50">{account.bankName}</h3>
               <dl className="space-y-2 text-sm">
                 {account.details.map((detail) => {
                   const detailKey = `${account.bankName}-${detail.label}`
-                  const canCopyDetail = isCopyableBankDetail(detail.label)
+                  const canCopyDetail = isCopyableBankDetail(detail.label) && detail.value !== "No registrado"
                   const wasCopied = copiedBankDetailKey === detailKey
 
                   return (
@@ -1808,7 +1816,8 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
                 })}
               </dl>
             </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 

@@ -1,22 +1,37 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { profesionalApi, horariosApi } from "@/lib/api"
-import { MapPin, Mail, Facebook, Instagram, Linkedin, Music, Youtube } from "lucide-react"
+import { format } from "date-fns"
+import { es } from "date-fns/locale"
+import { articulosApi, horariosApi, profesionalApi, type Articulo } from "@/lib/api"
+import { ArrowRight, BookOpen, Facebook, Instagram, Linkedin, Mail, MapPin, Music, Youtube } from "lucide-react"
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import BookingForm from "@/components/booking-form"
 import LocationMap from "@/components/shared/location-map"
 import { formatUrl } from "@/lib/utils"
 
+const ArticlePdfPreview = dynamic(() => import("@/components/articles/article-pdf-preview"), { ssr: false })
+
 interface ProfessionalProfileClientProps {
   profileId: string
+}
+
+function formatArticleDate(dateStr: string) {
+  try {
+    return format(new Date(dateStr), "d 'de' MMMM 'de' yyyy", { locale: es })
+  } catch {
+    return dateStr
+  }
 }
 
 export default function ProfessionalProfileClient({ profileId }: ProfessionalProfileClientProps) {
   const [professional, setProfessional] = useState<any>(null)
   const [schedule, setSchedule] = useState<boolean[] | null>(null)
+  const [articles, setArticles] = useState<Articulo[]>([])
+  const [articlesLoading, setArticlesLoading] = useState(true)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -24,8 +39,20 @@ export default function ProfessionalProfileClient({ profileId }: ProfessionalPro
       if (!profileId) return
       try {
         setLoading(true)
-        const found = await profesionalApi.obtenerPublico(profileId)
+        setArticlesLoading(true)
+
+        const [found, articlesResult] = await Promise.all([
+          profesionalApi.obtenerPublico(profileId),
+          articulosApi
+            .listarPublicados({
+              profileSlug: profileId,
+              limit: 6,
+            })
+            .catch(() => ({ data: [], meta: { totalItems: 0, totalPages: 1, currentPage: 1, itemsPerPage: 0 } })),
+        ])
+
         setProfessional(found || null)
+        setArticles(articlesResult.data)
 
         if (found) {
           try {
@@ -39,7 +66,9 @@ export default function ProfessionalProfileClient({ profileId }: ProfessionalPro
         }
       } catch (error) {
         console.error("Error fetching profile:", error)
+        setArticles([])
       } finally {
+        setArticlesLoading(false)
         setLoading(false)
       }
     }
@@ -226,6 +255,107 @@ export default function ProfessionalProfileClient({ profileId }: ProfessionalPro
             </div>
           </div>
         </div>
+
+        {(articlesLoading || articles.length > 0) && (
+          <section className="border-t border-gray-100 pt-16">
+            <div className="mb-10 text-center md:text-left">
+              <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-4">
+                <BookOpen className="text-primary" size={18} />
+                <span className="text-sm font-semibold text-primary">Publicaciones</span>
+              </div>
+              <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">Artículos publicados</h3>
+              <p className="text-gray-500 max-w-2xl">
+                Leé los artículos aprobados y publicados por {name} dentro de Profesionales.EC.
+              </p>
+            </div>
+
+            {articlesLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                {articles.map((article, index) => {
+                  const excerpt = article.resumen || `${article.contenido?.slice(0, 150) || ""}...`
+                  const articlePdfUrl = formatUrl(article.pdf_url) || article.pdf_url
+
+                  return (
+                    <article
+                      key={article.id}
+                      className="group bg-white rounded-2xl overflow-hidden border border-gray-200 hover:border-primary/30 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 animate-in fade-in slide-in-from-bottom-6"
+                      style={{ animationDelay: `${index * 80}ms` }}
+                    >
+                      <Link href={`/articulos/${article.id}`} className="block">
+                        <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary/5 to-accent/5">
+                          {articlePdfUrl ? (
+                            <ArticlePdfPreview
+                              pdfUrl={articlePdfUrl}
+                              title={article.titulo}
+                              compact={true}
+                              variant="thumbnail"
+                              className="transition-transform duration-700 group-hover:scale-[1.03]"
+                              fallbackMessage="Vista previa no disponible para este artículo."
+                            />
+                          ) : article.imagen_url ? (
+                            <img
+                              src={formatUrl(article.imagen_url) || ""}
+                              alt={article.titulo}
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                            />
+                          ) : (
+                            <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center text-gray-500">
+                              <BookOpen className="text-primary/30" size={56} />
+                              <p className="text-sm font-medium">Sin PDF disponible</p>
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-white via-white/50 to-transparent opacity-70" />
+                        </div>
+
+                        <div className="p-6">
+                          <div className="mb-3 text-xs text-gray-500">
+                            <span>{formatArticleDate(article.fecha_publicacion)}</span>
+                          </div>
+
+                          <h4 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-primary transition-colors">
+                            {article.titulo}
+                          </h4>
+
+                          <p className="text-sm text-gray-600 leading-relaxed mb-5 line-clamp-3">{excerpt}</p>
+                        </div>
+                      </Link>
+
+                      <div className="px-6 pb-6">
+                        <div className="pt-4 border-t border-gray-100 flex items-center justify-between gap-4">
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">{name}</p>
+                            <p className="text-xs text-gray-500">{subTitle}</p>
+                          </div>
+
+                          {articlePdfUrl ? (
+                            <a
+                              href={articlePdfUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 text-sm font-semibold text-primary"
+                            >
+                              Leer artículo
+                              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                            </a>
+                          ) : (
+                            <Link href={`/articulos/${article.id}`} className="inline-flex items-center gap-2 text-sm font-semibold text-primary">
+                              Leer artículo
+                              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
+            )}
+          </section>
+        )}
       </div>
 
       <div className="fixed bottom-6 left-6 z-50">

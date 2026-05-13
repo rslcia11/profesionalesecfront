@@ -1047,6 +1047,7 @@ export default function ProfesionalDashboard() {
         open={isArticleModalOpen}
         onOpenChange={setIsArticleModalOpen}
         article={editingArticle}
+        showFeaturedImageSection={false}
         onSubmit={editingArticle ? handleUpdateArticulo : handleCreateArticulo}
       />
     </div >

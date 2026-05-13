@@ -63,9 +63,11 @@ import { formatUrl, cn } from "@/lib/utils"
 import { adminApi, catalogosApi, ponenciasApi, profesionalApi, articulosApi, API_URL, ponentesApi, revistaApi, multimediaApi, type Articulo } from "@/lib/api"
 import dynamic from "next/dynamic"
 const LocationMap = dynamic(() => import("@/components/shared/location-map"), { ssr: false })
+const ArticlePdfPreview = dynamic(() => import("@/components/articles/article-pdf-preview"), { ssr: false })
 import { useAnimatedConfirm, AnimatedConfirm } from "@/components/shared/animated-confirm"
 import ArticleFormModal from "@/components/article-form-modal"
 import ProfessionManagementDialog from "@/components/admin/profession-management-dialog"
+import BankAccountsManagement from "@/components/admin/bank-accounts-management"
 
 type Ponencia = {
   id: number
@@ -427,6 +429,9 @@ export default function AdminDashboard() {
   const [isArticleModalOpen, setIsArticleModalOpen] = useState(false)
   const [isArticleDetailsOpen, setIsArticleDetailsOpen] = useState(false)
   const [selectedArticle, setSelectedArticle] = useState<Articulo | null>(null)
+  const selectedArticlePdfUrl = selectedArticle?.pdf_url
+    ? formatUrl(selectedArticle.pdf_url) ?? selectedArticle.pdf_url
+    : null
 
   // Filter state
   const [filterStatus, setFilterStatus] = useState<"todos" | "pendiente" | "aprobado" | "rechazado">("todos")
@@ -910,7 +915,7 @@ export default function AdminDashboard() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-6 bg-white border border-gray-200 shadow-sm">
+              <TabsList className="grid w-full grid-cols-7 bg-white border border-gray-200 shadow-sm">
                 <TabsTrigger
                   value="dashboard"
                   className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
@@ -931,6 +936,9 @@ export default function AdminDashboard() {
                 </TabsTrigger>
                 <TabsTrigger value="articulos" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                   Artículos
+                </TabsTrigger>
+                <TabsTrigger value="bancos" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                  Bancos
                 </TabsTrigger>
                 <TabsTrigger
                   value="convenios"
@@ -1797,6 +1805,10 @@ export default function AdminDashboard() {
                 )}
               </div>
             </TabsContent>
+
+            <TabsContent value="bancos" className="space-y-4">
+              <BankAccountsManagement />
+            </TabsContent>
             <TabsContent value="revistas" className="space-y-4">
               <div className="animate-in fade-in duration-300">
                 <div className="flex justify-between items-center mb-6">
@@ -2385,6 +2397,47 @@ export default function AdminDashboard() {
                     {selectedArticle.resumen && (
                       <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-100 italic text-gray-600 text-lg leading-relaxed">
                         "{selectedArticle.resumen}"
+                      </div>
+                    )}
+
+                    {selectedArticlePdfUrl && (
+                      <div className="space-y-3 rounded-xl border border-blue-100 bg-blue-50/40 p-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex items-center gap-2 text-sm font-semibold text-blue-900">
+                            <FileText className="h-4 w-4" />
+                            Documento PDF adjunto
+                          </div>
+                          <Button asChild variant="outline" className="gap-2 border-blue-200 bg-white text-blue-700 hover:bg-blue-50">
+                            <a
+                              href={selectedArticlePdfUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Eye className="h-4 w-4" />
+                              Abrir PDF
+                            </a>
+                          </Button>
+                        </div>
+
+                        <div className="mx-auto w-full max-w-md">
+                          <div className="relative aspect-[210/297] overflow-hidden rounded-lg border border-blue-100 bg-white transition hover:border-blue-300 hover:shadow-sm">
+                            <ArticlePdfPreview
+                              pdfUrl={selectedArticlePdfUrl}
+                              title={selectedArticle.titulo}
+                            />
+                            <a
+                              href={selectedArticlePdfUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              aria-label={`Abrir PDF de ${selectedArticle.titulo} en otra pestaña`}
+                              className="absolute inset-0"
+                            />
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-blue-700">
+                        Vista previa de la primera hoja. Haz clic en el botón para abrir el PDF completo en otra pestaña.
+                        </p>
                       </div>
                     )}
 

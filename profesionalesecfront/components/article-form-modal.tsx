@@ -13,6 +13,8 @@ interface ArticleFormModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     article?: Articulo | null
+    showFeaturedImageLabel?: boolean
+    showFeaturedImageSection?: boolean
     onSubmit: (data: FormData | { titulo: string; contenido: string; resumen?: string; imagen_url?: string }) => Promise<void>
 }
 
@@ -20,6 +22,8 @@ export default function ArticleFormModal({
     open,
     onOpenChange,
     article,
+    showFeaturedImageLabel = true,
+    showFeaturedImageSection = true,
     onSubmit,
 }: ArticleFormModalProps) {
     const [titulo, setTitulo] = useState("")
@@ -167,56 +171,58 @@ export default function ArticleFormModal({
                     </div>
 
                     {/* Imagen Selection */}
-                    <div className="space-y-3 p-4 border rounded-lg bg-slate-50 dark:bg-slate-900/50">
-                        <Label className="font-semibold">Imagen Destacada</Label>
+                    {showFeaturedImageSection && (
+                        <div className="space-y-3 p-4 border rounded-lg bg-slate-50 dark:bg-slate-900/50">
+                            {showFeaturedImageLabel && <Label className="font-semibold">Imagen Destacada</Label>}
 
-                        {/* Option 1: File Upload */}
-                        <div className="space-y-2">
-                            <Label htmlFor="imagen_file" className="text-xs text-muted-foreground">Subir desde PC:</Label>
-                            <Input
-                                id="imagen_file"
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => handleFileChange(e, 'image')}
-                            />
-                        </div>
-
-                        <div className="text-xs text-center text-muted-foreground">- O -</div>
-
-                        {/* Option 2: URL */}
-                        <div className="space-y-2">
-                            <Label htmlFor="imagen_url" className="text-xs text-muted-foreground">Usar URL externa:</Label>
-                            <Input
-                                id="imagen_url"
-                                type="url"
-                                placeholder="https://ejemplo.com/imagen.jpg"
-                                value={imagenUrl}
-                                onChange={(e) => {
-                                    setImagenUrl(e.target.value)
-                                    setImagenFile(null) // Clear file if URL is typed
-                                }}
-                                disabled={!!imagenFile}
-                            />
-                        </div>
-
-                        {/* Preview */}
-                        {(imagenFile || imagenUrl) && (
-                            <div className="mt-2 rounded-lg overflow-hidden border border-border/50 h-32 w-full flex items-center justify-center bg-background">
-                                {imagenFile ? (
-                                    <span className="text-sm text-green-600 flex items-center gap-2">
-                                        <Upload size={16} /> Imagen seleccionada: {imagenFile.name}
-                                    </span>
-                                ) : (
-                                    <img
-                                        src={imagenUrl}
-                                        alt="Preview"
-                                        className="h-full object-contain"
-                                        onError={(e) => (e.target as HTMLImageElement).style.display = "none"}
-                                    />
-                                )}
+                            {/* Option 1: File Upload */}
+                            <div className="space-y-2">
+                                <Label htmlFor="imagen_file" className="text-xs text-muted-foreground">Subir desde PC:</Label>
+                                <Input
+                                    id="imagen_file"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => handleFileChange(e, 'image')}
+                                />
                             </div>
-                        )}
-                    </div>
+
+                            <div className="text-xs text-center text-muted-foreground">- O -</div>
+
+                            {/* Option 2: URL */}
+                            <div className="space-y-2">
+                                <Label htmlFor="imagen_url" className="text-xs text-muted-foreground">Usar URL externa:</Label>
+                                <Input
+                                    id="imagen_url"
+                                    type="url"
+                                    placeholder="https://ejemplo.com/imagen.jpg"
+                                    value={imagenUrl}
+                                    onChange={(e) => {
+                                        setImagenUrl(e.target.value)
+                                        setImagenFile(null) // Clear file if URL is typed
+                                    }}
+                                    disabled={!!imagenFile}
+                                />
+                            </div>
+
+                            {/* Preview */}
+                            {(imagenFile || imagenUrl) && (
+                                <div className="mt-2 rounded-lg overflow-hidden border border-border/50 h-32 w-full flex items-center justify-center bg-background">
+                                    {imagenFile ? (
+                                        <span className="text-sm text-green-600 flex items-center gap-2">
+                                            <Upload size={16} /> Imagen seleccionada: {imagenFile.name}
+                                        </span>
+                                    ) : (
+                                        <img
+                                            src={imagenUrl}
+                                            alt="Preview"
+                                            className="h-full object-contain"
+                                            onError={(e) => (e.target as HTMLImageElement).style.display = "none"}
+                                        />
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* PDF Upload */}
                     <div className="space-y-3 p-4 border rounded-lg bg-slate-50 dark:bg-slate-900/50">
