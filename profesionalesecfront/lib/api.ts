@@ -46,6 +46,8 @@ export interface PerfilProfesionalData {
   tarifa_hora?: number // Added for compatibility with admin view
   plan?: string
   comprobante_pago_url?: string
+  payment_method?: string
+  payphone_flow?: boolean
 }
 
 export interface ComprobanteTemporalResponse {
@@ -182,6 +184,70 @@ export interface BankAccountPayload {
   holder_name: string
   email?: string | null
   is_active?: boolean
+}
+
+export interface PayPhonePriorityTransaction {
+  id: number
+  pago_id: number | null
+  user_id: number
+  perfil_id: number | null
+  client_transaction_id: string
+  payphone_payment_id: number | null
+  payphone_transaction_id: number | null
+  amount: number
+  currency: string
+  status: string
+  confirm_deadline_at: string | null
+  error_detail: string | null
+}
+
+export interface PayPhonePriorityCheckout {
+  id: number | null
+  transactionId: number | null
+  clientTransactionId: string | null
+  checkoutUrl: string | null
+  payWithCard: string | null
+  payWithPayPhone: string | null
+  statusCode: number | null
+  normalizedStatus: string | null
+}
+
+export interface PayPhonePriorityPreparePayload {
+  clientTransactionId: string
+  cancellationUrl?: string
+  currency?: string
+  idempotencyKey?: string
+  perfil_id?: number
+  plan?: string
+  reference?: string
+  responseUrl?: string
+}
+
+export interface PayPhonePriorityPrepareData {
+  reused: boolean
+  transaction: PayPhonePriorityTransaction
+  checkout: PayPhonePriorityCheckout
+}
+
+export interface PayPhonePriorityConfirmPayload {
+  clientTransactionId: string
+  id?: number | string
+  idempotencyKey?: string
+  payphonePaymentId?: number | string
+}
+
+export interface PayPhonePriorityConfirmData {
+  approved: boolean
+  reviewRequired: boolean
+  manualReviewMessage: string | null
+  transaction: PayPhonePriorityTransaction
+  confirmation: {
+    id: number | null
+    transactionId: number | null
+    clientTransactionId: string | null
+    statusCode: number | null
+    normalizedStatus: string | null
+  }
 }
 
 export interface Ponencia {
@@ -817,6 +883,30 @@ export const bankAccountsApi = {
       method: "PATCH",
       headers: authHeader(token),
       body: JSON.stringify({ is_active }),
+    })
+  },
+}
+
+export const payphoneApi = {
+  async preparePriorityCheckout(
+    data: PayPhonePriorityPreparePayload,
+    token: string,
+  ): Promise<PayPhonePriorityPrepareData> {
+    return fetchApi("/payphone/priority/checkout/prepare", {
+      method: "POST",
+      headers: authHeader(token),
+      body: JSON.stringify(data),
+    })
+  },
+
+  async confirmPriorityCheckout(
+    data: PayPhonePriorityConfirmPayload,
+    token: string,
+  ): Promise<PayPhonePriorityConfirmData> {
+    return fetchApi("/payphone/priority/checkout/confirm", {
+      method: "POST",
+      headers: authHeader(token),
+      body: JSON.stringify(data),
     })
   },
 }

@@ -116,7 +116,7 @@ export default function PreinscripcionPage() {
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900 font-display">Evita la Lista de Espera</h3>
-                  <p className="text-blue-600 text-sm font-medium">Activación inmediata</p>
+                  <p className="text-blue-600 text-sm font-medium">Pago sujeto a validación y revisión manual</p>
                 </div>
               </div>
 
@@ -169,9 +169,12 @@ export default function PreinscripcionPage() {
           {selectedPlan === "paid" && (
             <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-lg">
-                <h3 className="text-2xl font-bold mb-6 text-center text-gray-900">Pago por Transferencia</h3>
+                <h3 className="text-2xl font-bold mb-2 text-center text-gray-900">Elegí tu método de pago</h3>
+                <p className="mb-6 text-center text-sm text-gray-600">
+                  El pago registra tu solicitud priority, pero la validación final sigue siendo manual/admin.
+                </p>
 
-                <div className="grid md:grid-cols-1 gap-6">
+                <div className="grid gap-6 md:grid-cols-2">
                   <div className="bg-gray-50 border border-gray-300 rounded-xl p-6 hover:border-blue-500 transition-all duration-300 group">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
@@ -185,8 +188,26 @@ export default function PreinscripcionPage() {
                     <Link
                       href="/crear-perfil?plan=priority&payment=bank"
                       className="w-full block text-center py-3 px-4 bg-gray-200 text-gray-900 rounded-lg font-medium hover:bg-gray-300 transition-all"
-                    >
+                      >
                       Continuar con Transferencia
+                    </Link>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 hover:border-blue-500 transition-all duration-300 group">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
+                        <CreditCard className="text-blue-600" size={24} />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-gray-900">Tarjeta con PayPhone</h4>
+                        <p className="text-sm text-gray-600">Completá el formulario y luego serás redirigido al checkout</p>
+                      </div>
+                    </div>
+                    <Link
+                      href="/crear-perfil?plan=priority&payment=payphone"
+                      className="w-full block text-center py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all"
+                    >
+                      Continuar con PayPhone
                     </Link>
                   </div>
 
