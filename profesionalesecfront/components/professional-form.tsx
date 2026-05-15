@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
-import { useSearchParams } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { CheckCircle2, ChevronLeft, ChevronRight, Home, Upload, Eye, EyeOff, PartyPopper, Loader2, Facebook, Instagram, Linkedin, Twitter, Music, Youtube, Copy } from "lucide-react"
 import { Check, X } from "lucide-react" // Declared the Check variable
@@ -135,12 +135,20 @@ const mapPriorityBankAccounts = (accounts: ApiBankAccount[]): PriorityBankAccoun
 
 export default function ProfessionalForm({ isAdditionalProfile = false }: ProfessionalFormProps) {
   const { toast } = useToast()
+  const router = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
   const plan = searchParams.get("plan") // Get plan from URL
   const paymentMethod = searchParams.get("payment")
   const isPriorityPlan = plan === "priority"
-  const isPriorityPayPhone = isPriorityPlan && paymentMethod === "payphone"
-  const isPriorityBankTransfer = isPriorityPlan && paymentMethod !== "payphone"
+  const normalizedPriorityPaymentMethod = paymentMethod === "payphone"
+    ? "payphone"
+    : paymentMethod === "bank"
+      ? "bank"
+      : null
+  const isPriorityPayPhone = isPriorityPlan && normalizedPriorityPaymentMethod === "payphone"
+  const isPriorityBankTransfer = isPriorityPlan && normalizedPriorityPaymentMethod === "bank"
+  const shouldChoosePriorityPaymentMethod = isPriorityPlan && normalizedPriorityPaymentMethod === null
 
   const [currentStep, setCurrentStep] = useState(0)
   const [comprobantePagoUrl, setComprobantePagoUrl] = useState<string | null>(null)
@@ -201,6 +209,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
   const [priorityBankAccounts, setPriorityBankAccounts] = useState<PriorityBankAccount[]>([])
   const [isLoadingPriorityBankAccounts, setIsLoadingPriorityBankAccounts] = useState(false)
   const [priorityBankAccountsError, setPriorityBankAccountsError] = useState<string | null>(null)
+  const [priorityPaymentMethodError, setPriorityPaymentMethodError] = useState<string | null>(null)
   const isAddressManuallyEdited = useRef(false)
   const copiedBankDetailTimeoutRef = useRef<number | null>(null)
   const emailInputRef = useRef<HTMLInputElement>(null)
@@ -248,6 +257,14 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
         variant: "destructive",
       })
     }
+  }
+
+  const updatePriorityPaymentMethod = (nextPaymentMethod: "bank" | "payphone") => {
+    const nextSearchParams = new URLSearchParams(searchParams.toString())
+    nextSearchParams.set("payment", nextPaymentMethod)
+    router.replace(`${pathname}?${nextSearchParams.toString()}`, { scroll: false })
+    setPriorityPaymentMethodError(null)
+    setErrors((prev) => ({ ...prev, paymentProof: "" }))
   }
 
   // Load initial catalogs and existing user data if needed
@@ -394,7 +411,14 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
     { title: "Ubicación", description: "Dónde trabajas" },
     { title: "Documentos", description: "Verifica tu identidad" },
     { title: "Preferencias", description: "Configuración final" },
-    ...(isPriorityPlan ? [{ title: isPriorityPayPhone ? "Pago" : "Comprobante", description: isPriorityPayPhone ? "Continúa con PayPhone" : "Sube tu comprobante de transferencia" }] : []),
+    ...(isPriorityPlan ? [{
+      title: shouldChoosePriorityPaymentMethod ? "Pago" : isPriorityPayPhone ? "Pago" : "Comprobante",
+      description: shouldChoosePriorityPaymentMethod
+        ? "Elegí cómo querés registrar el pago"
+        : isPriorityPayPhone
+          ? "Continúa con PayPhone"
+          : "Sube tu comprobante de transferencia",
+    }] : []),
   ]
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -671,6 +695,8 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
 
   const validateStep = (): boolean => {
     const currentFieldsToValidate: string[] = []
+    let isValid = true
+
     switch (currentStep) {
       case 0:
         if (isAdditionalProfile) {
@@ -692,11 +718,15 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
         currentFieldsToValidate.push("tags")
         break
       case 5:
+        if (shouldChoosePriorityPaymentMethod) {
+          setPriorityPaymentMethodError("Elegí un método de pago para continuar.")
+          isValid = false
+          break
+        }
         if (isPriorityBankTransfer) currentFieldsToValidate.push("paymentProof")
         break
     }
 
-    let isValid = true
     const newTouched = { ...touched }
 
     currentFieldsToValidate.forEach(field => {
@@ -1798,114 +1828,161 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
     <div className="space-y-6">
       <div>
         <h2 className="font-oswald text-2xl font-bold text-foreground mb-4">
-          {isPriorityPayPhone ? "Pago con PayPhone" : "Comprobante de transferencia"}
+          {shouldChoosePriorityPaymentMethod
+            ? "Elegí tu método de pago"
+            : isPriorityPayPhone
+              ? "Pago con PayPhone"
+              : "Comprobante de transferencia"}
         </h2>
         <p className="text-muted-foreground">
-          {isPriorityPayPhone
-            ? "Cuando envíes el formulario, te redirigiremos a PayPhone para completar el pago."
-            : "Sube tu comprobante para registrar tu solicitud priority y pasar a revisión manual."}
+          {shouldChoosePriorityPaymentMethod
+            ? "Tu solicitud priority siempre queda pendiente de revisión manual/admin, incluso si pagás con tarjeta por PayPhone."
+            : isPriorityPayPhone
+              ? "Cuando envíes el formulario, te redirigiremos a PayPhone para completar el pago."
+              : "Sube tu comprobante para registrar tu solicitud priority y pasar a revisión manual."}
         </p>
       </div>
 
-      <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-blue-950 shadow-sm dark:border-blue-900 dark:bg-blue-950/20 dark:text-blue-50">
-        <div className="mb-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-blue-700 dark:text-blue-300">
-            {isPriorityPayPhone ? "Qué va a pasar" : "Cuentas disponibles"}
-          </p>
-          <p className="mt-1 text-sm text-blue-900/80 dark:text-blue-100/80">
-            {isPriorityPayPhone
-              ? "Al terminar este formulario vas a continuar en PayPhone. Si el pago queda Approved, se registrará y quedará pendiente de revisión/validación manual."
-              : "Realiza la transferencia a cualquiera de estas cuentas y luego sube tu comprobante."}
-          </p>
-        </div>
-        {isPriorityPayPhone ? (
-          <div className="rounded-xl border border-blue-200 bg-white/80 p-5 text-sm shadow-sm dark:border-blue-900 dark:bg-slate-950/40">
-            <ul className="space-y-2 text-blue-950 dark:text-blue-50">
-              <li>• Te redirigiremos al checkout seguro de PayPhone al enviar el formulario.</li>
-              <li>• El pago aprobado NO activa el perfil automáticamente.</li>
-              <li>• Nuestro equipo debe revisar y validar la solicitud antes de cualquier activación.</li>
-            </ul>
+      {shouldChoosePriorityPaymentMethod ? (
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950 shadow-sm dark:border-blue-900 dark:bg-blue-950/20 dark:text-blue-50">
+            <p className="font-semibold">Importante antes de continuar</p>
+            <p className="mt-2">
+              El pago registra tu solicitud priority, pero NO activa premium, priority ni destacado automáticamente. Todo queda pendiente de revisión/validación manual del equipo.
+            </p>
           </div>
-        ) : (
-          <>
-            <div className="grid gap-3 md:grid-cols-2">
-              {isLoadingPriorityBankAccounts ? (
-                <div className="col-span-full flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white/80 p-6 text-sm text-blue-900 dark:border-blue-900 dark:bg-slate-950/40 dark:text-blue-50">
-                  <Loader2 className="size-4 animate-spin" />
-                  Cargando cuentas bancarias...
-                </div>
-              ) : priorityBankAccountsError ? (
-                <div className="col-span-full rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/20 dark:text-red-200">
-                  {priorityBankAccountsError}
-                </div>
-              ) : priorityBankAccounts.length === 0 ? (
-                <div className="col-span-full rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-200">
-                  No hay cuentas bancarias activas disponibles en este momento.
-                </div>
-              ) : (
-                priorityBankAccounts.map((account) => (
-                  <div key={account.bankName} className="rounded-xl border border-blue-200 bg-white/80 p-4 shadow-sm dark:border-blue-900 dark:bg-slate-950/40">
-                    <h3 className="mb-3 font-oswald text-lg font-bold text-blue-950 dark:text-blue-50">{account.bankName}</h3>
-                    <dl className="space-y-2 text-sm">
-                      {account.details.map((detail) => {
-                        const detailKey = `${account.bankName}-${detail.label}`
-                        const canCopyDetail = isCopyableBankDetail(detail.label) && detail.value !== "No registrado"
-                        const wasCopied = copiedBankDetailKey === detailKey
 
-                        return (
-                          <div key={detailKey} className="flex flex-col gap-0.5 sm:flex-row sm:justify-between sm:gap-4">
-                            <dt className="font-semibold text-blue-800 dark:text-blue-200">{detail.label}</dt>
-                            <dd className="break-words text-blue-950 sm:text-right dark:text-blue-50">
-                              {canCopyDetail ? (
-                                <button
-                                  type="button"
-                                  onClick={() => handleCopyBankDetail(detailKey, detail.value)}
-                                  aria-label={`Copiar ${detail.label} de ${account.bankName}: ${detail.value}`}
-                                  className="group inline-flex max-w-full items-center justify-start gap-1.5 rounded-md text-left font-medium transition-colors hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white sm:justify-end sm:text-right dark:hover:text-blue-200 dark:focus:ring-offset-slate-950"
-                                >
-                                  <span className="break-words">{detail.value}</span>
-                                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blue-700 transition-colors group-hover:bg-blue-200 dark:bg-blue-900/60 dark:text-blue-100 dark:group-hover:bg-blue-800">
-                                    {wasCopied ? "Copiado" : <><Copy className="size-3" aria-hidden="true" /> Copiar</>}
-                                  </span>
-                                </button>
-                              ) : (
-                                detail.value
-                              )}
-                            </dd>
-                          </div>
-                        )
-                      })}
-                    </dl>
+          <div className="grid gap-4 md:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => updatePriorityPaymentMethod("bank")}
+              className="rounded-2xl border border-slate-300 bg-white p-5 text-left transition-all hover:border-blue-500 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <p className="text-lg font-bold text-slate-900">Transferencia bancaria</p>
+              <p className="mt-2 text-sm text-slate-600">
+                Vas a ver las cuentas disponibles y luego subir tu comprobante para revisión manual.
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => updatePriorityPaymentMethod("payphone")}
+              className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-left transition-all hover:border-blue-500 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <p className="text-lg font-bold text-slate-900">Tarjeta de crédito/débito (PayPhone)</p>
+              <p className="mt-2 text-sm text-slate-600">
+                Al enviar el formulario te redirigiremos a PayPhone y, si el pago queda Approved, seguirá pendiente de revisión manual/admin.
+              </p>
+            </button>
+          </div>
+
+          {priorityPaymentMethodError ? (
+            <p className="text-sm text-red-500">{priorityPaymentMethodError}</p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {!shouldChoosePriorityPaymentMethod ? (
+        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-blue-950 shadow-sm dark:border-blue-900 dark:bg-blue-950/20 dark:text-blue-50">
+          <div className="mb-4">
+            <p className="text-xs font-bold uppercase tracking-wide text-blue-700 dark:text-blue-300">
+              {isPriorityPayPhone ? "Qué va a pasar" : "Cuentas disponibles"}
+            </p>
+            <p className="mt-1 text-sm text-blue-900/80 dark:text-blue-100/80">
+              {isPriorityPayPhone
+                ? "Al terminar este formulario vas a continuar en PayPhone. Si el pago queda Approved, se registrará y quedará pendiente de revisión/validación manual."
+                : "Realiza la transferencia a cualquiera de estas cuentas y luego sube tu comprobante."}
+            </p>
+          </div>
+          {isPriorityPayPhone ? (
+            <div className="rounded-xl border border-blue-200 bg-white/80 p-5 text-sm shadow-sm dark:border-blue-900 dark:bg-slate-950/40">
+              <ul className="space-y-2 text-blue-950 dark:text-blue-50">
+                <li>• Te redirigiremos al checkout seguro de PayPhone al enviar el formulario.</li>
+                <li>• El pago aprobado NO activa el perfil automáticamente.</li>
+                <li>• Nuestro equipo debe revisar y validar la solicitud antes de cualquier activación.</li>
+              </ul>
+            </div>
+          ) : (
+            <>
+              <div className="grid gap-3 md:grid-cols-2">
+                {isLoadingPriorityBankAccounts ? (
+                  <div className="col-span-full flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white/80 p-6 text-sm text-blue-900 dark:border-blue-900 dark:bg-slate-950/40 dark:text-blue-50">
+                    <Loader2 className="size-4 animate-spin" />
+                    Cargando cuentas bancarias...
                   </div>
-                ))
-              )}
-            </div>
+                ) : priorityBankAccountsError ? (
+                  <div className="col-span-full rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/20 dark:text-red-200">
+                    {priorityBankAccountsError}
+                  </div>
+                ) : priorityBankAccounts.length === 0 ? (
+                  <div className="col-span-full rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-200">
+                    No hay cuentas bancarias activas disponibles en este momento.
+                  </div>
+                ) : (
+                  priorityBankAccounts.map((account) => (
+                    <div key={account.bankName} className="rounded-xl border border-blue-200 bg-white/80 p-4 shadow-sm dark:border-blue-900 dark:bg-slate-950/40">
+                      <h3 className="mb-3 font-oswald text-lg font-bold text-blue-950 dark:text-blue-50">{account.bankName}</h3>
+                      <dl className="space-y-2 text-sm">
+                        {account.details.map((detail) => {
+                          const detailKey = `${account.bankName}-${detail.label}`
+                          const canCopyDetail = isCopyableBankDetail(detail.label) && detail.value !== "No registrado"
+                          const wasCopied = copiedBankDetailKey === detailKey
 
-            <div className="mt-6">
-              <label className="block text-sm font-medium text-muted-foreground mb-2">Sube el comprobante (JPG, PNG, WEBP o PDF, máx 5MB)</label>
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/jpg,image/webp,application/pdf"
-                onChange={(e) => handleFileChange("paymentProof", e.target.files?.[0] || null)}
-                className="hidden"
-                id="paymentProof"
-              />
-              <label
-                htmlFor="paymentProof"
-                className={`flex items-center justify-center w-full h-32 border-2 border-dashed ${errors.paymentProof ? "border-red-400" : formData.paymentProof ? "border-green-500 bg-green-500/10" : "border-border"} rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group`}
-              >
-                <div className="flex flex-col items-center justify-center">
-                  {formData.paymentProof ? <CheckCircle2 className="size-8 text-green-500 mb-2" /> : <Upload className="size-8 text-primary mb-2" />}
-                  <p className={`text-sm ${formData.paymentProof ? "text-green-600 font-medium" : "text-muted-foreground"}`}>
-                    {formData.paymentProof ? formData.paymentProof.name : "Sube tu comprobante"}
-                  </p>
-                </div>
-              </label>
-              {errors.paymentProof && <p className="text-red-400 text-sm mt-1">{errors.paymentProof}</p>}
-            </div>
-          </>
-        )}
-      </div>
+                          return (
+                            <div key={detailKey} className="flex flex-col gap-0.5 sm:flex-row sm:justify-between sm:gap-4">
+                              <dt className="font-semibold text-blue-800 dark:text-blue-200">{detail.label}</dt>
+                              <dd className="break-words text-blue-950 sm:text-right dark:text-blue-50">
+                                {canCopyDetail ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCopyBankDetail(detailKey, detail.value)}
+                                    aria-label={`Copiar ${detail.label} de ${account.bankName}: ${detail.value}`}
+                                    className="group inline-flex max-w-full items-center justify-start gap-1.5 rounded-md text-left font-medium transition-colors hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white sm:justify-end sm:text-right dark:hover:text-blue-200 dark:focus:ring-offset-slate-950"
+                                  >
+                                    <span className="break-words">{detail.value}</span>
+                                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blue-700 transition-colors group-hover:bg-blue-200 dark:bg-blue-900/60 dark:text-blue-100 dark:group-hover:bg-blue-800">
+                                      {wasCopied ? "Copiado" : <><Copy className="size-3" aria-hidden="true" /> Copiar</>}
+                                    </span>
+                                  </button>
+                                ) : (
+                                  detail.value
+                                )}
+                              </dd>
+                            </div>
+                          )
+                        })}
+                      </dl>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-muted-foreground mb-2">Sube el comprobante (JPG, PNG, WEBP o PDF, máx 5MB)</label>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/webp,application/pdf"
+                  onChange={(e) => handleFileChange("paymentProof", e.target.files?.[0] || null)}
+                  className="hidden"
+                  id="paymentProof"
+                />
+                <label
+                  htmlFor="paymentProof"
+                  className={`flex items-center justify-center w-full h-32 border-2 border-dashed ${errors.paymentProof ? "border-red-400" : formData.paymentProof ? "border-green-500 bg-green-500/10" : "border-border"} rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all duration-300 group`}
+                >
+                  <div className="flex flex-col items-center justify-center">
+                    {formData.paymentProof ? <CheckCircle2 className="size-8 text-green-500 mb-2" /> : <Upload className="size-8 text-primary mb-2" />}
+                    <p className={`text-sm ${formData.paymentProof ? "text-green-600 font-medium" : "text-muted-foreground"}`}>
+                      {formData.paymentProof ? formData.paymentProof.name : "Sube tu comprobante"}
+                    </p>
+                  </div>
+                </label>
+                {errors.paymentProof && <p className="text-red-400 text-sm mt-1">{errors.paymentProof}</p>}
+              </div>
+            </>
+          )}
+        </div>
+      ) : null}
     </div>
   )
 

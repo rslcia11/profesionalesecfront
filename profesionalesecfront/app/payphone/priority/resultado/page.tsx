@@ -46,7 +46,7 @@ export default function PayPhonePriorityResultPage() {
     const confirmCheckout = async () => {
       const searchParams = new URLSearchParams(window.location.search)
       const storedContext = readStoredCheckoutContext()
-      const payphonePaymentId = searchParams.get("id")
+      const payphonePaymentId = searchParams.get("paymentId") || searchParams.get("id")
       const clientTransactionId = searchParams.get("clientTransactionId") || storedContext?.clientTransactionId
       const token = getToken()
 
