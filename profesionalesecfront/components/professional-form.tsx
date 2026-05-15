@@ -1,7 +1,6 @@
 "use client"
 
-import type React from "react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, type ChangeEvent, type FocusEvent } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { CheckCircle2, ChevronLeft, ChevronRight, Home, Upload, Eye, EyeOff, PartyPopper, Loader2, Facebook, Instagram, Linkedin, Twitter, Music, Youtube, Copy } from "lucide-react"
@@ -456,7 +455,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
     }] : []),
   ]
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
 
     if (name === "address") {
@@ -716,7 +715,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
     return !error
   }
 
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleBlur = (e: FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setTouched(prev => ({ ...prev, [name]: true }))
     validateField(name, value)
@@ -798,8 +797,8 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
           throw new Error("No se encontró una sesión activa")
         }
 
-        if (!isAdditionalProfile && !isPriorityPayPhone) {
-          // Step 1: Register user first to validate duplicate email/cedula before uploading payment proof
+        if (!isAdditionalProfile && !token) {
+          // Step 1: Register/authenticate the user first so every later flow, including PayPhone, has a user_id.
           const registerData = {
             nombre: formData.fullName,
             correo: formData.email,
@@ -819,6 +818,8 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
         } else if (isAdditionalProfile) {
           if (!token) throw new Error("No se encontró una sesión activa")
           console.log("[v0] Using existing token for additional profile")
+        } else {
+          console.log("[v0] Reusing existing authenticated token")
         }
 
         // Step 2: Upload profile image after registration/session validation
@@ -897,16 +898,9 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
 
           const servicesDraft: PayPhonePriorityServiceDraft[] = formData.services.map((descripcion) => ({ descripcion }))
           const registrationDraft: PayPhonePriorityRegistrationDraft = {
-            mode: isAdditionalProfile ? "existing_user" : "new_user",
-            registerData: isAdditionalProfile
-              ? undefined
-              : {
-                  nombre: formData.fullName,
-                  correo: formData.email,
-                  contrasena: formData.password,
-                  cedula: formData.cedula,
-                  telefono: formData.phone,
-                },
+            // The user is already registered/authenticated before PayPhone prepare.
+            mode: "existing_user",
+            registerData: undefined,
             profileData: {
               ...perfilData,
               comprobante_pago_url: undefined,
