@@ -169,11 +169,7 @@ export default function PreinscripcionPage() {
           {selectedPlan === "paid" && (
             <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-lg">
-                <h3 className="text-2xl font-bold mb-2 text-center text-gray-900">Elegí tu método de pago</h3>
-                <p className="mb-6 text-center text-sm text-gray-600">
-                  El pago registra tu solicitud priority, pero la validación final sigue siendo manual/admin.
-                </p>
-
+                <h3 className="text-2xl font-bold mb-2 text-center text-gray-900">Elige tu método de pago</h3>
                 <div className="grid gap-6 md:grid-cols-2">
                   <div className="bg-gray-50 border border-gray-300 rounded-xl p-6 hover:border-blue-500 transition-all duration-300 group">
                     <div className="flex items-center gap-3 mb-4">

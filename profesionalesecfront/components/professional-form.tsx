@@ -6,7 +6,21 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { CheckCircle2, ChevronLeft, ChevronRight, Home, Upload, Eye, EyeOff, PartyPopper, Loader2, Facebook, Instagram, Linkedin, Twitter, Music, Youtube, Copy } from "lucide-react"
 import { Check, X } from "lucide-react" // Declared the Check variable
-import { authApi, profesionalApi, catalogosApi, saveToken, removeToken, usuarioApi, horariosApi, bankAccountsApi, payphoneApi, type BankAccount as ApiBankAccount } from "@/lib/api"
+import {
+  authApi,
+  profesionalApi,
+  catalogosApi,
+  saveToken,
+  removeToken,
+  usuarioApi,
+  horariosApi,
+  bankAccountsApi,
+  payphoneApi,
+  type BankAccount as ApiBankAccount,
+  type PayPhonePriorityDocumentDraft,
+  type PayPhonePriorityRegistrationDraft,
+  type PayPhonePriorityServiceDraft,
+} from "@/lib/api"
 import ScheduleGrid from "@/components/schedule-grid"
 
 
@@ -31,6 +45,27 @@ async function uploadToCloudinary(file: File): Promise<string> {
 
   const res = await fetch(
     `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  )
+
+  if (!res.ok) {
+    throw new Error(`Cloudinary upload failed: ${res.statusText}`)
+  }
+
+  const data = await res.json()
+  return data.secure_url
+}
+
+async function uploadAssetToCloudinary(file: File): Promise<string> {
+  const formData = new FormData()
+  formData.append("file", file)
+  formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET)
+
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`,
     {
       method: "POST",
       body: formData,
@@ -759,7 +794,11 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
       try {
         let token = localStorage.getItem("auth_token")
 
-        if (!isAdditionalProfile) {
+        if (isPriorityPayPhone && isAdditionalProfile && !token) {
+          throw new Error("No se encontró una sesión activa")
+        }
+
+        if (!isAdditionalProfile && !isPriorityPayPhone) {
           // Step 1: Register user first to validate duplicate email/cedula before uploading payment proof
           const registerData = {
             nombre: formData.fullName,
@@ -777,7 +816,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
           if (!token) throw new Error("No se recibió el token de autenticación")
           saveToken(token) // Save token for consistency with future calls
           console.log("[v0] User registered successfully")
-        } else {
+        } else if (isAdditionalProfile) {
           if (!token) throw new Error("No se encontró una sesión activa")
           console.log("[v0] Using existing token for additional profile")
         }
@@ -807,8 +846,8 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
           }
         }
 
-        // Step 4: Create professional profile
-        const perfilData: any = {
+        // Step 4: Create professional profile or prepare deferred PayPhone registration
+        const perfilData = {
           profesion_id: Number(formData.profession),
           especialidad_id: Number(formData.specialty),
           ciudad_id: Number(formData.city),
@@ -832,81 +871,63 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
           show_phone: formData.showPhone,
           show_email: formData.showEmail,
           foto_url: fotoUrl, // Include foto_url directly in creation request
-          plan,
+          plan: plan || undefined,
           comprobante_pago_url: comprobanteUrl || undefined,
           payment_method: isPriorityPayPhone ? "payphone" : undefined,
           payphone_flow: isPriorityPayPhone,
         }
 
-        console.log("[v0] Creating professional profile:", perfilData)
-        const profileRes = await profesionalApi.crearPerfil(perfilData, token)
-        const perfilId = profileRes?.perfil?.id || profileRes?.id || profileRes?.doc?.id
-        
-        if (!perfilId) throw new Error("No se pudo obtener el ID del perfil creado")
-        console.log("[v0] Professional profile created with ID:", perfilId)
-
-        // Step 5: Sync user record in 'usuarios' table (only for new users)
-        if (!isAdditionalProfile) {
-          try {
-            const userUpdateData = {
-              nombre: formData.fullName,
-              telefono: formData.phone,
-              cedula: formData.cedula,
-              foto_url: fotoUrl
-            }
-            await usuarioApi.actualizarPerfil(userUpdateData, token)
-          } catch (updateError) {
-            console.warn("[v0] Could not update user record:", updateError)
-          }
-        }
-
-        // Step 6: Save Availability Schedule using perfilId
-        console.log("[v0] Saving availability matrix for profile:", perfilId)
-        try {
-          await horariosApi.actualizar({ perfilId, matriz: formData.matrix }, token)
-          console.log("[v0] Availability matrix saved")
-        } catch (horarioError) {
-          console.error("[v0] Error saving availability matrix:", horarioError)
-        }
-
-        // Step 7: Upload other verification documents using perfilId
-        const otherDocs = [
-          { file: formData.identityFront, type: "cedula_frontal" },
-          { file: formData.identityBack, type: "cedula_posterior" },
-          { file: formData.title, type: "titulo" },
-          { file: formData.license, type: "licencia" },
-        ]
-
-        await Promise.all([
-          ...otherDocs
-            .filter(d => d.file)
-            .map(d => profesionalApi.subirDocumento(d.type, d.file as File, token, perfilId).catch(err => {
-              console.error(`Error uploading ${d.type}:`, err)
-            }))
-        ])
-
-        // Step 8: Process Services linked to perfilId
-        if (formData.services.length > 0) {
-          console.log("[v0] Creating professional services for profile:", perfilId)
-          const { serviciosApi } = await import("@/lib/api")
-          await Promise.allSettled(
-            formData.services.map(service => 
-              serviciosApi.crear({ perfilId, descripcion: service }, token)
-            )
-          )
-        }
-
         if (isPriorityPayPhone) {
+          const uploadedDocuments = (
+            await Promise.all([
+              formData.identityFront
+                ? uploadAssetToCloudinary(formData.identityFront).then<PayPhonePriorityDocumentDraft>((url) => ({ tipo: "cedula_frontal", url }))
+                : Promise.resolve(null),
+              formData.identityBack
+                ? uploadAssetToCloudinary(formData.identityBack).then<PayPhonePriorityDocumentDraft>((url) => ({ tipo: "cedula_posterior", url }))
+                : Promise.resolve(null),
+              formData.title
+                ? uploadAssetToCloudinary(formData.title).then<PayPhonePriorityDocumentDraft>((url) => ({ tipo: "titulo", url }))
+                : Promise.resolve(null),
+              formData.license
+                ? uploadAssetToCloudinary(formData.license).then<PayPhonePriorityDocumentDraft>((url) => ({ tipo: "licencia", url }))
+                : Promise.resolve(null),
+            ])
+          ).filter((document): document is PayPhonePriorityDocumentDraft => document !== null)
+
+          const servicesDraft: PayPhonePriorityServiceDraft[] = formData.services.map((descripcion) => ({ descripcion }))
+          const registrationDraft: PayPhonePriorityRegistrationDraft = {
+            mode: isAdditionalProfile ? "existing_user" : "new_user",
+            registerData: isAdditionalProfile
+              ? undefined
+              : {
+                  nombre: formData.fullName,
+                  correo: formData.email,
+                  contrasena: formData.password,
+                  cedula: formData.cedula,
+                  telefono: formData.phone,
+                },
+            profileData: {
+              ...perfilData,
+              comprobante_pago_url: undefined,
+            },
+            schedule: {
+              matriz: formData.matrix,
+            },
+            services: servicesDraft,
+            documents: uploadedDocuments,
+          }
+
           const origin = typeof window !== "undefined" ? window.location.origin : ""
           const resultUrl = origin ? `${origin}/payphone/priority/resultado` : undefined
-          const clientTransactionId = `priority-profile-${perfilId}-${Date.now()}`
+          const clientTransactionId = `priority-registration-${Date.now()}`
           const prepareResponse = await payphoneApi.preparePriorityCheckout(
             {
               clientTransactionId,
               cancellationUrl: resultUrl,
-              perfil_id: Number(perfilId),
               plan: "priority",
-              reference: `priority-profile-${perfilId}`,
+              reference: `priority-registration-${Date.now()}`,
+              registrationDraft,
               responseUrl: resultUrl,
             },
             token,
@@ -923,12 +944,76 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
           if (typeof window !== "undefined") {
             window.localStorage.setItem(
               PAYPHONE_PRIORITY_STORAGE_KEY,
-              JSON.stringify({ clientTransactionId, perfilId }),
+              JSON.stringify({ clientTransactionId }),
             )
             window.location.assign(checkoutUrl)
           }
 
           return
+        }
+
+        console.log("[v0] Creating professional profile:", perfilData)
+        const authenticatedToken = token
+
+        if (!authenticatedToken) {
+          throw new Error("No se recibió el token de autenticación")
+        }
+
+        const profileRes = await profesionalApi.crearPerfil(perfilData, authenticatedToken)
+        const perfilId = profileRes?.perfil?.id || profileRes?.id || profileRes?.doc?.id
+        
+        if (!perfilId) throw new Error("No se pudo obtener el ID del perfil creado")
+        console.log("[v0] Professional profile created with ID:", perfilId)
+
+        // Step 5: Sync user record in 'usuarios' table (only for new users)
+        if (!isAdditionalProfile) {
+          try {
+            const userUpdateData = {
+              nombre: formData.fullName,
+              telefono: formData.phone,
+              cedula: formData.cedula,
+              foto_url: fotoUrl
+            }
+            await usuarioApi.actualizarPerfil(userUpdateData, authenticatedToken)
+          } catch (updateError) {
+            console.warn("[v0] Could not update user record:", updateError)
+          }
+        }
+
+        // Step 6: Save Availability Schedule using perfilId
+        console.log("[v0] Saving availability matrix for profile:", perfilId)
+        try {
+          await horariosApi.actualizar({ perfilId, matriz: formData.matrix }, authenticatedToken)
+          console.log("[v0] Availability matrix saved")
+        } catch (horarioError) {
+          console.error("[v0] Error saving availability matrix:", horarioError)
+        }
+
+        // Step 7: Upload other verification documents using perfilId
+        const otherDocs = [
+          { file: formData.identityFront, type: "cedula_frontal" },
+          { file: formData.identityBack, type: "cedula_posterior" },
+          { file: formData.title, type: "titulo" },
+          { file: formData.license, type: "licencia" },
+        ]
+
+        await Promise.all([
+          ...otherDocs
+            .filter(d => d.file)
+            .map(d => profesionalApi.subirDocumento(d.type, d.file as File, authenticatedToken, perfilId).catch(err => {
+              console.error(`Error uploading ${d.type}:`, err)
+            }))
+        ])
+
+        // Step 8: Process Services linked to perfilId
+        if (formData.services.length > 0) {
+          console.log("[v0] Creating professional services for profile:", perfilId)
+          const { serviciosApi } = await import("@/lib/api")
+          await Promise.allSettled(
+              formData.services.map(service => 
+              serviciosApi.crear({ perfilId, descripcion: service }, authenticatedToken)
+            )
+          )
         }
 
         removeToken()
@@ -1829,7 +1914,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
       <div>
         <h2 className="font-oswald text-2xl font-bold text-foreground mb-4">
           {shouldChoosePriorityPaymentMethod
-            ? "Elegí tu método de pago"
+            ? "Elige tu método de pago"
             : isPriorityPayPhone
               ? "Pago con PayPhone"
               : "Comprobante de transferencia"}
@@ -1845,13 +1930,6 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
 
       {shouldChoosePriorityPaymentMethod ? (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950 shadow-sm dark:border-blue-900 dark:bg-blue-950/20 dark:text-blue-50">
-            <p className="font-semibold">Importante antes de continuar</p>
-            <p className="mt-2">
-              El pago registra tu solicitud priority, pero NO activa premium, priority ni destacado automáticamente. Todo queda pendiente de revisión/validación manual del equipo.
-            </p>
-          </div>
-
           <div className="grid gap-4 md:grid-cols-2">
             <button
               type="button"

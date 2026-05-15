@@ -219,8 +219,70 @@ export interface PayPhonePriorityPreparePayload {
   idempotencyKey?: string
   perfil_id?: number
   plan?: string
+  registrationDraft?: PayPhonePriorityRegistrationDraft
   reference?: string
   responseUrl?: string
+}
+
+export interface PayPhonePriorityDocumentDraft {
+  tipo: string
+  url: string
+}
+
+export interface PayPhonePriorityServiceDraft {
+  descripcion: string
+}
+
+export interface PayPhonePriorityScheduleDraft {
+  matriz: boolean[]
+}
+
+export interface PayPhonePriorityProfileDraft {
+  profesion_id: number
+  especialidad_id?: number | null
+  ciudad_id?: number | null
+  descripcion: string
+  telefono?: string
+  cedula?: string
+  foto_url?: string
+  latitud?: number
+  longitud?: number
+  lat?: number
+  lng?: number
+  calle_principal?: string
+  referencia?: string
+  permitir_reagendar?: boolean
+  tarifa?: number | null
+  tarifa_hora?: number | null
+  facebook_url?: string
+  instagram_url?: string
+  tiktok_url?: string
+  linkedin_url?: string
+  x_url?: string
+  yt_url?: string
+  show_phone?: boolean
+  show_email?: boolean
+  plan?: string
+  comprobante_pago_url?: string
+  payment_method?: string
+  payphone_flow?: boolean
+}
+
+export interface PayPhonePriorityRegisterDraft {
+  nombre: string
+  correo: string
+  contrasena: string
+  cedula?: string
+  telefono?: string
+}
+
+export interface PayPhonePriorityRegistrationDraft {
+  mode: "new_user" | "existing_user"
+  registerData?: PayPhonePriorityRegisterDraft
+  profileData: PayPhonePriorityProfileDraft
+  schedule: PayPhonePriorityScheduleDraft
+  services: PayPhonePriorityServiceDraft[]
+  documents: PayPhonePriorityDocumentDraft[]
 }
 
 export interface PayPhonePriorityPrepareData {
@@ -388,6 +450,10 @@ async function fetchApi(endpoint: string, options: RequestInit = {}): Promise<an
 
 function authHeader(token: string) {
   return { Authorization: `Bearer ${token}` };
+}
+
+function optionalAuthHeader(token?: string | null) {
+  return token ? authHeader(token) : {}
 }
 
 // --- API Objects ---
@@ -890,22 +956,22 @@ export const bankAccountsApi = {
 export const payphoneApi = {
   async preparePriorityCheckout(
     data: PayPhonePriorityPreparePayload,
-    token: string,
+    token?: string | null,
   ): Promise<PayPhonePriorityPrepareData> {
     return fetchApi("/payphone/priority/checkout/prepare", {
       method: "POST",
-      headers: authHeader(token),
+      headers: optionalAuthHeader(token),
       body: JSON.stringify(data),
     })
   },
 
   async confirmPriorityCheckout(
     data: PayPhonePriorityConfirmPayload,
-    token: string,
+    token?: string | null,
   ): Promise<PayPhonePriorityConfirmData> {
     return fetchApi("/payphone/priority/checkout/confirm", {
       method: "POST",
-      headers: authHeader(token),
+      headers: optionalAuthHeader(token),
       body: JSON.stringify(data),
     })
   },

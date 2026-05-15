@@ -3,11 +3,10 @@
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { AlertCircle, ArrowLeft, CheckCircle2, Home, Loader2 } from "lucide-react"
-import { getToken, payphoneApi, type PayPhonePriorityConfirmData } from "@/lib/api"
+import { payphoneApi, type PayPhonePriorityConfirmData } from "@/lib/api"
 
 interface StoredCheckoutContext {
   clientTransactionId: string
-  perfilId: number
 }
 
 const CHECKOUT_CONTEXT_STORAGE_KEY = "payphone_priority_checkout_context"
@@ -23,11 +22,9 @@ function readStoredCheckoutContext(): StoredCheckoutContext | null {
 
     if (
       typeof parsedValue.clientTransactionId === "string"
-      && typeof parsedValue.perfilId === "number"
     ) {
       return {
         clientTransactionId: parsedValue.clientTransactionId,
-        perfilId: parsedValue.perfilId,
       }
     }
   } catch {
@@ -48,8 +45,6 @@ export default function PayPhonePriorityResultPage() {
       const storedContext = readStoredCheckoutContext()
       const payphonePaymentId = searchParams.get("paymentId") || searchParams.get("id")
       const clientTransactionId = searchParams.get("clientTransactionId") || storedContext?.clientTransactionId
-      const token = getToken()
-
       if (!clientTransactionId) {
         setErrorMessage("No pudimos identificar tu transacción PayPhone para confirmar el pago.")
         setIsLoading(false)
@@ -62,19 +57,12 @@ export default function PayPhonePriorityResultPage() {
         return
       }
 
-      if (!token) {
-        setErrorMessage("No encontramos tu sesión para confirmar el pago. Inicia sesión y pedí ayuda al soporte si el cobro ya se realizó.")
-        setIsLoading(false)
-        return
-      }
-
       try {
         const result = await payphoneApi.confirmPriorityCheckout(
           {
             id: payphonePaymentId,
             clientTransactionId,
           },
-          token,
         )
 
         setConfirmationResult(result)
@@ -131,7 +119,7 @@ export default function PayPhonePriorityResultPage() {
               </p>
               <p className="mt-2 text-sm">
                 {isApprovedPendingReview
-                  ? "Tu pago fue registrado y quedó pendiente de revisión/validación manual. Tu perfil NO se activa automáticamente."
+                  ? "Tu pago fue validado y registramos tu perfil/solicitud. Todo quedó pendiente de revisión/validación manual; NO hay activación automática."
                   : "PayPhone devolvió un estado distinto de aprobado. Si necesitás continuar, revisá el estado con soporte o intentá nuevamente."}
               </p>
             </div>
