@@ -150,7 +150,7 @@ export default function Convenios() {
 
         {/* Carousel */}
         <div className="relative">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 lg:gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 lg:gap-6 md:px-16 lg:px-24">
             {getVisibleConvenios().map((convenio, idx) => {
               const IconComponent = getIconComponent(convenio.categorias)
               return (
@@ -165,7 +165,7 @@ export default function Convenios() {
                   </div>
 
                   {/* Banner Photo Section */}
-                  <div className="h-36 md:h-44 w-full relative">
+                  <div className="h-24 md:h-28 w-full relative">
                     <img 
                       src={convenio.bannerUrl || "/placeholder.svg"} 
                       alt="" 
@@ -177,14 +177,14 @@ export default function Convenios() {
                     <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
                   </div>
 
-                  <div className="p-6 md:p-8 lg:p-10 pt-0 -mt-28 relative z-10">
-                  <div className="flex flex-col items-center text-center mb-6">
+                  <div className="p-4 md:p-5 lg:p-6 pt-0 -mt-16 relative z-10">
+                  <div className="flex flex-col items-center text-center mb-4">
                     <div className="relative group -mt-2 mb-2">
                       <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl group-hover:blur-2xl transition-all" />
                       <img
                         src={convenio.logoUrl || "/placeholder.svg"}
                         alt={convenio.titulo}
-                        className="w-36 h-36 md:w-44 md:h-44 rounded-full border-4 border-card object-cover relative z-10 transform group-hover:scale-105 transition-transform duration-500 shadow-xl"
+                        className="w-24 h-24 md:w-28 md:h-28 rounded-full border-4 border-card object-cover relative z-10 transform group-hover:scale-105 transition-transform duration-500 shadow-xl"
                         onError={(e) => {
                           ;(e.target as HTMLImageElement).src = "/placeholder.svg"
                         }}
@@ -192,31 +192,31 @@ export default function Convenios() {
                     </div>
                   </div>
 
-                  <div className="space-y-5 flex-grow flex flex-col">
+                  <div className="space-y-3 flex-grow flex flex-col">
                     <div className="text-center flex flex-col items-center">
-                      <h3 className="text-xl md:text-2xl font-heading font-bold mb-3 text-foreground">
+                      <h3 className="text-base md:text-lg font-heading font-bold mb-2 text-foreground">
                         {convenio.titulo}
                       </h3>
                       {convenio.categorias && (
-                        <div className="inline-block px-4 py-1.5 mb-4 bg-primary/10 text-primary rounded-full text-xs font-button font-bold uppercase tracking-wider">
+                        <div className="inline-block px-2.5 py-1 mb-2 bg-primary/10 text-primary rounded-full text-[10px] font-button font-bold uppercase tracking-wider">
                           {convenio.categorias}
                         </div>
                       )}
-                      <p className="text-muted-foreground font-body leading-relaxed text-xs md:text-sm max-w-[90%] mx-auto">
+                      <p className="text-muted-foreground font-body leading-relaxed text-[11px] max-w-[86%] mx-auto">
                         {convenio.descripcion}
                       </p>
                     </div>
 
                     {convenio.beneficios && convenio.beneficios.length > 0 && (
-                      <div className="flex-grow pt-4 border-t border-border/50 mt-4">
-                        <h4 className="text-sm font-heading font-bold mb-4 text-foreground text-center uppercase tracking-wider text-muted-foreground">
+                      <div className="flex-grow pt-2.5 border-t border-border/50 mt-2.5">
+                        <h4 className="text-[11px] font-heading font-bold mb-2 text-foreground text-center uppercase tracking-wider text-muted-foreground">
                           Beneficios Incluidos
                         </h4>
                         <ul className="space-y-2 max-w-sm mx-auto">
                           {convenio.beneficios.map((benefit: string, bIndex: number) => (
                             <li
                               key={bIndex}
-                              className="flex items-start gap-2 text-muted-foreground font-body text-xs md:text-sm"
+                              className="flex items-start gap-2 text-muted-foreground font-body text-[11px]"
                             >
                               <span className="w-1.5 h-1.5 bg-primary rounded-full mt-1.5 flex-shrink-0 shadow-sm" />
                               <span>{benefit}</span>
@@ -227,7 +227,7 @@ export default function Convenios() {
                     )}
 
                     {convenio.link && (
-                      <div className="text-center pt-6 mt-auto">
+                      <div className="text-center pt-3 mt-auto">
                         <a
                           href={convenio.link}
                           target="_blank"
@@ -249,14 +249,14 @@ export default function Convenios() {
           {/* Navigation Buttons */}
           <button
             onClick={prevSlide}
-            className="hidden lg:block absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 bg-primary hover:bg-primary/80 text-white p-3 rounded-full shadow-lg hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300"
+            className="hidden lg:block absolute left-8 top-1/2 -translate-y-1/2 z-30 bg-primary hover:bg-primary/80 text-white p-3 rounded-full shadow-lg hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300"
             aria-label="Anterior"
           >
             <ChevronLeft className="w-8 h-8" />
           </button>
           <button
             onClick={nextSlide}
-            className="hidden lg:block absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 z-30 bg-primary hover:bg-primary/80 text-white p-3 rounded-full shadow-lg hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300"
+            className="hidden lg:block absolute right-8 top-1/2 -translate-y-1/2 z-30 bg-primary hover:bg-primary/80 text-white p-3 rounded-full shadow-lg hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300"
             aria-label="Siguiente"
           >
             <ChevronRight className="w-8 h-8" />

@@ -125,7 +125,7 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
       `}</style>
 
       <div className="relative">
-        <div className="overflow-hidden lg:px-16">
+        <div className="overflow-hidden md:px-6 lg:px-20 xl:px-24">
         <div className={`transition-all duration-800 ease-in-out ${getAnimationClass()}`}>
           {/* Desktop: Grid */}
           <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -205,7 +205,7 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
 
         <button
           onClick={handlePrev}
-          className="hidden lg:block absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 bg-primary hover:bg-primary/80 text-white p-3 rounded-full shadow-lg hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300"
+          className="hidden lg:block absolute left-4 top-1/2 -translate-y-1/2 z-30 bg-primary hover:bg-primary/80 text-white p-3 rounded-full shadow-lg hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300"
           aria-label="Anterior"
           disabled={isTransitioning}
         >
@@ -214,7 +214,7 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
 
         <button
           onClick={handleNext}
-          className="hidden lg:block absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 z-30 bg-primary hover:bg-primary/80 text-white p-3 rounded-full shadow-lg hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300"
+          className="hidden lg:block absolute right-4 top-1/2 -translate-y-1/2 z-30 bg-primary hover:bg-primary/80 text-white p-3 rounded-full shadow-lg hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300"
           aria-label="Siguiente"
           disabled={isTransitioning}
         >
