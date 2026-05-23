@@ -2,15 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-
-interface Slide {
-  image: string
-  title: string
-  subtitle?: string
-}
+import type { ManagedCarouselSlide } from "@/lib/validators/carousel"
 
 interface ProfessionalHeroCarouselProps {
-  slides: Slide[]
+  slides: ManagedCarouselSlide[]
   autoplay?: boolean
   autoplayInterval?: number
 }
@@ -22,6 +17,11 @@ export default function ProfessionalHeroCarousel({
 }: ProfessionalHeroCarouselProps) {
   const [currentSlide, setCurrentSlide] = useState(0)
 
+  useEffect(() => {
+    if (currentSlide < slides.length) return
+    setCurrentSlide(0)
+  }, [currentSlide, slides.length])
+
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % slides.length)
   }
@@ -31,14 +31,18 @@ export default function ProfessionalHeroCarousel({
   }
 
   useEffect(() => {
-    if (!autoplay) return
+    if (!autoplay || slides.length === 0) return
 
     const interval = setInterval(() => {
       nextSlide()
     }, autoplayInterval)
 
     return () => clearInterval(interval)
-  }, [autoplay, autoplayInterval, currentSlide])
+  }, [autoplay, autoplayInterval, currentSlide, slides.length])
+
+  if (slides.length === 0) {
+    return null
+  }
 
   return (
     <div className="relative h-[70vh] min-h-[500px] md:min-h-[600px] overflow-hidden group">
@@ -50,7 +54,7 @@ export default function ProfessionalHeroCarousel({
             currentSlide === idx ? "opacity-100" : "opacity-0"
           }`}
         >
-          <img src={slide.image || "/placeholder.svg"} alt={slide.title} className="w-full h-full object-cover" />
+          <img src={slide.imageUrl || "/placeholder.svg"} alt={slide.title} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
 
           {/* Slide Content */}

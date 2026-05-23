@@ -1,11 +1,16 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { BookOpen, Quote, ArrowRight } from "lucide-react"
 import { articulosApi, type Articulo } from "@/lib/api"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import ArticleReaderDialog from "@/components/articles/article-reader-dialog"
+import { formatUrl } from "@/lib/utils"
+
+const ArticlePdfPreview = dynamic(() => import("@/components/articles/article-pdf-preview"), { ssr: false })
 
 interface BlogSectionProps {
   professionIds?: number[]
@@ -13,6 +18,7 @@ interface BlogSectionProps {
 }
 
 interface BlogCard {
+  article: Articulo
   id: number
   title: string
   excerpt: string
@@ -41,6 +47,7 @@ function articuloToCard(a: Articulo): BlogCard {
   }
   const fallbackExcerpt = a.contenido ? a.contenido.substring(0, 150) + "..." : ""
   return {
+    article: a,
     id: a.id,
     title: a.titulo,
     excerpt: a.resumen || fallbackExcerpt,
@@ -55,6 +62,7 @@ function articuloToCard(a: Articulo): BlogCard {
 export default function BlogSection({ professionIds, limit = 3 }: BlogSectionProps) {
   const [posts, setPosts] = useState<BlogCard[]>([])
   const [loaded, setLoaded] = useState(false)
+  const [selectedArticle, setSelectedArticle] = useState<Articulo | null>(null)
 
   // Serializamos para evitar refetch en cada render del padre.
   const idsKey = useMemo(() => (professionIds ?? []).join(","), [professionIds])
@@ -103,14 +111,26 @@ export default function BlogSection({ professionIds, limit = 3 }: BlogSectionPro
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
         {posts.map((post, index) => (
-          <Link
+          <button
+            type="button"
             key={post.id}
-            href={`/articulos/${post.id}`}
-            className="group bg-card rounded-2xl overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 animate-in fade-in slide-in-from-bottom-6"
+            onClick={() => {
+              setSelectedArticle(post.article)
+            }}
+            className="group w-full bg-card rounded-2xl overflow-hidden border border-border/50 text-left hover:border-primary/30 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 animate-in fade-in slide-in-from-bottom-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             style={{ animationDelay: `${index * 100}ms` }}
           >
             <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary/5 to-accent/5">
-              {post.image ? (
+              {post.article.pdf_url ? (
+                <ArticlePdfPreview
+                  pdfUrl={formatUrl(post.article.pdf_url) || post.article.pdf_url}
+                  title={post.title}
+                  compact={true}
+                  variant="thumbnail"
+                  className="transition-transform duration-700 group-hover:scale-[1.03]"
+                  fallbackMessage="Vista previa no disponible para este artículo."
+                />
+              ) : post.image ? (
                 <img
                   src={post.image}
                   alt={post.title}
@@ -146,18 +166,20 @@ export default function BlogSection({ professionIds, limit = 3 }: BlogSectionPro
                     <p className="text-sm font-semibold text-foreground">{post.author}</p>
                     <p className="text-xs text-muted-foreground">{post.role}</p>
                   </div>
-                  <button
+                  <span
                     className="group/btn p-2 bg-primary/10 text-primary rounded-full hover:bg-primary hover:text-primary-foreground transition-all"
-                    aria-label="Leer artículo"
+                    aria-hidden="true"
                   >
                     <ArrowRight size={16} className="group-hover/btn:translate-x-0.5 transition-transform" />
-                  </button>
+                  </span>
                 </div>
               </div>
             </div>
-          </Link>
+          </button>
         ))}
       </div>
+
+      <ArticleReaderDialog article={selectedArticle} onClose={() => setSelectedArticle(null)} />
 
       <div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-1000">
         <Link

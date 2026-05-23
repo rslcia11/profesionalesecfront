@@ -11,6 +11,7 @@ import Header from "@/components/header"
 import Footer from "@/components/footer"
 import BookingForm from "@/components/booking-form"
 import LocationMap from "@/components/shared/location-map"
+import ArticleReaderDialog from "@/components/articles/article-reader-dialog"
 import { formatUrl } from "@/lib/utils"
 
 const ArticlePdfPreview = dynamic(() => import("@/components/articles/article-pdf-preview"), { ssr: false })
@@ -28,11 +29,16 @@ function formatArticleDate(dateStr: string) {
 }
 
 export default function ProfessionalProfileClient({ profileId }: ProfessionalProfileClientProps) {
+  const profileArticleLog = (...args: unknown[]) => {
+    console.log("[ProfileArticleModal]", ...args)
+  }
+
   const [professional, setProfessional] = useState<any>(null)
   const [schedule, setSchedule] = useState<boolean[] | null>(null)
   const [articles, setArticles] = useState<Articulo[]>([])
   const [articlesLoading, setArticlesLoading] = useState(true)
   const [loading, setLoading] = useState(true)
+  const [selectedArticle, setSelectedArticle] = useState<Articulo | null>(null)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -74,6 +80,35 @@ export default function ProfessionalProfileClient({ profileId }: ProfessionalPro
     }
     fetchProfile()
   }, [profileId])
+
+  useEffect(() => {
+    if (selectedArticle) {
+      profileArticleLog("modal opened", {
+        articleId: selectedArticle.id,
+        title: selectedArticle.titulo,
+        pdfUrl: selectedArticle.pdf_url,
+        normalizedPdfUrl: selectedArticle.pdf_url ? formatUrl(selectedArticle.pdf_url) || selectedArticle.pdf_url : "",
+      })
+
+      return
+    }
+
+    profileArticleLog("modal closed")
+  }, [selectedArticle])
+
+  useEffect(() => {
+    const selectedArticlePdfUrl = selectedArticle?.pdf_url ? formatUrl(selectedArticle.pdf_url) || selectedArticle.pdf_url : ""
+
+    if (!selectedArticle || selectedArticlePdfUrl) {
+      return
+    }
+
+    profileArticleLog("fallback without pdf shown", {
+      articleId: selectedArticle.id,
+      title: selectedArticle.titulo,
+      pdfUrl: selectedArticle.pdf_url,
+    })
+  }, [selectedArticle])
 
   if (loading) {
     return (
@@ -280,49 +315,57 @@ export default function ProfessionalProfileClient({ profileId }: ProfessionalPro
                   const articlePdfUrl = formatUrl(article.pdf_url) || article.pdf_url
 
                   return (
-                    <article
+                    <button
+                      type="button"
                       key={article.id}
-                      className="group bg-white rounded-2xl overflow-hidden border border-gray-200 hover:border-primary/30 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 animate-in fade-in slide-in-from-bottom-6"
+                      onClick={() => {
+                        profileArticleLog("article card clicked", {
+                          articleId: article.id,
+                          title: article.titulo,
+                          pdfUrl: article.pdf_url,
+                          normalizedPdfUrl: articlePdfUrl,
+                        })
+                        setSelectedArticle(article)
+                      }}
+                      className="group block w-full bg-white rounded-2xl overflow-hidden border border-gray-200 text-left hover:border-primary/30 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 animate-in fade-in slide-in-from-bottom-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                       style={{ animationDelay: `${index * 80}ms` }}
                     >
-                      <Link href={`/articulos/${article.id}`} className="block">
-                        <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary/5 to-accent/5">
-                          {articlePdfUrl ? (
-                            <ArticlePdfPreview
-                              pdfUrl={articlePdfUrl}
-                              title={article.titulo}
-                              compact={true}
-                              variant="thumbnail"
-                              className="transition-transform duration-700 group-hover:scale-[1.03]"
-                              fallbackMessage="Vista previa no disponible para este artículo."
-                            />
-                          ) : article.imagen_url ? (
-                            <img
-                              src={formatUrl(article.imagen_url) || ""}
-                              alt={article.titulo}
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                            />
-                          ) : (
-                            <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center text-gray-500">
-                              <BookOpen className="text-primary/30" size={56} />
-                              <p className="text-sm font-medium">Sin PDF disponible</p>
-                            </div>
-                          )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-white via-white/50 to-transparent opacity-70" />
-                        </div>
-
-                        <div className="p-6">
-                          <div className="mb-3 text-xs text-gray-500">
-                            <span>{formatArticleDate(article.fecha_publicacion)}</span>
+                      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary/5 to-accent/5">
+                        {articlePdfUrl ? (
+                          <ArticlePdfPreview
+                            pdfUrl={articlePdfUrl}
+                            title={article.titulo}
+                            compact={true}
+                            variant="thumbnail"
+                            className="transition-transform duration-700 group-hover:scale-[1.03]"
+                            fallbackMessage="Vista previa no disponible para este artículo."
+                          />
+                        ) : article.imagen_url ? (
+                          <img
+                            src={formatUrl(article.imagen_url) || ""}
+                            alt={article.titulo}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                          />
+                        ) : (
+                          <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center text-gray-500">
+                            <BookOpen className="text-primary/30" size={56} />
+                            <p className="text-sm font-medium">Sin PDF disponible</p>
                           </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-white via-white/50 to-transparent opacity-70" />
+                      </div>
 
-                          <h4 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-primary transition-colors">
-                            {article.titulo}
-                          </h4>
-
-                          <p className="text-sm text-gray-600 leading-relaxed mb-5 line-clamp-3">{excerpt}</p>
+                      <div className="p-6">
+                        <div className="mb-3 text-xs text-gray-500">
+                          <span>{formatArticleDate(article.fecha_publicacion)}</span>
                         </div>
-                      </Link>
+
+                        <h4 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-primary transition-colors">
+                          {article.titulo}
+                        </h4>
+
+                        <p className="text-sm text-gray-600 leading-relaxed mb-5 line-clamp-3">{excerpt}</p>
+                      </div>
 
                       <div className="px-6 pb-6">
                         <div className="pt-4 border-t border-gray-100 flex items-center justify-between gap-4">
@@ -331,31 +374,33 @@ export default function ProfessionalProfileClient({ profileId }: ProfessionalPro
                             <p className="text-xs text-gray-500">{subTitle}</p>
                           </div>
 
-                          {articlePdfUrl ? (
-                            <a
-                              href={articlePdfUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 text-sm font-semibold text-primary"
-                            >
-                              Leer artículo
-                              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                            </a>
-                          ) : (
-                            <Link href={`/articulos/${article.id}`} className="inline-flex items-center gap-2 text-sm font-semibold text-primary">
-                              Leer artículo
-                              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                            </Link>
-                          )}
+                          <span className="inline-flex items-center gap-2 text-sm font-semibold text-primary">
+                            Leer artículo
+                            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                          </span>
                         </div>
                       </div>
-                    </article>
+                    </button>
                   )
                 })}
               </div>
             )}
           </section>
         )}
+
+        <ArticleReaderDialog
+          article={selectedArticle}
+          onClose={() => {
+            if (selectedArticle) {
+              profileArticleLog("reader close clicked", {
+                articleId: selectedArticle.id,
+                title: selectedArticle.titulo,
+              })
+            }
+
+            setSelectedArticle(null)
+          }}
+        />
       </div>
 
       <div className="fixed bottom-6 left-6 z-50">

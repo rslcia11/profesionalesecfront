@@ -8,27 +8,12 @@ import ProfessionalsCategoryList from "@/components/shared/professionals-categor
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
 import { useSpecialtyCounts } from "@/hooks/use-specialty-counts"
+import { useManagedCarousel } from "@/hooks/use-managed-carousel"
 import { catalogosApi } from "@/lib/api"
 import { Building2, Home, Mountain, Hammer, Ruler, PenTool } from "lucide-react"
 
 export default function DisenoYConstruccionPage() {
-  const heroSlides = [
-    {
-      image: "/architect-blueprint-construction.jpg",
-      title: "Profesionales en Diseño y Construcción",
-      subtitle: "Expertos para materializar tus proyectos arquitectónicos",
-    },
-    {
-      image: "/placeholder.svg?height=600&width=1200",
-      title: "Diseño y Construcción de Excelencia",
-      subtitle: "Arquitectos, diseñadores y constructores certificados",
-    },
-    {
-      image: "/placeholder.svg?height=600&width=1200",
-      title: "Transforma tus Espacios",
-      subtitle: "De la idea al proyecto terminado con profesionales verificados",
-    },
-  ]
+  const heroSlides = useManagedCarousel("diseno-y-construccion")
 
   const featuredProfessional = {
     name: "Arq. Diego Mendoza",

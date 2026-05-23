@@ -8,6 +8,7 @@ import ProfessionalServicesGrid from "@/components/shared/professional-services-
 import BlogSection from "@/components/shared/blog-section"
 import { useState, useEffect, useMemo } from "react"
 import { useSpecialtyCounts } from "@/hooks/use-specialty-counts"
+import { useManagedCarousel } from "@/hooks/use-managed-carousel"
 import { catalogosApi } from "@/lib/api"
 import {
   Stethoscope,
@@ -35,23 +36,7 @@ import {
 } from "lucide-react"
 
 export default function SaludPage() {
-  const heroSlides = [
-    {
-      image: "/doctor-consultation-patient-healthcare.jpg",
-      title: "Cuidamos Tu Salud",
-      subtitle: "Profesionales médicos comprometidos con tu bienestar",
-    },
-    {
-      image: "/medical-team-hospital-professionals.jpg",
-      title: "Excelencia en Atención Médica",
-      subtitle: "Especialistas altamente calificados a tu servicio",
-    },
-    {
-      image: "/healthcare-technology-modern-medicine.jpg",
-      title: "Salud con Tecnología de Punta",
-      subtitle: "Diagnósticos precisos y tratamientos efectivos",
-    },
-  ]
+  const heroSlides = useManagedCarousel("salud")
 
   const featuredProfessional = {
     name: "Dra. Yajaira González Fierro",

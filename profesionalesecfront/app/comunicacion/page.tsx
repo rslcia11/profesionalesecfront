@@ -7,6 +7,7 @@ import ProfessionalServicesGrid from "@/components/shared/professional-services-
 import BlogSection from "@/components/shared/blog-section"
 import { useState, useEffect, useMemo } from "react"
 import { useSpecialtyCounts } from "@/hooks/use-specialty-counts"
+import { useManagedCarousel } from "@/hooks/use-managed-carousel"
 import { catalogosApi } from "@/lib/api"
 import {
   Camera,
@@ -24,23 +25,7 @@ import {
 } from "lucide-react"
 
 export default function ComunicacionPage() {
-  const heroSlides = [
-    {
-      image: "/communication-professional-media-broadcast.jpg",
-      title: "Expertos en Comunicación y Medios",
-      subtitle: "Conectamos tu mensaje con el mundo",
-    },
-    {
-      image: "/journalism-news-reporter-professional.jpg",
-      title: "Periodistas y Comunicadores",
-      subtitle: "Información veraz y profesional",
-    },
-    {
-      image: "/digital-marketing-social-media.jpg",
-      title: "Comunicación Digital y Marketing",
-      subtitle: "Tu marca en todas las plataformas",
-    },
-  ]
+  const heroSlides = useManagedCarousel("comunicacion")
 
   const PROFESSION_ID = 13 // Comunicación
   const { countsBySpecialty } = useSpecialtyCounts([PROFESSION_ID])

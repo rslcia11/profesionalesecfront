@@ -8,27 +8,12 @@ import ProfessionalsCategoryList from "@/components/shared/professionals-categor
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
 import { useSpecialtyCounts } from "@/hooks/use-specialty-counts"
+import { useManagedCarousel } from "@/hooks/use-managed-carousel"
 import { catalogosApi } from "@/lib/api"
 import { Code, Cpu, Zap, Leaf, Bot, Building2 } from "lucide-react"
 
 export default function IngenieriaYTecnologiaPage() {
-  const heroSlides = [
-    {
-      image: "/placeholder.svg?height=600&width=1200",
-      title: "Profesionales en Ingeniería y Tecnología",
-      subtitle: "Expertos en innovación y soluciones tecnológicas",
-    },
-    {
-      image: "/placeholder.svg?height=600&width=1200",
-      title: "Tecnología de Vanguardia",
-      subtitle: "Ingenieros certificados para tus proyectos",
-    },
-    {
-      image: "/placeholder.svg?height=600&width=1200",
-      title: "Innovación y Desarrollo",
-      subtitle: "Soluciones tecnológicas con profesionales verificados",
-    },
-  ]
+  const heroSlides = useManagedCarousel("ingenieria-y-tecnologia")
 
   const featuredProfessional = {
     name: "Ing. Carlos Mendoza",

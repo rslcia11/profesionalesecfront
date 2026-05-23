@@ -8,27 +8,12 @@ import ProfessionalsCategoryList from "@/components/shared/professionals-categor
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
 import { useSpecialtyCounts } from "@/hooks/use-specialty-counts"
+import { useManagedCarousel } from "@/hooks/use-managed-carousel"
 import { catalogosApi } from "@/lib/api"
 import { Brain, BookOpen, Briefcase, Shield, Baby, Activity, Target, Pill, School, Home } from "lucide-react"
 
 export default function SaludMentalPage() {
-  const heroSlides = [
-    {
-      image: "/mental-health-therapy-counseling.jpg",
-      title: "Apoyo profesional para tu bienestar emocional",
-      description: "Especialistas en salud mental comprometidos con tu equilibrio psicológico",
-    },
-    {
-      image: "/psychology-clinical-therapy-session.jpg",
-      title: "Encuentra el psicólogo ideal para ti",
-      description: "Profesionales certificados en diversas áreas de la psicología",
-    },
-    {
-      image: "/mental-wellness-emotional-health.jpg",
-      title: "Tu salud mental es nuestra prioridad",
-      description: "Atención personalizada para cada etapa de tu vida",
-    },
-  ]
+  const heroSlides = useManagedCarousel("salud-mental")
 
   const PROFESSION_ID = 6 // Salud Mental
   const { countsBySpecialty, loading: loadingCounts } = useSpecialtyCounts([PROFESSION_ID])

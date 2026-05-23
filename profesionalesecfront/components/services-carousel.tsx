@@ -19,7 +19,6 @@ interface ServicesCarouselProps {
 export default function ServicesCarousel({ services, itemsPerView = 4 }: ServicesCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isAutoPlay, setIsAutoPlay] = useState(true)
-  const [isHoveringCarousel, setIsHoveringCarousel] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [direction, setDirection] = useState<"left" | "right" | null>(null)
 
@@ -125,11 +124,8 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
         }
       `}</style>
 
-      <div
-        className="relative group overflow-hidden"
-        onMouseEnter={() => setIsHoveringCarousel(true)}
-        onMouseLeave={() => setIsHoveringCarousel(false)}
-      >
+      <div className="relative">
+        <div className="overflow-hidden lg:px-16">
         <div className={`transition-all duration-800 ease-in-out ${getAnimationClass()}`}>
           {/* Desktop: Grid */}
           <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -205,27 +201,27 @@ export default function ServicesCarousel({ services, itemsPerView = 4 }: Service
             })}
           </div>
         </div>
-        {/* Navigation arrows - hidden on mobile */}
+        </div>
+
         <button
           onClick={handlePrev}
-          className={`hidden md:block absolute left-2 top-1/2 -translate-y-1/2 z-20 p-3 md:p-4 bg-primary hover:bg-primary/80 text-white rounded-full shadow-lg hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-500 ease-out ${isHoveringCarousel ? "opacity-100" : "opacity-0"
-            }`}
-          aria-label="Previous slide"
+          className="hidden lg:block absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 bg-primary hover:bg-primary/80 text-white p-3 rounded-full shadow-lg hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300"
+          aria-label="Anterior"
           disabled={isTransitioning}
         >
-          <ChevronLeft className="w-6 h-6 md:w-7 md:h-7" />
+          <ChevronLeft className="w-8 h-8" />
         </button>
+
         <button
           onClick={handleNext}
-          className={`hidden md:block absolute right-2 top-1/2 -translate-y-1/2 z-20 p-3 md:p-4 bg-primary hover:bg-primary/80 text-white rounded-full shadow-lg hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-500 ease-out ${isHoveringCarousel ? "opacity-100" : "opacity-0"
-            }`}
-          aria-label="Next slide"
+          className="hidden lg:block absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 z-30 bg-primary hover:bg-primary/80 text-white p-3 rounded-full shadow-lg hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300"
+          aria-label="Siguiente"
           disabled={isTransitioning}
         >
-          <ChevronRight className="w-6 h-6 md:w-7 md:h-7" />
+          <ChevronRight className="w-8 h-8" />
         </button>
       </div>
-      {/* Pagination dots - hidden on mobile */}
+
       <div className="hidden md:flex justify-center items-center gap-2">
         {Array.from({ length: totalPages }).map((_, idx) => (
           <button

@@ -149,7 +149,7 @@ export default function Convenios() {
         </div>
 
         {/* Carousel */}
-        <div className="relative px-0 md:px-14 lg:px-16">
+        <div className="relative">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 lg:gap-10">
             {getVisibleConvenios().map((convenio, idx) => {
               const IconComponent = getIconComponent(convenio.categorias)
@@ -249,17 +249,17 @@ export default function Convenios() {
           {/* Navigation Buttons */}
           <button
             onClick={prevSlide}
-            className="absolute left-2 top-1/2 -translate-y-1/2 bg-card border border-border rounded-full p-3 md:p-4 shadow-xl hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors duration-300 z-20"
-            aria-label="Anterior convenio"
+            className="hidden lg:block absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 bg-primary hover:bg-primary/80 text-white p-3 rounded-full shadow-lg hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300"
+            aria-label="Anterior"
           >
-            <ChevronLeft className="w-6 h-6 md:w-7 md:h-7" />
+            <ChevronLeft className="w-8 h-8" />
           </button>
           <button
             onClick={nextSlide}
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-card border border-border rounded-full p-3 md:p-4 shadow-xl hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors duration-300 z-20"
-            aria-label="Siguiente convenio"
+            className="hidden lg:block absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 z-30 bg-primary hover:bg-primary/80 text-white p-3 rounded-full shadow-lg hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300"
+            aria-label="Siguiente"
           >
-            <ChevronRight className="w-6 h-6 md:w-7 md:h-7" />
+            <ChevronRight className="w-8 h-8" />
           </button>
 
           {/* Dots indicator */}

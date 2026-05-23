@@ -8,27 +8,12 @@ import ProfessionalsCategoryList from "@/components/shared/professionals-categor
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
 import { useSpecialtyCounts } from "@/hooks/use-specialty-counts"
+import { useManagedCarousel } from "@/hooks/use-managed-carousel"
 import { catalogosApi } from "@/lib/api"
 import { Calculator, TrendingUp, Users, Briefcase, Building2, Globe } from "lucide-react"
 
 export default function AdministracionPage() {
-  const heroSlides = [
-    {
-      image: "/business-professionals-team-meeting-office.jpg",
-      title: "Expertos en Economía y Administración",
-      subtitle: "Potencia tu negocio con profesionales certificados",
-    },
-    {
-      image: "/financial-advisor-consulting-client-modern-office.jpg",
-      title: "Gestión Empresarial de Excelencia",
-      subtitle: "Impulsa el crecimiento de tu organización",
-    },
-    {
-      image: "/business-team-collaboration-strategy-planning.jpg",
-      title: "Soluciones Estratégicas para tu Empresa",
-      subtitle: "Profesionales comprometidos con tu éxito",
-    },
-  ]
+  const heroSlides = useManagedCarousel("administracion")
 
   const featuredProfessional = {
     name: "María Elena Rodríguez",

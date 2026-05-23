@@ -3,49 +3,50 @@
 import { useState, useEffect, useCallback } from "react"
 import Image from "next/image"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { useManagedCarousel } from "@/hooks/use-managed-carousel"
 
 export default function Hero() {
-  const carouselImages = [
-    "/images/0cef6a13d87d872103747b3f8da1cd07.jpg",
-    "/images/2.jpg",
-    "/images/3.jpg",
-    "/images/4.jpg",
-    "/images/5.jpg",
-    "/images/6.jpg",
-    "/images/7.jpg",
-    "/images/8.jpg",
-    "/images/9.jpg",
-    "/images/10.jpg",
-  ]
+  const carouselSlides = useManagedCarousel("home")
 
   const [currentIndex, setCurrentIndex] = useState(0)
   const [startX, setStartX] = useState(0)
 
   useEffect(() => {
+    if (carouselSlides.length === 0) return
+
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % carouselImages.length)
+      setCurrentIndex((prev) => (prev + 1) % carouselSlides.length)
     }, 4000)
 
     return () => clearInterval(interval)
-  }, [carouselImages.length])
+  }, [carouselSlides.length])
 
   const goToSlide = useCallback((index: number) => {
     setCurrentIndex(index)
   }, [])
 
   const goToPrevious = useCallback(() => {
-    setCurrentIndex((prev) => (prev - 1 + carouselImages.length) % carouselImages.length)
-  }, [carouselImages.length])
+    setCurrentIndex((prev) => (prev - 1 + carouselSlides.length) % carouselSlides.length)
+  }, [carouselSlides.length])
 
   const goToNext = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % carouselImages.length)
-  }, [carouselImages.length])
+    setCurrentIndex((prev) => (prev + 1) % carouselSlides.length)
+  }, [carouselSlides.length])
+
+  useEffect(() => {
+    if (currentIndex < carouselSlides.length) return
+    setCurrentIndex(0)
+  }, [carouselSlides.length, currentIndex])
+
+  if (carouselSlides.length === 0) {
+    return null
+  }
 
   return (
     <section className="relative w-full h-screen flex items-center justify-start overflow-hidden bg-black">
       {/* Images */}
       <div className="absolute inset-0 w-full h-full">
-        {carouselImages.map((image, index) => (
+        {carouselSlides.map((slide, index) => (
           <div
             key={index}
             className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
@@ -53,8 +54,8 @@ export default function Hero() {
             }`}
           >
             <Image
-              src={image || "/placeholder.svg"}
-              alt={`Profesional ${index + 1}`}
+              src={slide.imageUrl || "/placeholder.svg"}
+              alt={slide.title || `Profesional ${index + 1}`}
               fill
               className="object-cover"
               priority={index === 0}
@@ -83,7 +84,7 @@ export default function Hero() {
 
       {/* Desktop Indicators */}
       <div className="hidden lg:flex absolute bottom-8 left-1/2 -translate-x-1/2 z-30 gap-2">
-        {carouselImages.map((_, index) => (
+        {carouselSlides.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
@@ -97,7 +98,7 @@ export default function Hero() {
 
       {/* Mobile/Tablet Indicators */}
       <div className="lg:hidden absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
-        {carouselImages.map((_, index) => (
+        {carouselSlides.map((_, index) => (
           <div
             key={index}
             className={`rounded-full transition-all duration-300 ${
@@ -110,13 +111,14 @@ export default function Hero() {
       {/* Text */}
       <div className="relative z-10 px-6 lg:px-16 max-w-7xl mx-auto w-full pointer-events-none">
         <div className="max-w-3xl">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold mb-6 md:mb-8 leading-[1.1] text-white break-words">
-            Conectando
-            <br />
-            profesionales
-            <br />
-            de excelencia
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold mb-4 md:mb-6 leading-[1.1] text-white break-words">
+            {carouselSlides[currentIndex]?.title || ""}
           </h1>
+          {carouselSlides[currentIndex]?.subtitle && (
+            <p className="text-lg sm:text-xl md:text-2xl text-white/90 break-words">
+              {carouselSlides[currentIndex].subtitle}
+            </p>
+          )}
         </div>
       </div>
 

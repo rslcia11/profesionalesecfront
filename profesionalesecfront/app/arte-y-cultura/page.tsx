@@ -8,27 +8,12 @@ import ProfessionalsCategoryList from "@/components/shared/professionals-categor
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
 import { useSpecialtyCounts } from "@/hooks/use-specialty-counts"
+import { useManagedCarousel } from "@/hooks/use-managed-carousel"
 import { catalogosApi } from "@/lib/api"
 import { Music, Palette, Theater, Camera, Mic, Brush } from "lucide-react"
 
 export default function ArteCulturaPage() {
-  const heroSlides = [
-    {
-      image: "/artist-painting-studio.png",
-      title: "Artistas y Profesionales del Arte",
-      subtitle: "Talento ecuatoriano excepcional para tus proyectos",
-    },
-    {
-      image: "/musician-performing-stage.jpg",
-      title: "Creatividad Sin Límites",
-      subtitle: "Conecta con artistas verificados y profesionales",
-    },
-    {
-      image: "/theater-performance-actors.jpg",
-      title: "Arte y Cultura Ecuatoriana",
-      subtitle: "Encuentra el talento perfecto para tu evento",
-    },
-  ]
+  const heroSlides = useManagedCarousel("arte-y-cultura")
 
   const featuredProfessional = {
     name: "María Fernández",

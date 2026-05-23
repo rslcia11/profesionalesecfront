@@ -7,27 +7,12 @@ import ProfessionalsCategoryList from "@/components/shared/professionals-categor
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
 import { useSpecialtyCounts } from "@/hooks/use-specialty-counts"
+import { useManagedCarousel } from "@/hooks/use-managed-carousel"
 import { catalogosApi } from "@/lib/api"
 import { Sparkles, Camera, Dumbbell, ChefHat, Wrench, Cookie, Car, Zap, Hammer, Trophy, Briefcase } from "lucide-react"
 
 export default function OficiosPage() {
-  const carouselSlides = [
-    {
-      image: "/craftsman-skilled-work-professional.jpg",
-      title: "Profesionales en Oficios",
-      subtitle: "Expertos certificados en servicios especializados",
-    },
-    {
-      image: "/photography-professional-camera-work.jpg",
-      title: "Calidad y Experiencia",
-      subtitle: "Encuentra el profesional ideal para tu proyecto",
-    },
-    {
-      image: "/beauty-salon-professional-service.jpg",
-      title: "Servicios Confiables",
-      subtitle: "Profesionales verificados y evaluados por clientes",
-    },
-  ]
+  const carouselSlides = useManagedCarousel("oficios")
 
   const PROFESSION_ID = 16 // Oficios
   const { countsBySpecialty } = useSpecialtyCounts([PROFESSION_ID])

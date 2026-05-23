@@ -8,27 +8,12 @@ import ProfessionalsCategoryList from "@/components/shared/professionals-categor
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
 import { useSpecialtyCounts } from "@/hooks/use-specialty-counts"
+import { useManagedCarousel } from "@/hooks/use-managed-carousel"
 import { catalogosApi } from "@/lib/api"
 import { Scale, Gavel, Users, Building2, FileText, Briefcase, Shield, Globe, BookOpen, Landmark } from "lucide-react"
 
 export default function DerechoPage() {
-  const heroSlides = [
-    {
-      image: "/lawyer-team-office-consultation.jpg",
-      title: "Expertos en Derecho",
-      subtitle: "Asesoría legal profesional para resolver tus necesidades jurídicas",
-    },
-    {
-      image: "/lawyer-courtroom-justice-scales.jpg",
-      title: "Justicia y Asesoría Legal",
-      subtitle: "Protegemos tus derechos con excelencia profesional",
-    },
-    {
-      image: "/lawyer-consultation-client-meeting.jpg",
-      title: "Soluciones Legales Integrales",
-      subtitle: "Tu mejor aliado en asuntos legales y jurídicos",
-    },
-  ]
+  const heroSlides = useManagedCarousel("derecho")
 
   const featuredProfessional = {
     name: "Dr. Rodrigo Cajas",

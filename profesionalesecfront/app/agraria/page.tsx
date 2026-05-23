@@ -8,30 +8,12 @@ import ProfessionalsCategoryList from "@/components/shared/professionals-categor
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
 import { useSpecialtyCounts } from "@/hooks/use-specialty-counts"
+import { useManagedCarousel } from "@/hooks/use-managed-carousel"
 import { catalogosApi } from "@/lib/api"
 import { Sprout, Beef, Factory, TrendingUp, UtensilsCrossed } from "lucide-react"
 
 export default function AgrariaPage() {
-  const carouselSlides = [
-    {
-      image: "/agriculture-modern-farming-technology.jpg",
-      title: "Innovación Agrícola para el Futuro",
-      description: "Conecta con especialistas en agronomía y tecnología agrícola",
-      cta: { text: "Explorar Servicios", href: "#servicios" },
-    },
-    {
-      image: "/livestock-farming-professional.jpg",
-      title: "Producción Pecuaria Sostenible",
-      description: "Expertos en zootecnia y manejo de ganado",
-      cta: { text: "Ver Profesionales", href: "#servicios" },
-    },
-    {
-      image: "/agroindustry-food-processing.jpg",
-      title: "Agroindustria y Transformación",
-      description: "Profesionales en procesamiento y valor agregado",
-      cta: { text: "Conocer Más", href: "#servicios" },
-    },
-  ]
+  const carouselSlides = useManagedCarousel("agraria")
 
   const PROFESSION_ID = 15 // Agraria
   const { countsBySpecialty } = useSpecialtyCounts([PROFESSION_ID])

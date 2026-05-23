@@ -1,4 +1,0 @@
-module CameraPlugin {
-header "CameraPlugin-Swift.h"
-export *
-}

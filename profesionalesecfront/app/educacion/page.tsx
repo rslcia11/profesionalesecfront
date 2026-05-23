@@ -8,27 +8,12 @@ import ProfessionalsCategoryList from "@/components/shared/professionals-categor
 import ProfessionalServicesGrid from "@/components/shared/professional-services-grid"
 import BlogSection from "@/components/shared/blog-section"
 import { useSpecialtyCounts } from "@/hooks/use-specialty-counts"
+import { useManagedCarousel } from "@/hooks/use-managed-carousel"
 import { catalogosApi } from "@/lib/api"
 import { BookOpen, GraduationCap, Users, Globe, School, Microscope } from "lucide-react"
 
 export default function EducacionPage() {
-  const heroSlides = [
-    {
-      image: "/teacher-classroom-students.jpg",
-      title: "Profesionales en Educación",
-      subtitle: "Docentes calificados para transformar el aprendizaje",
-    },
-    {
-      image: "/university-professor-lecture.jpg",
-      title: "Excelencia Educativa",
-      subtitle: "Conecta con los mejores educadores del país",
-    },
-    {
-      image: "/online-education-teacher.jpg",
-      title: "Educación de Calidad",
-      subtitle: "Profesores verificados y con experiencia comprobada",
-    },
-  ]
+  const heroSlides = useManagedCarousel("educacion")
 
   const featuredProfessional = {
     name: "Dr. Roberto Vega",
