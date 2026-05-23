@@ -86,7 +86,7 @@ export default function FeaturedProfessionals() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 md:px-10 lg:px-16 xl:px-24">
           {professionals.map((pro, index) => (
             <Link
               href={pro.slug ? `/perfil/${pro.slug}` : "/profesionales"}

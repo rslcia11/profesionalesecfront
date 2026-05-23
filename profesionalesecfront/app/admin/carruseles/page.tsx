@@ -1,12 +1,9 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import Header from "@/components/header"
-import Footer from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -16,7 +13,7 @@ import { useToast } from "@/hooks/use-toast"
 import { carouselsApi } from "@/lib/api/carousels"
 import { getToken, multimediaApi } from "@/lib/api"
 import type { CarouselPlacement, ManagedCarouselSlide } from "@/lib/validators/carousel"
-import { ArrowDown, ArrowLeft, ArrowUp, Image as ImageIcon, Loader2, Pencil, Plus, Trash2, Upload } from "lucide-react"
+import { ArrowDown, ArrowUp, Image as ImageIcon, Loader2, Pencil, Plus, Trash2, Upload } from "lucide-react"
 
 type PlacementData = {
   placement: CarouselPlacement
@@ -44,10 +41,8 @@ const EMPTY_FORM: SlideFormState = {
 }
 
 export default function AdminCarruselesPage() {
-  const router = useRouter()
   const { toast } = useToast()
 
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
@@ -57,22 +52,6 @@ export default function AdminCarruselesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingSlide, setEditingSlide] = useState<ManagedCarouselSlide | null>(null)
   const [form, setForm] = useState<SlideFormState>(EMPTY_FORM)
-
-  useEffect(() => {
-    const token = localStorage.getItem("auth_token")
-    if (!token) {
-      setIsAuthenticated(false)
-      toast({
-        title: "Acceso Denegado",
-        description: "Debes iniciar sesión como administrador.",
-        variant: "destructive",
-      })
-      router.push("/login")
-      return
-    }
-
-    setIsAuthenticated(true)
-  }, [router, toast])
 
   const loadPlacements = useCallback(async (nextPlacementKey?: string) => {
     setIsLoading(true)
@@ -112,16 +91,14 @@ export default function AdminCarruselesPage() {
   }, [toast])
 
   useEffect(() => {
-    if (!isAuthenticated) return
-
     loadPlacements()
-  }, [isAuthenticated, loadPlacements])
+  }, [loadPlacements])
 
   useEffect(() => {
-    if (!selectedPlacementKey || !isAuthenticated) return
+    if (!selectedPlacementKey) return
 
     loadPlacement(selectedPlacementKey)
-  }, [selectedPlacementKey, isAuthenticated, loadPlacement])
+  }, [selectedPlacementKey, loadPlacement])
 
   function openCreateModal() {
     setEditingSlide(null)
@@ -193,7 +170,7 @@ export default function AdminCarruselesPage() {
   }
 
   async function handleDelete(slide: ManagedCarouselSlide) {
-    if (!window.confirm(`Eliminar el slide \"${slide.title}\"?`)) {
+    if (!window.confirm(`Eliminar el slide "${slide.title}"?`)) {
       return
     }
 
@@ -279,135 +256,111 @@ export default function AdminCarruselesPage() {
     }
   }
 
-  if (isAuthenticated === null) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 text-gray-900 flex flex-col">
-      <Header />
+    <div className="animate-in fade-in duration-300">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+        <div>
+          <h1 className="text-4xl font-bold">Gestión de Carruseles</h1>
+          <p className="text-muted-foreground">Administra slides por placement sin depender de publicidades.</p>
+        </div>
 
-      <main className="flex-grow pt-24 pb-12">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 space-y-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <Button
-                variant="outline"
-                onClick={() => router.push("/admin")}
-                className="mb-4 rounded-2xl"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Volver al Dashboard
-              </Button>
-              <h1 className="text-4xl font-bold">Gestión de Carruseles</h1>
-              <p className="text-muted-foreground">Administra slides por placement sin depender de publicidades.</p>
+        <Button onClick={openCreateModal} disabled={!selectedPlacementKey} className="rounded-2xl">
+          <Plus className="mr-2 h-4 w-4" />
+          Nuevo Slide
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Placement</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-[280px_1fr]">
+          <div className="space-y-2">
+            <Label>Selecciona un placement</Label>
+            <Select value={selectedPlacementKey} onValueChange={setSelectedPlacementKey}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona un placement" />
+              </SelectTrigger>
+              <SelectContent>
+                {placements.map((placement) => (
+                  <SelectItem key={placement.key} value={placement.key}>
+                    {placement.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="rounded-2xl border bg-slate-50 p-4 text-sm text-slate-600">
+              <p><span className="font-semibold text-slate-900">Ruta:</span> {placementData?.placement.routePath || "-"}</p>
+              <p><span className="font-semibold text-slate-900">Activos:</span> {placements.find((placement) => placement.key === selectedPlacementKey)?.activeSlides || 0}</p>
+              <p><span className="font-semibold text-slate-900">Total:</span> {placements.find((placement) => placement.key === selectedPlacementKey)?.totalSlides || 0}</p>
             </div>
-
-            <Button onClick={openCreateModal} disabled={!selectedPlacementKey} className="rounded-2xl">
-              <Plus className="mr-2 h-4 w-4" />
-              Nuevo Slide
-            </Button>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Placement</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-[280px_1fr]">
-              <div className="space-y-2">
-                <Label>Selecciona un placement</Label>
-                <Select value={selectedPlacementKey} onValueChange={setSelectedPlacementKey}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un placement" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {placements.map((placement) => (
-                      <SelectItem key={placement.key} value={placement.key}>
-                        {placement.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <div className="rounded-2xl border bg-slate-50 p-4 text-sm text-slate-600">
-                  <p><span className="font-semibold text-slate-900">Ruta:</span> {placementData?.placement.routePath || "-"}</p>
-                  <p><span className="font-semibold text-slate-900">Activos:</span> {placements.find((placement) => placement.key === selectedPlacementKey)?.activeSlides || 0}</p>
-                  <p><span className="font-semibold text-slate-900">Total:</span> {placements.find((placement) => placement.key === selectedPlacementKey)?.totalSlides || 0}</p>
-                </div>
+          <div className="space-y-4">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
               </div>
-
-              <div className="space-y-4">
-                {isLoading ? (
-                  <div className="flex items-center justify-center py-16">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                  </div>
-                ) : placementData?.slides.length ? (
-                  placementData.slides.map((slide, index) => (
-                    <Card key={slide.id} className="border-slate-200">
-                      <CardContent className="p-4 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                        <div className="flex gap-4">
-                          <div className="h-28 w-40 overflow-hidden rounded-2xl border bg-slate-100">
-                            {slide.imageUrl ? (
-                              <img src={slide.imageUrl} alt={slide.title} className="h-full w-full object-cover" />
-                            ) : (
-                              <div className="h-full w-full flex items-center justify-center text-slate-400">
-                                <ImageIcon className="h-8 w-8" />
-                              </div>
-                            )}
+            ) : placementData?.slides.length ? (
+              placementData.slides.map((slide, index) => (
+                <Card key={slide.id} className="border-slate-200">
+                  <CardContent className="p-4 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div className="flex gap-4">
+                      <div className="h-28 w-40 overflow-hidden rounded-2xl border bg-slate-100">
+                        {slide.imageUrl ? (
+                          <img src={slide.imageUrl} alt={slide.title} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="h-full w-full flex items-center justify-center text-slate-400">
+                            <ImageIcon className="h-8 w-8" />
                           </div>
+                        )}
+                      </div>
 
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-3">
-                              <h2 className="text-lg font-semibold">{slide.title}</h2>
-                              <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${slide.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700"}`}>
-                                {slide.isActive ? "Activo" : "Inactivo"}
-                              </span>
-                            </div>
-                            {slide.subtitle && <p className="text-sm text-muted-foreground">{slide.subtitle}</p>}
-                            <p className="text-xs text-slate-500">Orden guardado: {slide.sortOrder + 1}</p>
-                            {slide.ctaLabel && slide.ctaUrl && (
-                              <p className="text-xs text-slate-500">CTA: {slide.ctaLabel} ({slide.ctaUrl})</p>
-                            )}
-                          </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <h2 className="text-lg font-semibold">{slide.title}</h2>
+                          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${slide.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700"}`}>
+                            {slide.isActive ? "Activo" : "Inactivo"}
+                          </span>
                         </div>
+                        {slide.subtitle && <p className="text-sm text-muted-foreground">{slide.subtitle}</p>}
+                        <p className="text-xs text-slate-500">Orden guardado: {slide.sortOrder + 1}</p>
+                        {slide.ctaLabel && slide.ctaUrl && (
+                          <p className="text-xs text-slate-500">CTA: {slide.ctaLabel} ({slide.ctaUrl})</p>
+                        )}
+                      </div>
+                    </div>
 
-                        <div className="flex flex-wrap items-center gap-2 md:justify-end">
-                          <div className="flex items-center gap-2 rounded-full border px-3 py-2">
-                            <span className="text-xs font-medium text-slate-600">Activo</span>
-                            <Switch checked={slide.isActive} onCheckedChange={(checked) => handleToggle(slide, checked)} />
-                          </div>
-                          <Button variant="outline" size="icon" onClick={() => handleMove(index, "up")} disabled={index === 0}>
-                            <ArrowUp className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="icon" onClick={() => handleMove(index, "down")} disabled={index === placementData.slides.length - 1}>
-                            <ArrowDown className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="icon" onClick={() => openEditModal(slide)}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="icon" onClick={() => handleDelete(slide)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : (
-                  <div className="rounded-2xl border border-dashed bg-white p-10 text-center text-muted-foreground">
-                    No hay slides en este placement. Crea el primero para comenzar.
-                  </div>
-                )}
+                    <div className="flex flex-wrap items-center gap-2 md:justify-end">
+                      <div className="flex items-center gap-2 rounded-full border px-3 py-2">
+                        <span className="text-xs font-medium text-slate-600">Activo</span>
+                        <Switch checked={slide.isActive} onCheckedChange={(checked) => handleToggle(slide, checked)} />
+                      </div>
+                      <Button variant="outline" size="icon" onClick={() => handleMove(index, "up")} disabled={index === 0}>
+                        <ArrowUp className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="icon" onClick={() => handleMove(index, "down")} disabled={index === placementData.slides.length - 1}>
+                        <ArrowDown className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="icon" onClick={() => openEditModal(slide)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="icon" onClick={() => handleDelete(slide)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-dashed bg-white p-10 text-center text-muted-foreground">
+                No hay slides en este placement. Crea el primero para comenzar.
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </main>
-
-      <Footer />
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="w-full sm:max-w-xl flex flex-col overflow-hidden">
