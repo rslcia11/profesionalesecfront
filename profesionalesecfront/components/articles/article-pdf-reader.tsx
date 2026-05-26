@@ -84,10 +84,10 @@ const DEFAULT_VIEWPORT_WIDTH = 1280
 const DEFAULT_VIEWPORT_HEIGHT = 800
 const MIN_PAGE_WIDTH = 160
 const MAX_PAGE_WIDTH = 860
-const MOBILE_VIEWPORT_HORIZONTAL_MARGIN = 24
-const DESKTOP_VIEWPORT_HORIZONTAL_MARGIN = 88
-const MOBILE_VIEWPORT_VERTICAL_CHROME = 150
-const DESKTOP_VIEWPORT_VERTICAL_CHROME = 176
+const MOBILE_VIEWPORT_HORIZONTAL_MARGIN = 4
+const DESKTOP_VIEWPORT_HORIZONTAL_MARGIN = 8
+const MOBILE_VIEWPORT_VERTICAL_CHROME = 16
+const DESKTOP_VIEWPORT_VERTICAL_CHROME = 16
 const MOBILE_PAGE_GAP = 8
 const DESKTOP_PAGE_GAP = 18
 
@@ -502,10 +502,10 @@ export default function ArticlePdfReader({ pdfUrl, title, summary, onClose }: Ar
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-4 top-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur transition hover:bg-white/15"
+            aria-label="Cerrar"
+            className="absolute right-4 top-4 inline-flex items-center justify-center rounded-full border border-black/15 bg-white h-10 w-10 text-black backdrop-blur transition hover:bg-gray-100"
           >
-            <X className="h-4 w-4" />
-            Cerrar
+            <X className="h-5 w-5" />
           </button>
         ) : null}
         <FileWarning className="h-8 w-8" />
@@ -528,52 +528,41 @@ export default function ArticlePdfReader({ pdfUrl, title, summary, onClose }: Ar
   return (
     <div
       className={cn(
-        "relative flex h-[100dvh] w-full flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.08),_transparent_32%),linear-gradient(180deg,#111827_0%,#09090b_100%)] px-2 py-2 text-white sm:px-3 sm:py-3 md:px-5 md:py-4",
+        "relative flex h-[100dvh] w-full flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.08),_transparent_32%),linear-gradient(180deg,#111827_0%,#09090b_100%)] text-white",
         "[&_.react-pdf__Document]:flex [&_.react-pdf__Document]:h-full [&_.react-pdf__Document]:min-h-0 [&_.react-pdf__Document]:flex-1 [&_.react-pdf__Document]:flex-col",
         "[&_.react-pdf__Page]:flex [&_.react-pdf__Page]:h-full [&_.react-pdf__Page]:items-center [&_.react-pdf__Page]:justify-center",
         "[&_.react-pdf__Page__canvas]:!h-auto [&_.react-pdf__Page__canvas]:max-h-full [&_.react-pdf__Page__canvas]:max-w-full",
         "[&_.page-wrapper]:bg-transparent [&_.turn-page]:bg-transparent [&_.turn-page-wrapper]:bg-transparent",
       )}
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/45 via-black/10 to-transparent" />
-
-      <div className="relative z-10 flex shrink-0 items-start justify-between gap-3 pb-2 md:pb-3">
-        <div className="min-w-0 max-w-2xl">
-          <h2 className="line-clamp-2 text-base font-semibold leading-tight text-white sm:text-lg md:text-2xl">{title}</h2>
-          {summary ? (
-            <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-stone-300/90 md:text-sm">{summary}</p>
-          ) : null}
+      {onClose ? (
+        <div className="absolute right-2 top-2 z-50 flex items-center gap-2 sm:right-3 sm:top-3">
+          <a
+            href={pdfUrl}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => {
+              pdfReaderLog("open original pdf clicked", {
+                pdfUrl,
+                activeSpreadIndex,
+              })
+            }}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/12 bg-white text-black backdrop-blur transition hover:bg-gray-100"
+            title="Abrir PDF en nueva pestana"
+          >
+            <ExternalLink className="h-5 w-5" />
+          </a>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/12 bg-white text-black backdrop-blur transition hover:bg-gray-100"
+            aria-label="Cerrar lector"
+            title="Cerrar lector"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
-
-        {onClose ? (
-          <div className="flex shrink-0 items-center gap-2">
-            <a
-              href={pdfUrl}
-              target="_blank"
-              rel="noreferrer"
-              onClick={() => {
-                pdfReaderLog("open original pdf clicked", {
-                  pdfUrl,
-                  activeSpreadIndex,
-                })
-              }}
-              className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/30 px-3 py-2 text-sm font-medium text-white backdrop-blur transition hover:bg-black/40"
-            >
-              <ExternalLink className="h-4 w-4" />
-              <span className="hidden sm:inline">Abrir PDF</span>
-            </a>
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/12 bg-black/30 px-3 py-2 text-sm font-medium text-white backdrop-blur transition hover:bg-black/40"
-              aria-label="Cerrar lector"
-            >
-              <X className="h-4 w-4" />
-              <span className="hidden sm:inline">Cerrar</span>
-            </button>
-          </div>
-        ) : null}
-      </div>
+      ) : null}
 
       <Document
         key={pdfUrl}
@@ -623,8 +612,8 @@ export default function ArticlePdfReader({ pdfUrl, title, summary, onClose }: Ar
           setHasError(true)
         }}
       >
-        <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden pt-1">
-          <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-[26px] border border-white/6 bg-black/10 px-1 py-1 sm:px-2 sm:py-2 md:px-3 md:py-3">
+        <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.06),_transparent_58%)]" />
 
             <button
@@ -634,7 +623,7 @@ export default function ArticlePdfReader({ pdfUrl, title, summary, onClose }: Ar
               }}
               disabled={!canGoPrevious}
               aria-label="Spread anterior"
-              className="absolute left-2 top-1/2 z-30 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/45 text-white backdrop-blur-md transition hover:bg-black/65 disabled:cursor-not-allowed disabled:opacity-30 sm:left-3 md:left-4"
+              className="absolute left-2 top-1/2 z-30 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-black/12 bg-white text-black backdrop-blur transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30 sm:left-3 md:left-4"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -646,7 +635,7 @@ export default function ArticlePdfReader({ pdfUrl, title, summary, onClose }: Ar
               }}
               disabled={!canGoNext}
               aria-label="Spread siguiente"
-              className="absolute right-2 top-1/2 z-30 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/45 text-white backdrop-blur-md transition hover:bg-black/65 disabled:cursor-not-allowed disabled:opacity-30 sm:right-3 md:right-4"
+              className="absolute right-2 top-1/2 z-30 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-black/12 bg-white text-black backdrop-blur transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30 sm:right-3 md:right-4"
             >
               <ChevronRight className="h-5 w-5" />
             </button>
@@ -688,7 +677,7 @@ export default function ArticlePdfReader({ pdfUrl, title, summary, onClose }: Ar
                       >
                         <div className="pointer-events-none absolute inset-y-0 left-1/2 z-10 w-8 -translate-x-1/2 bg-[linear-gradient(90deg,rgba(255,255,255,0.02)_0%,rgba(0,0,0,0.18)_40%,rgba(0,0,0,0.35)_50%,rgba(0,0,0,0.18)_60%,rgba(255,255,255,0.02)_100%)] blur-[1px]" />
 
-                        {spread.pages.map((pageNumber) => (
+                        {spread.pages.map((pageNumber, pageIndex) => (
                           <div
                             key={`${pdfUrl}-spread-${spread.index}-page-${pageNumber}`}
                             className="relative flex h-full shrink-0 items-center justify-center overflow-hidden rounded-[18px] bg-white shadow-[0_28px_70px_rgba(0,0,0,0.45)]"
@@ -768,6 +757,22 @@ export default function ArticlePdfReader({ pdfUrl, title, summary, onClose }: Ar
                             ) : (
                               <div className="h-full w-full bg-[linear-gradient(135deg,#f6f7fb_0%,#edf1f7_100%)]" />
                             )}
+                            <div
+                              className="absolute inset-0 z-10 cursor-pointer"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                if (pageIndex === 0) {
+                                  if (canGoPrevious) {
+                                    requestSpreadChange(activeSpreadIndex - 1)
+                                  }
+                                } else {
+                                  if (canGoNext) {
+                                    requestSpreadChange(activeSpreadIndex + 1)
+                                  }
+                                }
+                              }}
+                              aria-hidden="true"
+                            />
                           </div>
                         ))}
 

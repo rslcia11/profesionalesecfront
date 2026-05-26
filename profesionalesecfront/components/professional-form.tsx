@@ -706,6 +706,24 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
       case "paymentProof":
         if (plan === "priority" && !value) error = "Debes subir el comprobante de pago"
         break
+      case "facebook_url":
+        if (value && !/^(https?:\/\/)?(www\.)?facebook\.com\/.+/i.test(value)) error = "La URL debe ser un perfil de Facebook válido"
+        break
+      case "instagram_url":
+        if (value && !/^(https?:\/\/)?(www\.)?instagram\.com\/.+/i.test(value)) error = "La URL debe ser un perfil de Instagram válido"
+        break
+      case "x_url":
+        if (value && !/^(https?:\/\/)?(www\.)?(twitter\.com\/|x\.com\/).+/i.test(value)) error = "La URL debe ser un perfil de X válido"
+        break
+      case "linkedin_url":
+        if (value && !/^(https?:\/\/)?(www\.)?linkedin\.com\/.+/i.test(value)) error = "La URL debe ser un perfil de LinkedIn válido"
+        break
+      case "tiktok_url":
+        if (value && !/^(https?:\/\/)?(www\.)?tiktok\.com\/.+/i.test(value)) error = "La URL debe ser un perfil de TikTok válido"
+        break
+      case "yt_url":
+        if (value && !/^(https?:\/\/)?(www\.)?(youtube\.com\/|youtu\.be\/).+/i.test(value)) error = "La URL debe ser un canal de YouTube válido"
+        break
     }
 
     setErrors(prev => ({
@@ -749,7 +767,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
         currentFieldsToValidate.push("identityFront", "identityBack")
         break
       case 4:
-        currentFieldsToValidate.push("tags")
+        currentFieldsToValidate.push("tags", "facebook_url", "instagram_url", "x_url", "linkedin_url", "tiktok_url", "yt_url")
         break
       case 5:
         if (shouldChoosePriorityPaymentMethod) {
@@ -1755,6 +1773,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
               placeholder="https://facebook.com/usuario"
               className={`w-full px-4 py-2.5 bg-card border ${getInputBorderColor("facebook_url")} rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30`}
             />
+            {errors.facebook_url && touched.facebook_url && <p className="text-red-400 text-sm mt-1">{errors.facebook_url}</p>}
           </div>
 
           <div className="space-y-2">
@@ -1770,6 +1789,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
               placeholder="https://instagram.com/usuario"
               className={`w-full px-4 py-2.5 bg-card border ${getInputBorderColor("instagram_url")} rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30`}
             />
+            {errors.instagram_url && touched.instagram_url && <p className="text-red-400 text-sm mt-1">{errors.instagram_url}</p>}
           </div>
 
           <div className="space-y-2">
@@ -1785,6 +1805,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
               placeholder="https://x.com/usuario"
               className={`w-full px-4 py-2.5 bg-card border ${getInputBorderColor("x_url")} rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30`}
             />
+            {errors.x_url && touched.x_url && <p className="text-red-400 text-sm mt-1">{errors.x_url}</p>}
           </div>
 
           <div className="space-y-2">
@@ -1800,6 +1821,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
               placeholder="https://linkedin.com/in/usuario"
               className={`w-full px-4 py-2.5 bg-card border ${getInputBorderColor("linkedin_url")} rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30`}
             />
+            {errors.linkedin_url && touched.linkedin_url && <p className="text-red-400 text-sm mt-1">{errors.linkedin_url}</p>}
           </div>
 
           <div className="space-y-2">
@@ -1815,6 +1837,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
               placeholder="https://tiktok.com/@usuario"
               className={`w-full px-4 py-2.5 bg-card border ${getInputBorderColor("tiktok_url")} rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30`}
             />
+            {errors.tiktok_url && touched.tiktok_url && <p className="text-red-400 text-sm mt-1">{errors.tiktok_url}</p>}
           </div>
 
           <div className="space-y-2">
@@ -1830,6 +1853,7 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
               placeholder="https://youtube.com/@canal"
               className={`w-full px-4 py-2.5 bg-card border ${getInputBorderColor("yt_url")} rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30`}
             />
+            {errors.yt_url && touched.yt_url && <p className="text-red-400 text-sm mt-1">{errors.yt_url}</p>}
           </div>
         </div>
       </div>
@@ -1973,6 +1997,15 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
                 <li>• El pago aprobado NO activa el perfil automáticamente.</li>
                 <li>• Nuestro equipo debe revisar y validar la solicitud antes de cualquier activación.</li>
               </ul>
+              <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-800 text-center">
+                <button
+                  type="button"
+                  onClick={() => updatePriorityPaymentMethod("bank")}
+                  className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200 underline underline-offset-2 font-medium transition-colors"
+                >
+                  Prefiero pagar con transferencia
+                </button>
+              </div>
             </div>
           ) : (
             <>
@@ -2050,6 +2083,15 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
                   </div>
                 </label>
                 {errors.paymentProof && <p className="text-red-400 text-sm mt-1">{errors.paymentProof}</p>}
+              </div>
+              <div className="mt-6 text-center">
+                <button
+                  type="button"
+                  onClick={() => updatePriorityPaymentMethod("payphone")}
+                  className="text-sm text-blue-600 hover:text-blue-700 underline underline-offset-2 font-medium transition-colors"
+                >
+                  Prefiero pagar con PayPhone
+                </button>
               </div>
             </>
           )}

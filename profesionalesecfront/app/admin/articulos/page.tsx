@@ -1,6 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { format } from "date-fns"
+import { es } from "date-fns/locale"
+import dynamic from "next/dynamic"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -10,6 +13,7 @@ import { useAnimatedConfirm, AnimatedConfirm } from "@/components/shared/animate
 import { articulosApi, type Articulo } from "@/lib/api"
 import { formatUrl, cn } from "@/lib/utils"
 import ArticleFormModal from "@/components/article-form-modal"
+import ArticleReaderDialog from "@/components/articles/article-reader-dialog"
 import {
   BookOpen,
   Plus,
@@ -17,8 +21,21 @@ import {
   CheckCircle2,
   XCircle,
   FileText,
+  User,
   Users,
+  X,
+  ArrowRight,
 } from "lucide-react"
+
+const ArticlePdfPreview = dynamic(() => import("@/components/articles/article-pdf-preview"), { ssr: false })
+
+function formatArticleDate(dateStr: string) {
+  try {
+    return format(new Date(dateStr), "d 'de' MMMM 'de' yyyy", { locale: es })
+  } catch {
+    return dateStr
+  }
+}
 
 export default function AdminArticulosPage() {
   const { toast } = useToast()
@@ -28,6 +45,7 @@ export default function AdminArticulosPage() {
   const [isArticleModalOpen, setIsArticleModalOpen] = useState(false)
   const [isArticleDetailsOpen, setIsArticleDetailsOpen] = useState(false)
   const [selectedArticle, setSelectedArticle] = useState<Articulo | null>(null)
+  const [archivingArticleId, setArchivingArticleId] = useState<number | null>(null)
 
   const selectedArticlePdfUrl = selectedArticle?.pdf_url
     ? formatUrl(selectedArticle.pdf_url) ?? selectedArticle.pdf_url
@@ -146,91 +164,112 @@ export default function AdminArticulosPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
-          {adminArticulos.map((articulo) => (
-            <Card key={articulo.id} className="bg-white border-gray-200 hover:border-blue-300 transition-all duration-300 hover:shadow-md group overflow-hidden">
-              <CardContent className="p-0">
-                <div className="flex h-full">
-                  <div className="w-24 bg-gray-50 border-r border-gray-100 flex flex-col items-center justify-center relative overflow-hidden group-hover:bg-blue-50 transition-colors">
-                    {articulo.imagen_url ? (
-                      <img src={articulo.imagen_url} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-40 transition-opacity" />
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+          {adminArticulos.map((articulo, index) => {
+            const excerpt = articulo.resumen || `${articulo.contenido?.slice(0, 150) || ""}...`
+            const articlePdfUrl = formatUrl(articulo.pdf_url) || articulo.pdf_url
+
+            return (
+              <div
+                key={articulo.id}
+                onClick={() => {
+                  setSelectedArticle(articulo)
+                }}
+                className="group block w-full bg-white rounded-2xl overflow-hidden border border-gray-200 hover:border-primary/30 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 animate-in fade-in slide-in-from-bottom-6 cursor-pointer"
+                style={{ animationDelay: `${index * 80}ms` }}
+              >
+                <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary/5 to-accent/5">
+                  {articlePdfUrl ? (
+                    <ArticlePdfPreview
+                      pdfUrl={articlePdfUrl}
+                      title={articulo.titulo}
+                      compact={true}
+                      variant="thumbnail"
+                      className="transition-transform duration-700 group-hover:scale-[1.03]"
+                      fallbackMessage="Vista previa no disponible para este artículo."
+                    />
+                  ) : articulo.imagen_url ? (
+                    <img
+                      src={formatUrl(articulo.imagen_url) || ""}
+                      alt={articulo.titulo}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    />
+                  ) : (
+                    <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center text-gray-500">
+                      <BookOpen className="text-primary/30" size={56} />
+                      <p className="text-sm font-medium">Sin PDF disponible</p>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-white via-white/50 to-transparent opacity-70" />
+
+                  <div className="absolute top-3 left-3 z-10 flex items-center gap-2">
+                    {articulo.autor?.foto_url ? (
+                      <img
+                        src={articulo.autor.foto_url}
+                        alt={articulo.autor.nombre || "Autor"}
+                        className="h-8 w-8 rounded-full object-cover border-2 border-white shadow-sm"
+                      />
                     ) : (
-                      <FileText className="h-8 w-8 text-gray-300 group-hover:text-blue-200" />
-                    )}
-                    <Badge className="z-10 text-[10px] absolute top-2 left-2 px-1">
-                      #{articulo.id}
-                    </Badge>
-                  </div>
-                  <div className="flex-1 p-5 min-w-0">
-                    <div className="flex justify-between items-start mb-2">
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5",
-                          articulo.estado === "publicado"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                            : articulo.estado === "archivado"
-                              ? "bg-red-50 text-red-700 border-red-100"
-                              : "bg-yellow-50 text-yellow-700 border-yellow-100"
-                        )}
-                      >
-                        {articulo.estado}
-                      </Badge>
-                      <span className="text-[10px] text-gray-400 font-medium">
-                        {articulo.fecha_publicacion ? new Date(articulo.fecha_publicacion).toLocaleDateString("es-EC") : ""}
-                      </span>
-                    </div>
-                    <h3 className="text-base font-bold text-gray-900 truncate mb-1 group-hover:text-blue-600 transition-colors">
-                      {articulo.titulo}
-                    </h3>
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
-                        <Users className="h-3 w-3 text-blue-600" />
+                      <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center border-2 border-white shadow-sm">
+                        <User className="h-4 w-4 text-primary" />
                       </div>
-                      <span className="text-xs text-gray-600 font-medium truncate">
-                        {articulo.autor?.nombre || "Autor desconocido"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 border-t pt-4">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => {
-                          setSelectedArticle(articulo)
-                          setIsArticleDetailsOpen(true)
-                        }}
-                        className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 gap-1.5"
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                        Detalles
-                      </Button>
-                      {articulo.estado === "publicado" ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleArchivarArticulo(articulo.id)}
-                          className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 transition-colors px-3"
-                          title="Archivar"
-                        >
-                          <XCircle className="h-4 w-4" />
-                        </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleModerarArticulo(articulo.id)}
-                          className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 transition-colors px-3"
-                          title="Publicar"
-                        >
-                          <CheckCircle2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
+                    )}
+                    <span className="text-sm font-semibold text-gray-900">
+                      {articulo.autor?.nombre || "Autor desconocido"}
+                    </span>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+
+                <div className="p-6">
+                  <div className="mb-3 text-xs text-gray-500">
+                    <span>{formatArticleDate(articulo.fecha_publicacion)}</span>
+                  </div>
+
+                  <h4 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-primary transition-colors">
+                    {articulo.titulo}
+                  </h4>
+
+                  <p className="text-sm text-gray-600 leading-relaxed mb-5 line-clamp-3">{excerpt}</p>
+                </div>
+
+                <div className="px-6 pb-6">
+                  <div className="pt-4 border-t border-gray-100 flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{articulo.autor?.nombre || "Autor desconocido"}</p>
+                    </div>
+
+                    {articulo.estado === "publicado" ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleArchivarArticulo(articulo.id)
+                        }}
+                        className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 transition-colors px-3"
+                        title="Archivar"
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleModerarArticulo(articulo.id)
+                        }}
+                        className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 transition-colors px-3"
+                        title="Publicar"
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
 
@@ -292,14 +331,13 @@ export default function AdminArticulosPage() {
                         <FileText className="h-4 w-4" />
                         Documento PDF adjunto
                       </div>
-                      <Button asChild variant="outline" className="gap-2 border-blue-200 bg-white text-blue-700 hover:bg-blue-50">
+                      <Button asChild variant="outline" size="icon" aria-label="Abrir PDF" className="border-blue-200 bg-white text-blue-700 hover:bg-blue-50">
                         <a
                           href={selectedArticlePdfUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                         >
                           <Eye className="h-4 w-4" />
-                          Abrir PDF
                         </a>
                       </Button>
                     </div>
@@ -314,10 +352,11 @@ export default function AdminArticulosPage() {
               <DialogFooter className="mt-8 pt-6 border-t border-gray-100 gap-3">
                 <Button
                   variant="outline"
+                  size="icon"
                   onClick={() => setIsArticleDetailsOpen(false)}
-                  className="px-6"
+                  aria-label="Cerrar"
                 >
-                  Cerrar
+                  <X className="h-4 w-4" />
                 </Button>
 
                 {selectedArticle.estado === 'publicado' ? (
@@ -362,6 +401,11 @@ export default function AdminArticulosPage() {
         options={confirmOptions}
         onConfirm={onConfirm}
         onCancel={onCancel}
+      />
+
+      <ArticleReaderDialog
+        article={selectedArticle}
+        onClose={() => setSelectedArticle(null)}
       />
     </div>
   )

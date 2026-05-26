@@ -1,6 +1,6 @@
 "use client"
 
-import { BookOpen } from "lucide-react"
+import { BookOpen, X } from "lucide-react"
 import dynamic from "next/dynamic"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import type { Articulo } from "@/lib/api"
@@ -49,9 +49,10 @@ export default function ArticleReaderDialog({ article, onClose }: ArticleReaderD
                 <button
                   type="button"
                   onClick={onClose}
-                  className="absolute right-4 top-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur transition hover:bg-white/15"
+                  aria-label="Cerrar"
+                  className="absolute right-4 top-4 inline-flex items-center justify-center rounded-full border border-white/15 bg-white/10 h-10 w-10 text-white backdrop-blur transition hover:bg-white/15"
                 >
-                  Cerrar
+                  <X className="h-5 w-5" />
                 </button>
                 <BookOpen className="h-9 w-9" />
                 <p className="font-semibold">Este artículo no tiene PDF disponible.</p>

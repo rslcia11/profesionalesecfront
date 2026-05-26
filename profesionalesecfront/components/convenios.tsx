@@ -88,7 +88,7 @@ export default function Convenios() {
   if (isLoading) {
     return (
       <section className="pt-2 pb-6 md:pt-6 md:pb-8 px-4 bg-gradient-to-br from-background via-secondary/5 to-background relative overflow-hidden">
-        <div className="max-w-7xl mx-auto relative z-10">
+      <div className="max-w-5xl mx-auto relative z-10">
           <div className="text-center mb-6">
             <h2 className="text-4xl md:text-5xl font-heading font-bold mb-4 text-foreground">
               Nuestros Convenios
@@ -137,7 +137,7 @@ export default function Convenios() {
       <div className="absolute top-10 right-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 left-10 w-96 h-96 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto relative z-10">
+      <div className="max-w-5xl mx-auto relative z-10">
         {/* Header */}
         <div className="text-center mb-10 md:mb-16">
           <h2 className="text-4xl md:text-5xl font-heading font-bold mb-4 text-foreground">
@@ -150,7 +150,7 @@ export default function Convenios() {
 
         {/* Carousel */}
         <div className="relative">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 lg:gap-6 md:px-16 lg:px-24">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 lg:gap-8 md:px-12 lg:px-16">
             {getVisibleConvenios().map((convenio, idx) => {
               const IconComponent = getIconComponent(convenio.categorias)
               return (
@@ -194,29 +194,29 @@ export default function Convenios() {
 
                   <div className="space-y-3 flex-grow flex flex-col">
                     <div className="text-center flex flex-col items-center">
-                      <h3 className="text-base md:text-lg font-heading font-bold mb-2 text-foreground">
+                      <h3 className="text-lg md:text-xl lg:text-2xl font-heading font-bold mb-2 text-foreground">
                         {convenio.titulo}
                       </h3>
                       {convenio.categorias && (
-                        <div className="inline-block px-2.5 py-1 mb-2 bg-primary/10 text-primary rounded-full text-[10px] font-button font-bold uppercase tracking-wider">
+                        <div className="inline-block px-3 py-1.5 mb-2 bg-primary/10 text-primary rounded-full text-xs md:text-sm font-button font-bold uppercase tracking-wider">
                           {convenio.categorias}
                         </div>
                       )}
-                      <p className="text-muted-foreground font-body leading-relaxed text-[11px] max-w-[86%] mx-auto">
+                      <p className="text-muted-foreground font-body leading-relaxed text-sm md:text-base max-w-[90%] mx-auto">
                         {convenio.descripcion}
                       </p>
                     </div>
 
                     {convenio.beneficios && convenio.beneficios.length > 0 && (
                       <div className="flex-grow pt-2.5 border-t border-border/50 mt-2.5">
-                        <h4 className="text-[11px] font-heading font-bold mb-2 text-foreground text-center uppercase tracking-wider text-muted-foreground">
+                        <h4 className="text-xs md:text-sm font-heading font-bold mb-3 text-foreground text-center uppercase tracking-wider text-muted-foreground">
                           Beneficios Incluidos
                         </h4>
                         <ul className="space-y-2 max-w-sm mx-auto">
                           {convenio.beneficios.map((benefit: string, bIndex: number) => (
                             <li
                               key={bIndex}
-                              className="flex items-start gap-2 text-muted-foreground font-body text-[11px]"
+                              className="flex items-start gap-2 text-muted-foreground font-body text-sm md:text-base"
                             >
                               <span className="w-1.5 h-1.5 bg-primary rounded-full mt-1.5 flex-shrink-0 shadow-sm" />
                               <span>{benefit}</span>
@@ -235,7 +235,7 @@ export default function Convenios() {
                           className="inline-flex items-center gap-2 text-primary hover:text-primary/80 font-button font-bold transition-colors group"
                         >
                           Visitar sitio
-                          <TrendingUp size={16} className="transform group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                          <TrendingUp size={18} className="transform group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                         </a>
                       </div>
                     )}
@@ -249,14 +249,14 @@ export default function Convenios() {
           {/* Navigation Buttons */}
           <button
             onClick={prevSlide}
-            className="hidden lg:block absolute left-8 top-1/2 -translate-y-1/2 z-30 bg-primary hover:bg-primary/80 text-white p-3 rounded-full shadow-lg hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300"
+            className="hidden lg:block absolute left-[-60px] top-1/2 -translate-y-1/2 z-30 bg-primary hover:bg-primary/80 text-white p-3 rounded-full shadow-lg hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300"
             aria-label="Anterior"
           >
             <ChevronLeft className="w-8 h-8" />
           </button>
           <button
             onClick={nextSlide}
-            className="hidden lg:block absolute right-8 top-1/2 -translate-y-1/2 z-30 bg-primary hover:bg-primary/80 text-white p-3 rounded-full shadow-lg hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300"
+            className="hidden lg:block absolute right-[-60px] top-1/2 -translate-y-1/2 z-30 bg-primary hover:bg-primary/80 text-white p-3 rounded-full shadow-lg hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300"
             aria-label="Siguiente"
           >
             <ChevronRight className="w-8 h-8" />
