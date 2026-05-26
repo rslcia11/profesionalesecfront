@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import dynamic from "next/dynamic"
+import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -25,6 +26,7 @@ import {
   Users,
   X,
   ArrowRight,
+  AlertCircle,
 } from "lucide-react"
 
 const ArticlePdfPreview = dynamic(() => import("@/components/articles/article-pdf-preview"), { ssr: false })
@@ -46,6 +48,7 @@ export default function AdminArticulosPage() {
   const [isArticleDetailsOpen, setIsArticleDetailsOpen] = useState(false)
   const [selectedArticle, setSelectedArticle] = useState<Articulo | null>(null)
   const [archivingArticleId, setArchivingArticleId] = useState<number | null>(null)
+  const [publishingArticleId, setPublishingArticleId] = useState<number | null>(null)
 
   const selectedArticlePdfUrl = selectedArticle?.pdf_url
     ? formatUrl(selectedArticle.pdf_url) ?? selectedArticle.pdf_url
@@ -67,16 +70,22 @@ export default function AdminArticulosPage() {
     }
   }
 
-  const handleModerarArticulo = async (id: number) => {
+  const executePublicar = async (id: number) => {
     const token = localStorage.getItem("auth_token")
     if (!token) return
     try {
       await articulosApi.moderar(id, token)
       toast({ title: "Artículo moderado", description: "El artículo ha sido aprobado y publicado." })
+      setPublishingArticleId(null)
       await loadArticles()
     } catch {
       toast({ title: "Error", description: "No se pudo moderar el artículo.", variant: "destructive" })
+      setPublishingArticleId(null)
     }
+  }
+
+  const handleModerarArticulo = async (id: number) => {
+    await executePublicar(id)
   }
 
   const handleArchivarArticulo = async (id: number) => {
@@ -87,14 +96,20 @@ export default function AdminArticulosPage() {
       variant: "warning"
     })
     if (!ok) return
+    await executeArchivar(id)
+  }
+
+  const executeArchivar = async (id: number) => {
     const token = localStorage.getItem("auth_token")
     if (!token) return
     try {
       await articulosApi.archivar(id, token)
       toast({ title: "Artículo archivado", description: "El artículo ha sido archivado." })
+      setArchivingArticleId(null)
       await loadArticles()
     } catch {
       toast({ title: "Error", description: "No se pudo archivar el artículo.", variant: "destructive" })
+      setArchivingArticleId(null)
     }
   }
 
@@ -173,9 +188,12 @@ export default function AdminArticulosPage() {
               <div
                 key={articulo.id}
                 onClick={() => {
+                  if (archivingArticleId !== null || publishingArticleId !== null) return
                   setSelectedArticle(articulo)
                 }}
-                className="group block w-full bg-white rounded-2xl overflow-hidden border border-gray-200 hover:border-primary/30 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 animate-in fade-in slide-in-from-bottom-6 cursor-pointer"
+                className={`group block w-full bg-white rounded-2xl overflow-hidden border border-gray-200 hover:border-primary/30 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 animate-in fade-in slide-in-from-bottom-6 cursor-pointer relative ${
+                  (archivingArticleId === articulo.id || publishingArticleId === articulo.id) ? "pointer-events-none" : ""
+                }`}
                 style={{ animationDelay: `${index * 80}ms` }}
               >
                 <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary/5 to-accent/5">
@@ -215,7 +233,18 @@ export default function AdminArticulosPage() {
                       </div>
                     )}
                     <span className="text-sm font-semibold text-gray-900">
-                      {articulo.autor?.nombre || "Autor desconocido"}
+                      {articulo.autor?.perfiles_profesionales?.[0]?.slug ? (
+                        <a
+                          href={`/perfil/${articulo.autor.perfiles_profesionales[0].slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:text-primary hover:underline transition-colors"
+                        >
+                          {articulo.autor?.nombre || "Autor desconocido"}
+                        </a>
+                      ) : (
+                        articulo.autor?.nombre || "Autor desconocido"
+                      )}
                     </span>
                   </div>
                 </div>
@@ -235,7 +264,20 @@ export default function AdminArticulosPage() {
                 <div className="px-6 pb-6">
                   <div className="pt-4 border-t border-gray-100 flex items-center justify-between gap-4">
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">{articulo.autor?.nombre || "Autor desconocido"}</p>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {articulo.autor?.perfiles_profesionales?.[0]?.slug ? (
+                          <a
+                            href={`/perfil/${articulo.autor.perfiles_profesionales[0].slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-primary hover:underline transition-colors"
+                          >
+                            {articulo.autor?.nombre || "Autor desconocido"}
+                          </a>
+                        ) : (
+                          articulo.autor?.nombre || "Autor desconocido"
+                        )}
+                      </p>
                     </div>
 
                     {articulo.estado === "publicado" ? (
@@ -244,7 +286,7 @@ export default function AdminArticulosPage() {
                         variant="outline"
                         onClick={(e) => {
                           e.stopPropagation()
-                          handleArchivarArticulo(articulo.id)
+                          setArchivingArticleId(articulo.id)
                         }}
                         className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 transition-colors px-3"
                         title="Archivar"
@@ -257,7 +299,7 @@ export default function AdminArticulosPage() {
                         variant="outline"
                         onClick={(e) => {
                           e.stopPropagation()
-                          handleModerarArticulo(articulo.id)
+                          setPublishingArticleId(articulo.id)
                         }}
                         className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 transition-colors px-3"
                         title="Publicar"
@@ -267,6 +309,113 @@ export default function AdminArticulosPage() {
                     )}
                   </div>
                 </div>
+
+                <AnimatePresence>
+                  {archivingArticleId === articulo.id && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="absolute inset-0 z-40 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-2xl pointer-events-auto"
+                    >
+                      <motion.div
+                        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                        transition={{ type: "spring", damping: 25, stiffness: 350 }}
+                        className="flex flex-col items-center text-center px-6 py-4"
+                      >
+                        <motion.div
+                          initial={{ rotate: -10, scale: 0.8 }}
+                          animate={{ rotate: 0, scale: 1 }}
+                          transition={{ delay: 0.1, type: "spring" }}
+                          className="mb-4"
+                        >
+                          <AlertCircle className="w-10 h-10 text-amber-500" />
+                        </motion.div>
+                        <h3 className="text-lg font-black text-gray-900 mb-1 tracking-tight uppercase">
+                          Archivar Artículo
+                        </h3>
+                        <p className="text-sm text-gray-500 font-light leading-relaxed mb-5 max-w-xs">
+                          ¿Estás seguro de archivar este artículo? Ya no será visible en la web.
+                        </p>
+                        <div className="flex gap-3 w-full max-w-xs">
+                          <Button
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setArchivingArticleId(null)
+                            }}
+                            className="flex-1 h-12 rounded-2xl border-gray-100 font-bold text-gray-400 hover:bg-gray-50 hover:text-gray-900 transition-all uppercase text-[10px] tracking-widest"
+                          >
+                            Cancelar
+                          </Button>
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              executeArchivar(articulo.id)
+                            }}
+                            className="flex-1 h-12 rounded-2xl font-black text-white bg-amber-500 hover:bg-amber-600 transition-all active:scale-95 uppercase text-[10px] tracking-widest shadow-lg"
+                          >
+                            Archivar
+                          </Button>
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                  {publishingArticleId === articulo.id && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="absolute inset-0 z-40 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-2xl pointer-events-auto"
+                    >
+                      <motion.div
+                        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                        transition={{ type: "spring", damping: 25, stiffness: 350 }}
+                        className="flex flex-col items-center text-center px-6 py-4"
+                      >
+                        <motion.div
+                          initial={{ rotate: -10, scale: 0.8 }}
+                          animate={{ rotate: 0, scale: 1 }}
+                          transition={{ delay: 0.1, type: "spring" }}
+                          className="mb-4"
+                        >
+                          <AlertCircle className="w-10 h-10 text-emerald-500" />
+                        </motion.div>
+                        <h3 className="text-lg font-black text-gray-900 mb-1 tracking-tight uppercase">
+                          Publicar Artículo
+                        </h3>
+                        <p className="text-sm text-gray-500 font-light leading-relaxed mb-5 max-w-xs">
+                          ¿Estás seguro de publicar este artículo? Será visible en la web.
+                        </p>
+                        <div className="flex gap-3 w-full max-w-xs">
+                          <Button
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setPublishingArticleId(null)
+                            }}
+                            className="flex-1 h-12 rounded-2xl border-gray-100 font-bold text-gray-400 hover:bg-gray-50 hover:text-gray-900 transition-all uppercase text-[10px] tracking-widest"
+                          >
+                            Cancelar
+                          </Button>
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              executePublicar(articulo.id)
+                            }}
+                            className="flex-1 h-12 rounded-2xl font-black text-white bg-emerald-600 hover:bg-emerald-700 transition-all active:scale-95 uppercase text-[10px] tracking-widest shadow-lg"
+                          >
+                            Publicar
+                          </Button>
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             )
           })}
@@ -301,7 +450,20 @@ export default function AdminArticulosPage() {
                     )}
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-gray-900">{selectedArticle.autor?.nombre}</p>
+                    <p className="text-sm font-bold text-gray-900">
+                        {selectedArticle.autor?.perfiles_profesionales?.[0]?.slug ? (
+                          <a
+                            href={`/perfil/${selectedArticle.autor.perfiles_profesionales[0].slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-primary hover:underline transition-colors"
+                          >
+                            {selectedArticle.autor?.nombre}
+                          </a>
+                        ) : (
+                          selectedArticle.autor?.nombre
+                        )}
+                      </p>
                     <p className="text-xs text-gray-500">Autor del artículo</p>
                   </div>
                 </div>
