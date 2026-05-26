@@ -67,6 +67,7 @@ export interface CambiarContrasenaData {
 
 export interface PerfilProfesionalSummary {
   id: number
+  slug?: string
   profesion_id: number
   especialidad_id?: number
   profesion?: { id: number; nombre: string }
