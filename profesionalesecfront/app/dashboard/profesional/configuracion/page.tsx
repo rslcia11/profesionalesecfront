@@ -5,9 +5,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Settings, Loader2 } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Settings, Loader2, Trash2, AlertTriangle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { usuarioApi, profesionalApi, authApi, multimediaApi } from "@/lib/api"
+import { usuarioApi, profesionalApi, authApi, multimediaApi, removeToken } from "@/lib/api"
 import { useProfesional } from "@/context/profesional-context"
 import { PROFILE_IMAGE_ACCEPTED_TYPES, PROFILE_IMAGE_MAX_SIZE_BYTES, PROFILE_IMAGE_MAX_SIZE_MB } from "@/constants/profile-upload"
 
@@ -37,6 +46,9 @@ export default function ConfiguracionPage() {
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null)
   const [profileImagePreview, setProfileImagePreview] = useState<string>("")
   const [profileImageError, setProfileImageError] = useState<string>("")
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState("")
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     setPerfilForm({
@@ -144,6 +156,11 @@ export default function ConfiguracionPage() {
     const tarifaNumero = tarifaNormalizada === "" ? undefined : Number(tarifaNormalizada)
     const tarifa = Number.isFinite(tarifaNumero) ? tarifaNumero : undefined
 
+    if (perfilProfesionalForm.descripcion.length > 80) {
+      toast({ title: "Error", description: "Descripción no puede exceder 80 caracteres", variant: "destructive" })
+      return
+    }
+
     try {
       setSavingPerfilProfesional(true)
       await profesionalApi.actualizarPerfil(
@@ -185,6 +202,23 @@ export default function ConfiguracionPage() {
       toast({ title: "Error", description: error.message || "No se pudo cambiar la contraseña", variant: "destructive" })
     } finally {
       setSavingPassword(false)
+    }
+  }
+
+  const handleEliminarCuenta = async () => {
+    if (!token || deleteConfirmText !== "ELIMINAR") return
+
+    try {
+      setDeleting(true)
+      await usuarioApi.eliminarCuenta(token)
+      removeToken()
+      window.location.href = "/"
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message || "No se pudo eliminar la cuenta", variant: "destructive" })
+      setDeleteDialogOpen(false)
+      setDeleteConfirmText("")
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -248,8 +282,9 @@ export default function ConfiguracionPage() {
         <CardContent>
           <form onSubmit={handleGuardarPerfilProfesional} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <Label htmlFor="descripcion">Descripción</Label>
-              <textarea id="descripcion" className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm" value={perfilProfesionalForm.descripcion} onChange={(e) => setPerfilProfesionalForm((prev) => ({ ...prev, descripcion: e.target.value }))} />
+              <Label htmlFor="descripcion">Descripción (máximo 80 caracteres)</Label>
+              <textarea id="descripcion" maxLength={80} className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm" value={perfilProfesionalForm.descripcion} onChange={(e) => setPerfilProfesionalForm((prev) => ({ ...prev, descripcion: e.target.value }))} />
+              <p className="text-xs text-muted-foreground mt-1">{perfilProfesionalForm.descripcion.length}/80 caracteres</p>
             </div>
             <div>
               <Label htmlFor="tarifa">Tarifa</Label>
@@ -289,6 +324,63 @@ export default function ConfiguracionPage() {
               <Button type="submit" disabled={savingPassword}>{savingPassword ? "Actualizando..." : "Actualizar contraseña"}</Button>
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-white border-red-200">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-red-600">
+            <AlertTriangle className="h-5 w-5" />
+            Zona de peligro
+          </CardTitle>
+          <CardDescription>
+            Una vez eliminada tu cuenta, no hay vuelta atrás. Todos tus datos serán borrados permanentemente.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Dialog open={deleteDialogOpen} onOpenChange={(open) => { setDeleteDialogOpen(open); if (!open) setDeleteConfirmText("") }}>
+            <DialogTrigger asChild>
+              <Button variant="destructive" className="gap-2">
+                <Trash2 className="h-4 w-4" />
+                Eliminar mi cuenta
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-red-600 flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5" />
+                  Eliminar cuenta permanentemente
+                </DialogTitle>
+                <DialogDescription className="text-left pt-2">
+                  Esta acción es <strong>irreversible</strong>. Se eliminará tu perfil profesional, todos tus datos
+                  (citas, servicios, artículos, pagos, etc.) y tu cuenta de usuario.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3">
+                <p className="text-sm font-medium">
+                  Escribe <span className="font-mono bg-red-50 text-red-700 px-1.5 py-0.5 rounded border border-red-200">ELIMINAR</span> para confirmar:
+                </p>
+                <Input
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="ELIMINAR"
+                  className="font-mono"
+                />
+              </div>
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button variant="outline" onClick={() => { setDeleteDialogOpen(false); setDeleteConfirmText("") }} disabled={deleting}>
+                  Cancelar
+                </Button>
+                <Button
+                  variant="destructive"
+                  disabled={deleteConfirmText !== "ELIMINAR" || deleting}
+                  onClick={handleEliminarCuenta}
+                >
+                  {deleting ? "Eliminando..." : "Sí, eliminar mi cuenta"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
     </div>

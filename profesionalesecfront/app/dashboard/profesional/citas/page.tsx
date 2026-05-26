@@ -64,7 +64,7 @@ export default function CitasPage() {
           const horaStr = c.hora_cita.toString()
           return `${fechaStr}T${horaStr}`
         })(),
-        estado: c.estado_id === 1 ? "pendiente" : c.estado_id === 2 ? "confirmada" : c.estado_id === 3 ? "completada" : "cancelada",
+        estado: c.estado_id === 1 ? "pendiente" : c.estado_id === 2 ? "confirmada" : c.estado_id === 4 ? "completada" : "cancelada",
         usuario: c.usuario || { nombre: c.alias || c.nombres_completos || "Cliente sin nombre" },
         descripcion: c.comentario || c.descripcion || "Sin motivo especificado",
         telefono: getClienteTelefono(c) || "No disp.",
@@ -222,7 +222,7 @@ export default function CitasPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleEstadoCita(cita.id, 3)}
+                              onClick={() => handleEstadoCita(cita.id, 4)}
                               className="bg-blue-600/10 border-blue-600/50 text-blue-400 hover:bg-blue-600/20"
                               title="Completar"
                             >
@@ -233,7 +233,7 @@ export default function CitasPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleEstadoCita(cita.id, 4)}
+                              onClick={() => handleEstadoCita(cita.id, 3)}
                               className="bg-red-600/10 border-red-600/50 text-red-400 hover:bg-red-600/20"
                               title="Cancelar"
                             >

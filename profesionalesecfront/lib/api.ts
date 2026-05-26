@@ -1200,6 +1200,9 @@ export const usuarioApi = {
   async obtenerMiPerfil(token: string) { return fetchApi("/usuarios/perfil", { headers: authHeader(token) }); },
   async actualizarPerfil(data: any, token: string) {
     return fetchApi("/usuarios/perfil", { method: "PUT", headers: authHeader(token), body: JSON.stringify(data) });
+  },
+  async eliminarCuenta(token: string) {
+    return fetchApi("/usuarios/mi-cuenta", { method: "DELETE", headers: authHeader(token) });
   }
 }
 
