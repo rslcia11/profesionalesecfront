@@ -10,6 +10,8 @@ export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userRole, setUserRole] = useState<string | null>(null)
   const pathname = usePathname()
+  const hideMobileMenu =
+    pathname.startsWith("/admin") || pathname.startsWith("/dashboard/profesional")
 
   useEffect(() => {
     const token = localStorage.getItem("auth_token")
@@ -157,18 +159,20 @@ export default function Header() {
               )}
 
               {/* Mobile Menu Button */}
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="md:hidden p-2 hover:bg-white/10 rounded-lg transition-all duration-300 text-white active:scale-95"
-              >
-                {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
+              {!hideMobileMenu && (
+                <button
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="md:hidden p-2 hover:bg-white/10 rounded-lg transition-all duration-300 text-white active:scale-95"
+                >
+                  {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                </button>
+              )}
             </div>
 
           </div>
 
           {/* Mobile Navigation */}
-          {isMenuOpen && (
+          {!hideMobileMenu && isMenuOpen && (
             <nav
               className="md:hidden pb-4 border-t border-white/10 animate-in fade-in slide-in-from-top-2 duration-300"
               onClick={() => setIsMenuOpen(false)}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import dynamic from "next/dynamic"
@@ -49,26 +49,51 @@ export default function AdminArticulosPage() {
   const [selectedArticle, setSelectedArticle] = useState<Articulo | null>(null)
   const [archivingArticleId, setArchivingArticleId] = useState<number | null>(null)
   const [publishingArticleId, setPublishingArticleId] = useState<number | null>(null)
+  const articlesRefreshInFlightRef = useRef(false)
 
   const selectedArticlePdfUrl = selectedArticle?.pdf_url
     ? formatUrl(selectedArticle.pdf_url) ?? selectedArticle.pdf_url
     : null
 
-  useEffect(() => {
-    loadArticles()
-  }, [])
-
-  const loadArticles = async () => {
+  const loadArticles = useCallback(async () => {
     const token = localStorage.getItem("auth_token")
-    if (!token) return
+    if (!token || articlesRefreshInFlightRef.current || document.visibilityState !== "visible") return
+
+    articlesRefreshInFlightRef.current = true
+
     try {
       const articlesData = await articulosApi.listarTodos(token)
       setAdminArticulos(Array.isArray(articlesData) ? articlesData : [])
     } catch {
       const publicResult = await articulosApi.listarPublicados().catch(() => null)
       setAdminArticulos(publicResult?.data ?? [])
+    } finally {
+      articlesRefreshInFlightRef.current = false
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadArticles()
+
+    const intervalId = window.setInterval(() => {
+      loadArticles()
+    }, 7000)
+
+    const refetchOnFocus = () => {
+      if (document.visibilityState === "visible") {
+        loadArticles()
+      }
+    }
+
+    window.addEventListener("focus", refetchOnFocus)
+    document.addEventListener("visibilitychange", refetchOnFocus)
+
+    return () => {
+      window.clearInterval(intervalId)
+      window.removeEventListener("focus", refetchOnFocus)
+      document.removeEventListener("visibilitychange", refetchOnFocus)
+    }
+  }, [loadArticles])
 
   const executePublicar = async (id: number) => {
     const token = localStorage.getItem("auth_token")

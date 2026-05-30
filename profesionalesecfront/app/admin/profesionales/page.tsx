@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { adminApi, profesionalApi } from "@/lib/api"
+import { adminApi, catalogosApi, profesionalApi } from "@/lib/api"
 import { formatUrl, cn } from "@/lib/utils"
 import { useAdminCatalogs } from "@/hooks/use-admin-catalogs"
 import ProfessionManagementDialog from "@/components/admin/profession-management-dialog"
@@ -68,7 +68,7 @@ type PerfilPendiente = {
 
 export default function AdminProfesionalesPage() {
   const { toast } = useToast()
-  const { profesiones, refresh: refreshProfesionesCatalogo } = useAdminCatalogs()
+  const { profesiones, provincias, refresh: refreshProfesionesCatalogo } = useAdminCatalogs()
 
   const [perfilesPendientes, setPerfilesPendientes] = useState<PerfilPendiente[]>([])
   const [processingProfiles, setProcessingProfiles] = useState<Record<number, "approving" | "rejecting" | null>>({})
@@ -80,6 +80,29 @@ export default function AdminProfesionalesPage() {
 
   const [isProfileDetailsOpen, setIsProfileDetailsOpen] = useState(false)
   const [selectedProfile, setSelectedProfile] = useState<any>(null)
+  const [isEditingProfile, setIsEditingProfile] = useState(false)
+  const [savingProfileChanges, setSavingProfileChanges] = useState(false)
+  const [especialidadesOptions, setEspecialidadesOptions] = useState<any[]>([])
+  const [ciudadesOptions, setCiudadesOptions] = useState<any[]>([])
+  const [editProfileForm, setEditProfileForm] = useState({
+    telefono: "",
+    cedula: "",
+    profesion_id: "",
+    especialidad_id: "",
+    provincia_id: "",
+    ciudad_id: "",
+    descripcion: "",
+    tarifa: "",
+    calle_principal: "",
+    referencia: "",
+    permitir_reagendar: true,
+    facebook_url: "",
+    instagram_url: "",
+    tiktok_url: "",
+    linkedin_url: "",
+    x_url: "",
+    yt_url: "",
+  })
 
   const [filterStatus, setFilterStatus] = useState<"todos" | "pendiente" | "aprobado" | "rechazado">("todos")
 
@@ -175,6 +198,24 @@ export default function AdminProfesionalesPage() {
     return format(parsedDate, outputFormat, { locale: es })
   }
 
+  const getNumericId = (value: any) => {
+    if (value === null || value === undefined || value === "") return ""
+    const parsed = Number(value)
+    return Number.isFinite(parsed) && parsed > 0 ? String(parsed) : ""
+  }
+
+  const parseDireccion = (direccion?: string) => {
+    if (!direccion || direccion === "No registrada") {
+      return { calle_principal: "", referencia: "" }
+    }
+
+    const match = direccion.match(/^(.*?)(?:\s*\((.*)\))?$/)
+    return {
+      calle_principal: match?.[1]?.trim() || "",
+      referencia: match?.[2]?.trim() || "",
+    }
+  }
+
   const applyProfilesSnapshot = useCallback((rawProfiles: any[], animateOnChange = false) => {
     const normalizedProfiles = mapProfilesFromApi(rawProfiles)
     const nextSignature = getProfilesSignature(normalizedProfiles)
@@ -208,6 +249,37 @@ export default function AdminProfesionalesPage() {
     }
   }, [applyProfilesSnapshot])
 
+  const loadEspecialidades = useCallback(async (profesionId: string) => {
+    if (!profesionId) {
+      setEspecialidadesOptions([])
+      return
+    }
+
+    try {
+      const response = await catalogosApi.obtenerEspecialidades(Number(profesionId))
+      const normalized = Array.isArray(response)
+        ? response.filter((item: any) => Number(item.profesion_id) === Number(profesionId))
+        : []
+      setEspecialidadesOptions(normalized)
+    } catch {
+      setEspecialidadesOptions([])
+    }
+  }, [])
+
+  const loadCiudades = useCallback(async (provinciaId: string) => {
+    if (!provinciaId) {
+      setCiudadesOptions([])
+      return
+    }
+
+    try {
+      const response = await catalogosApi.obtenerCiudades(Number(provinciaId))
+      setCiudadesOptions(Array.isArray(response) ? response : [])
+    } catch {
+      setCiudadesOptions([])
+    }
+  }, [])
+
   useEffect(() => {
     const token = localStorage.getItem("auth_token")
     if (!token) return
@@ -222,7 +294,7 @@ export default function AdminProfesionalesPage() {
 
     const intervalId = window.setInterval(() => {
       refreshProfiles()
-    }, 3000)
+    }, 7000)
 
     const refetchOnFocus = () => {
       if (document.visibilityState === "visible") {
@@ -345,31 +417,174 @@ export default function AdminProfesionalesPage() {
     }
   }
 
+  const hydrateProfileDetails = useCallback(async (profile: any) => {
+    const token = localStorage.getItem("auth_token")
+    if (!token) return
+
+    try {
+      const fullData = await profesionalApi.obtenerMiPerfil(token, profile.id)
+      const detailedProfile = Array.isArray(fullData) ? fullData[0] : (fullData.perfil || fullData)
+
+      if (detailedProfile) {
+        setSelectedProfile((prev: any) => ({
+          ...prev,
+          ...detailedProfile,
+          profesion: detailedProfile.profesion?.nombre || detailedProfile.profesion || prev?.profesion,
+          especialidad: detailedProfile.especialidad?.nombre || detailedProfile.especialidad || prev?.especialidad,
+          ciudad: detailedProfile.ciudad?.nombre || detailedProfile.ciudad || prev?.ciudad,
+          provincia: detailedProfile.ciudad?.provincia?.nombre || detailedProfile.provincia || prev?.provincia,
+          documentos: detailedProfile.documentos || detailedProfile.PerfilDocumentos || detailedProfile.perfil_documentos || prev?.documentos || [],
+          comprobante_pago_url: detailedProfile.comprobante_pago_url || prev?.comprobante_pago_url || null,
+        }))
+      }
+    } catch (error) {
+      console.error("Error fetching full profile details:", error)
+    }
+  }, [])
+
   const openProfileDetails = async (profile: any) => {
     setSelectedProfile(profile)
     setIsProfileDetailsOpen(true)
+    setIsEditingProfile(false)
+    await hydrateProfileDetails(profile)
+  }
+
+  useEffect(() => {
+    if (!selectedProfile) return
+
+    const { calle_principal, referencia } = parseDireccion(selectedProfile.direccion_texto)
+    const profesionId = getNumericId(selectedProfile.profesion_id ?? selectedProfile.profesion?.id)
+    const especialidadId = getNumericId(selectedProfile.especialidad_id ?? selectedProfile.especialidad?.id)
+    const ciudadId = getNumericId(selectedProfile.ciudad_id ?? selectedProfile.ciudad?.id)
+    const provinciaId = getNumericId(
+      selectedProfile.provincia_id ?? selectedProfile.ciudad?.provincia_id ?? selectedProfile.ciudad?.provincia?.id,
+    )
+
+    setEditProfileForm({
+      telefono: selectedProfile.telefono && selectedProfile.telefono !== "No disponible (API)" ? selectedProfile.telefono : "",
+      cedula: selectedProfile.cedula && selectedProfile.cedula !== "No disponible (API)" ? selectedProfile.cedula : "",
+      profesion_id: profesionId,
+      especialidad_id: especialidadId,
+      provincia_id: provinciaId,
+      ciudad_id: ciudadId,
+      descripcion: selectedProfile.descripcion || "",
+      tarifa: selectedProfile.tarifa ? String(selectedProfile.tarifa).replace(/^\$/, "") : "",
+      calle_principal,
+      referencia,
+      permitir_reagendar: selectedProfile.permitir_reagendar ?? true,
+      facebook_url: selectedProfile.facebook_url || "",
+      instagram_url: selectedProfile.instagram_url || "",
+      tiktok_url: selectedProfile.tiktok_url || "",
+      linkedin_url: selectedProfile.linkedin_url || "",
+      x_url: selectedProfile.x_url || "",
+      yt_url: selectedProfile.yt_url || "",
+    })
+  }, [selectedProfile])
+
+  useEffect(() => {
+    if (isEditingProfile) {
+      loadEspecialidades(editProfileForm.profesion_id)
+    }
+  }, [editProfileForm.profesion_id, isEditingProfile, loadEspecialidades])
+
+  useEffect(() => {
+    if (isEditingProfile) {
+      loadCiudades(editProfileForm.provincia_id)
+    }
+  }, [editProfileForm.provincia_id, isEditingProfile, loadCiudades])
+
+  const handleEditProfileField = (field: keyof typeof editProfileForm, value: string | boolean) => {
+    setEditProfileForm((prev) => {
+      const next = { ...prev, [field]: value }
+
+      if (field === "profesion_id") {
+        next.especialidad_id = ""
+      }
+
+      if (field === "provincia_id") {
+        next.ciudad_id = ""
+      }
+
+      return next
+    })
+  }
+
+  const handleSaveProfileChanges = async () => {
+    if (!selectedProfile?.id) return
 
     const token = localStorage.getItem("auth_token")
-    if (token) {
-      try {
-        const fullData = await profesionalApi.obtenerMiPerfil(token, profile.id)
-        const detailedProfile = Array.isArray(fullData) ? fullData[0] : (fullData.perfil || fullData)
+    if (!token) return
 
-        if (detailedProfile) {
-          setSelectedProfile((prev: any) => ({
-            ...prev,
-            ...detailedProfile,
-            profesion: detailedProfile.profesion?.nombre || detailedProfile.profesion || prev.profesion,
-            especialidad: detailedProfile.especialidad?.nombre || detailedProfile.especialidad || prev.especialidad,
-            ciudad: detailedProfile.ciudad?.nombre || detailedProfile.ciudad || prev.ciudad,
-            provincia: detailedProfile.ciudad?.provincia?.nombre || detailedProfile.provincia || prev.provincia,
-            documentos: detailedProfile.documentos || detailedProfile.PerfilDocumentos || detailedProfile.perfil_documentos || prev.documentos || [],
-            comprobante_pago_url: detailedProfile.comprobante_pago_url || prev.comprobante_pago_url || null,
-          }))
-        }
-      } catch (error) {
-        console.error("Error fetching full profile details:", error)
+    const tarifaNormalizada = editProfileForm.tarifa.trim()
+    const tarifaNumero = tarifaNormalizada === "" ? undefined : Number(tarifaNormalizada)
+
+    if (editProfileForm.descripcion.length > 80) {
+      toast({
+        title: "Error",
+        description: "La descripción profesional no puede exceder 80 caracteres.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (tarifaNormalizada !== "" && !Number.isFinite(tarifaNumero)) {
+      toast({
+        title: "Error",
+        description: "La tarifa debe ser un número válido.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      setSavingProfileChanges(true)
+
+      const payload: any = {
+        id: selectedProfile.id,
+        telefono: editProfileForm.telefono.trim(),
+        cedula: editProfileForm.cedula.trim(),
+        descripcion: editProfileForm.descripcion.trim(),
+        permitir_reagendar: editProfileForm.permitir_reagendar,
+        calle_principal: editProfileForm.calle_principal.trim(),
+        referencia: editProfileForm.referencia.trim(),
+        facebook_url: editProfileForm.facebook_url.trim(),
+        instagram_url: editProfileForm.instagram_url.trim(),
+        tiktok_url: editProfileForm.tiktok_url.trim(),
+        linkedin_url: editProfileForm.linkedin_url.trim(),
+        x_url: editProfileForm.x_url.trim(),
+        yt_url: editProfileForm.yt_url.trim(),
       }
+
+      if (Number.isFinite(tarifaNumero)) {
+        payload.tarifa = tarifaNumero
+      }
+      if (editProfileForm.profesion_id) {
+        payload.profesion_id = Number(editProfileForm.profesion_id)
+      }
+      if (editProfileForm.especialidad_id) {
+        payload.especialidad_id = Number(editProfileForm.especialidad_id)
+      }
+      if (editProfileForm.ciudad_id) {
+        payload.ciudad_id = Number(editProfileForm.ciudad_id)
+      }
+
+      await profesionalApi.actualizarPerfil(payload, token)
+      await refreshProfiles()
+      await hydrateProfileDetails({ ...selectedProfile, id: selectedProfile.id })
+      setIsEditingProfile(false)
+
+      toast({
+        title: "Perfil actualizado",
+        description: "Los cambios del profesional se guardaron correctamente.",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.message || "No se pudo actualizar la información del profesional.",
+        variant: "destructive",
+      })
+    } finally {
+      setSavingProfileChanges(false)
     }
   }
 
@@ -577,6 +792,192 @@ export default function AdminProfesionalesPage() {
                 </CardContent>
               </Card>
 
+              {isEditingProfile && (
+                <Card className="border-blue-200 bg-blue-50/40">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Editar información del profesional</CardTitle>
+                    <CardDescription>
+                      Modifica los datos del perfil y guarda los cambios desde este modal.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="edit-telefono">Teléfono</Label>
+                      <Input
+                        id="edit-telefono"
+                        value={editProfileForm.telefono}
+                        onChange={(e) => handleEditProfileField("telefono", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-cedula">Cédula</Label>
+                      <Input
+                        id="edit-cedula"
+                        value={editProfileForm.cedula}
+                        onChange={(e) => handleEditProfileField("cedula", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-profesion">Profesión</Label>
+                      <select
+                        id="edit-profesion"
+                        value={editProfileForm.profesion_id}
+                        onChange={(e) => handleEditProfileField("profesion_id", e.target.value)}
+                        className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        <option value="">Selecciona una profesión</option>
+                        {profesiones.map((profesion: any) => (
+                          <option key={profesion.id} value={profesion.id}>
+                            {profesion.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-especialidad">Especialidad</Label>
+                      <select
+                        id="edit-especialidad"
+                        value={editProfileForm.especialidad_id}
+                        onChange={(e) => handleEditProfileField("especialidad_id", e.target.value)}
+                        className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        <option value="">Selecciona una especialidad</option>
+                        {especialidadesOptions.map((especialidad: any) => (
+                          <option key={especialidad.id} value={especialidad.id}>
+                            {especialidad.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-provincia">Provincia</Label>
+                      <select
+                        id="edit-provincia"
+                        value={editProfileForm.provincia_id}
+                        onChange={(e) => handleEditProfileField("provincia_id", e.target.value)}
+                        className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        <option value="">Selecciona una provincia</option>
+                        {provincias.map((provincia: any) => (
+                          <option key={provincia.id} value={provincia.id}>
+                            {provincia.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-ciudad">Ciudad</Label>
+                      <select
+                        id="edit-ciudad"
+                        value={editProfileForm.ciudad_id}
+                        onChange={(e) => handleEditProfileField("ciudad_id", e.target.value)}
+                        className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        <option value="">Selecciona una ciudad</option>
+                        {ciudadesOptions.map((ciudad: any) => (
+                          <option key={ciudad.id} value={ciudad.id}>
+                            {ciudad.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-tarifa">Tarifa</Label>
+                      <Input
+                        id="edit-tarifa"
+                        value={editProfileForm.tarifa}
+                        onChange={(e) => handleEditProfileField("tarifa", e.target.value)}
+                        placeholder="Ej: 25"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="edit-direccion">Calle principal</Label>
+                      <Input
+                        id="edit-direccion"
+                        value={editProfileForm.calle_principal}
+                        onChange={(e) => handleEditProfileField("calle_principal", e.target.value)}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="edit-referencia">Referencia</Label>
+                      <Input
+                        id="edit-referencia"
+                        value={editProfileForm.referencia}
+                        onChange={(e) => handleEditProfileField("referencia", e.target.value)}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="edit-descripcion">Descripción profesional</Label>
+                      <textarea
+                        id="edit-descripcion"
+                        value={editProfileForm.descripcion}
+                        onChange={(e) => handleEditProfileField("descripcion", e.target.value)}
+                        maxLength={80}
+                        className="min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      />
+                      <p className="mt-1 text-xs text-gray-500">{editProfileForm.descripcion.length}/80</p>
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-facebook">Facebook</Label>
+                      <Input
+                        id="edit-facebook"
+                        value={editProfileForm.facebook_url}
+                        onChange={(e) => handleEditProfileField("facebook_url", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-instagram">Instagram</Label>
+                      <Input
+                        id="edit-instagram"
+                        value={editProfileForm.instagram_url}
+                        onChange={(e) => handleEditProfileField("instagram_url", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-linkedin">LinkedIn</Label>
+                      <Input
+                        id="edit-linkedin"
+                        value={editProfileForm.linkedin_url}
+                        onChange={(e) => handleEditProfileField("linkedin_url", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-x">X / Twitter</Label>
+                      <Input
+                        id="edit-x"
+                        value={editProfileForm.x_url}
+                        onChange={(e) => handleEditProfileField("x_url", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-tiktok">TikTok</Label>
+                      <Input
+                        id="edit-tiktok"
+                        value={editProfileForm.tiktok_url}
+                        onChange={(e) => handleEditProfileField("tiktok_url", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-youtube">YouTube</Label>
+                      <Input
+                        id="edit-youtube"
+                        value={editProfileForm.yt_url}
+                        onChange={(e) => handleEditProfileField("yt_url", e.target.value)}
+                      />
+                    </div>
+                    <div className="md:col-span-2 flex items-center gap-2">
+                      <input
+                        id="edit-reagendar"
+                        type="checkbox"
+                        checked={editProfileForm.permitir_reagendar}
+                        onChange={(e) => handleEditProfileField("permitir_reagendar", e.target.checked)}
+                      />
+                      <Label htmlFor="edit-reagendar">Permitir reagendamiento</Label>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {(selectedProfile.facebook_url || selectedProfile.instagram_url || selectedProfile.tiktok_url || selectedProfile.linkedin_url || selectedProfile.x_url || selectedProfile.yt_url) && (
                 <div>
                   <h3 className="font-semibold mb-3 text-lg">Redes Sociales</h3>
@@ -685,6 +1086,33 @@ export default function AdminProfesionalesPage() {
                 <Button variant="outline" onClick={() => setIsProfileDetailsOpen(false)}>
                   Cerrar
                 </Button>
+                {isEditingProfile ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsEditingProfile(false)}
+                      disabled={savingProfileChanges}
+                    >
+                      Cancelar edición
+                    </Button>
+                    <Button
+                      onClick={handleSaveProfileChanges}
+                      disabled={savingProfileChanges}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      {savingProfileChanges ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                      Guardar cambios
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsEditingProfile(true)}
+                    className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800"
+                  >
+                    Editar información
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   onClick={() => toggleDestacadoPerfil(selectedProfile.id)}

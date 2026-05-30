@@ -60,6 +60,9 @@ interface ProfessionalApiItem {
   especialidad?: {
     nombre?: string
   }
+  especialidades?: Array<{
+    nombre?: string
+  }>
   profesion?: {
     nombre?: string
   }
@@ -128,6 +131,20 @@ function normalizeLocationValue(value: unknown): string {
     .replace(/[\u0300-\u036f]/g, "")
     .trim()
     .toLowerCase()
+}
+
+function matchesKeywordFilter(professional: ProfessionalApiItem, keyword: string): boolean {
+  const normalizedKeyword = normalizeLocationValue(keyword)
+  if (!normalizedKeyword) return true
+
+  const searchableValues = [
+    professional.usuario?.nombre,
+    professional.profesion?.nombre,
+    professional.especialidad?.nombre,
+    ...(professional.especialidades?.map((specialty) => specialty.nombre) ?? []),
+  ]
+
+  return searchableValues.some((value) => normalizeLocationValue(value).includes(normalizedKeyword))
 }
 
 function matchesProvinceFilter(professional: ProfessionalApiItem, provinceFilter: string): boolean {
@@ -299,8 +316,14 @@ function ProfessionalsPageInner() {
       try {
         const params = filtersToParams(filters, { includeClientSort: false })
         const priceSort = isPriceSort(filters.sortBy)
-        params.set("limit", String(priceSort ? 1 : PAGE_SIZE))
-        params.set("page", String(priceSort ? 1 : page))
+        const hasKeywordSearch = Boolean(filters.keyword.trim())
+
+        if (hasKeywordSearch) {
+          params.delete("keyword")
+        }
+
+        params.set("limit", String(priceSort || hasKeywordSearch ? 1 : PAGE_SIZE))
+        params.set("page", String(priceSort || hasKeywordSearch ? 1 : page))
 
         const res = await fetch(`${API_BASE}/profesionales/verificados?${params.toString()}`, {
           signal: controller.signal,
@@ -309,10 +332,13 @@ function ProfessionalsPageInner() {
         let data = await res.json()
         if (cancelled) return
 
-        if (priceSort) {
+        if (priceSort || hasKeywordSearch) {
           const totalItems = Number(data?.meta?.totalItems ?? 0)
           if (totalItems > 1) {
             const allParams = filtersToParams(filters, { includeClientSort: false })
+            if (hasKeywordSearch) {
+              allParams.delete("keyword")
+            }
             allParams.set("limit", String(totalItems))
             allParams.set("page", "1")
             const allRes = await fetch(`${API_BASE}/profesionales/verificados?${allParams.toString()}`, {
@@ -325,13 +351,16 @@ function ProfessionalsPageInner() {
         }
 
         const raw = Array.isArray(data) ? data : data?.data ?? []
-        const filteredRaw = raw.filter((item: ProfessionalApiItem) => matchesProvinceFilter(item, filters.province))
+        const filteredRaw = raw
+          .filter((item: ProfessionalApiItem) => matchesProvinceFilter(item, filters.province))
+          .filter((item: ProfessionalApiItem) => matchesKeywordFilter(item, filters.keyword))
         const mapped = sortClientSide(filteredRaw.map(mapProfessional), filters.sortBy)
-        const visibleProfessionals = priceSort ? mapped.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : mapped
+        const visibleProfessionals =
+          priceSort || hasKeywordSearch ? mapped.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : mapped
 
         setProfessionals(visibleProfessionals)
         setMeta(
-          data?.meta && filteredRaw.length === raw.length && !priceSort
+          data?.meta && filteredRaw.length === raw.length && !priceSort && !hasKeywordSearch
             ? data.meta
             : {
                 totalItems: mapped.length,

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -19,6 +19,7 @@ export default function CitasPage() {
   const [loading, setLoading] = useState(true)
   const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false)
   const [selectedCita, setSelectedCita] = useState<any>(null)
+  const citasRefreshInFlightRef = useRef(false)
 
   const getClienteTelefono = (cita: any): string | null => {
     const candidates = [
@@ -52,9 +53,11 @@ export default function CitasPage() {
     return `https://wa.me/${telefono}`
   }
 
-  const loadCitas = useCallback(async () => {
-    if (!token) return
+  const loadCitas = useCallback(async (showErrorToast = true, showLoader = false) => {
+    if (!token || citasRefreshInFlightRef.current || document.visibilityState !== "visible") return
     try {
+      citasRefreshInFlightRef.current = true
+      if (showLoader) setLoading(true)
       const citasData = await citasApi.listar(token)
       const mappedCitas = (Array.isArray(citasData) ? citasData : []).map((c: any) => ({
         ...c,
@@ -79,25 +82,49 @@ export default function CitasPage() {
       )
     } catch (error) {
       console.error("Error loading citas:", error)
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar las citas.",
-        variant: "destructive",
-      })
+      if (showErrorToast) {
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar las citas.",
+          variant: "destructive",
+        })
+      }
     } finally {
+      citasRefreshInFlightRef.current = false
       setLoading(false)
     }
   }, [token, toast])
 
   useEffect(() => {
-    if (token) loadCitas()
+    if (!token) return
+
+    loadCitas(true, true)
+
+    const intervalId = window.setInterval(() => {
+      loadCitas(false, false)
+    }, 7000)
+
+    const refetchOnFocus = () => {
+      if (document.visibilityState === "visible") {
+        loadCitas(false, false)
+      }
+    }
+
+    window.addEventListener("focus", refetchOnFocus)
+    document.addEventListener("visibilitychange", refetchOnFocus)
+
+    return () => {
+      window.clearInterval(intervalId)
+      window.removeEventListener("focus", refetchOnFocus)
+      document.removeEventListener("visibilitychange", refetchOnFocus)
+    }
   }, [token, loadCitas])
 
   const handleEstadoCita = async (id: number, nuevoEstado: number) => {
     if (!token) return
     try {
       await citasApi.cambiarEstado(id, nuevoEstado, token)
-      loadCitas()
+      loadCitas(false, false)
       toast({ title: "Estado actualizado", description: "La cita ha sido actualizada." })
     } catch (error) {
       toast({ title: "Error", description: "No se pudo actualizar la cita.", variant: "destructive" })

@@ -4,13 +4,14 @@ import { useProfesional } from "@/context/profesional-context"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { AlertCircle, CheckCircle2, TrendingUp, Loader2, Plus } from "lucide-react"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { citasApi } from "@/lib/api"
 
 export default function ProfesionalDashboardPage() {
   const { user, perfil, perfiles, token, loading } = useProfesional()
   const [citas, setCitas] = useState<any[]>([])
   const [citasLoading, setCitasLoading] = useState(true)
+  const citasRefreshInFlightRef = useRef(false)
 
   const getClienteTelefono = (cita: any): string | null => {
     const candidates = [
@@ -32,10 +33,11 @@ export default function ProfesionalDashboardPage() {
     return telefono ? String(telefono).trim() : null
   }
 
-  const loadCitas = useCallback(async () => {
-    if (!token) return
+  const loadCitas = useCallback(async (showLoader = false) => {
+    if (!token || citasRefreshInFlightRef.current || document.visibilityState !== "visible") return
     try {
-      setCitasLoading(true)
+      citasRefreshInFlightRef.current = true
+      if (showLoader) setCitasLoading(true)
       const citasData = await citasApi.listar(token)
       const mappedCitas = (Array.isArray(citasData) ? citasData : []).map((c: any) => ({
         ...c,
@@ -55,12 +57,34 @@ export default function ProfesionalDashboardPage() {
     } catch (error) {
       console.error("Error loading citas:", error)
     } finally {
+      citasRefreshInFlightRef.current = false
       setCitasLoading(false)
     }
   }, [token])
 
   useEffect(() => {
-    if (token) loadCitas()
+    if (!token) return
+
+    loadCitas(true)
+
+    const intervalId = window.setInterval(() => {
+      loadCitas()
+    }, 7000)
+
+    const refetchOnFocus = () => {
+      if (document.visibilityState === "visible") {
+        loadCitas()
+      }
+    }
+
+    window.addEventListener("focus", refetchOnFocus)
+    document.addEventListener("visibilitychange", refetchOnFocus)
+
+    return () => {
+      window.clearInterval(intervalId)
+      window.removeEventListener("focus", refetchOnFocus)
+      document.removeEventListener("visibilitychange", refetchOnFocus)
+    }
   }, [token, loadCitas])
 
   const estadisticas = {

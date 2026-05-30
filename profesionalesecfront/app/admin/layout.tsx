@@ -33,6 +33,7 @@ function logout() {
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const router = useRouter()
   const [guardState, setGuardState] = useState<GuardState>("checking")
+  const [sidebarExpanded, setSidebarExpanded] = useState(true)
 
   useEffect(() => {
     const token = localStorage.getItem("auth_token")
@@ -103,9 +104,17 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 text-gray-900">
       <Header />
-      <AdminSidebar />
+      <AdminSidebar
+        expanded={sidebarExpanded}
+        onToggle={() => setSidebarExpanded((prev) => !prev)}
+      />
       <AdminMobileNav />
-      <div className="lg:ml-[70px] transition-all duration-200">
+      <div
+        className="lg:transition-all lg:duration-300 lg:ml-[var(--admin-sidebar-width)]"
+        style={{
+          ["--admin-sidebar-width" as string]: `${sidebarExpanded ? 312 : 70}px`,
+        }}
+      >
         <main className="pt-20 pb-12 px-4 lg:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
             {children}

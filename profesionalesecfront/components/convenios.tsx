@@ -29,6 +29,7 @@ export default function Convenios() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [bannerLoadErrors, setBannerLoadErrors] = useState<Record<number, boolean>>({})
 
   useEffect(() => {
     const fetchConvenios = async () => {
@@ -153,6 +154,7 @@ export default function Convenios() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 lg:gap-8 md:px-12 lg:px-16">
             {getVisibleConvenios().map((convenio, idx) => {
               const IconComponent = getIconComponent(convenio.categorias)
+              const hasBannerImage = Boolean(convenio.bannerUrl?.trim()) && !bannerLoadErrors[convenio.id]
               return (
                 <div
                   key={`${convenio.id}-${idx}`}
@@ -165,16 +167,20 @@ export default function Convenios() {
                   </div>
 
                   {/* Banner Photo Section */}
-                  <div className="h-24 md:h-28 w-full relative">
-                    <img 
-                      src={convenio.bannerUrl || "/placeholder.svg"} 
-                      alt="" 
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        ;(e.target as HTMLImageElement).src = "/placeholder.svg"
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
+                  <div className="h-24 md:h-28 w-full relative bg-white">
+                    {hasBannerImage && (
+                      <>
+                        <img 
+                          src={convenio.bannerUrl} 
+                          alt="" 
+                          className="w-full h-full object-cover"
+                          onError={() => {
+                            setBannerLoadErrors((prev) => ({ ...prev, [convenio.id]: true }))
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
+                      </>
+                    )}
                   </div>
 
                   <div className="p-4 md:p-5 lg:p-6 pt-0 -mt-16 relative z-10">
