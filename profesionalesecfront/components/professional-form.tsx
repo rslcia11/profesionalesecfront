@@ -930,16 +930,17 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
             documents: uploadedDocuments,
           }
 
-          const clientTransactionId = `priority-registration-${Date.now()}`
           const prepareResponse = await payphoneApi.preparePriorityCheckout(
             {
-              clientTransactionId,
               plan: "priority",
               reference: `priority-registration-${Date.now()}`,
               registrationDraft,
             },
             token,
           )
+
+          const clientTransactionId = prepareResponse.transaction.client_transaction_id
+            || prepareResponse.checkout.clientTransactionId
 
           const checkoutUrl = prepareResponse.checkout.payWithCard
             || prepareResponse.checkout.checkoutUrl

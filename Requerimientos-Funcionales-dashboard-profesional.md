@@ -14,7 +14,7 @@ Este documento define los requerimientos funcionales completos del **Dashboard d
 
 ### 1.2 Alcance
 
-El alcance cubre los siete (7) módulos del dashboard profesional accesibles desde la barra lateral de navegación, más los requerimientos transversales de autenticación, subida de archivos, geolocalización, pagos y diseño responsivo.
+El alcance cubre los siete (7) módulos del dashboard profesional accesibles desde el NavigationRail o BottomNavigationBar, más los requerimientos transversales de autenticación, subida de archivos, geolocalización, pagos y diseño adaptativo.
 
 **Módulos incluidos:**
 | # | Módulo | Ruta | Widget Principal |
@@ -216,7 +216,7 @@ El módulo de Perfil Profesional permite al usuario con `rol_id = 2` crear y man
 2. El sistema muestra el mapa interactivo (`LocationMap`) y los campos: `province` (select), `city` (select, filtrado), `address` (calle principal), `reference` (referencia), y coordenadas `lat`/`lng`.
 3. El usuario selecciona una provincia. El sistema filtra las ciudades disponibles.
 4. El usuario selecciona una ciudad.
-5. El usuario puede hacer clic en el mapa para establecer `latitud` y `longitud`, o usar el botón de geolocalización del navegador.
+5. El usuario puede tocar en el mapa para establecer `latitud` y `longitud`, o usar el botón de geolocalización del dispositivo.
 6. El usuario ingresa la calle principal (`calle_principal`) y una referencia opcional (`referencia`).
 7. El sistema llama a `PUT /profesionales/actualizar-perfil` con `{ciudad_id, calle_principal, referencia, latitud, longitud}` o `POST /profesionales/ubicacion`.
 8. El sistema avanza al Paso 3.
@@ -568,7 +568,7 @@ El módulo de Servicios permite al profesional gestionar el catálogo de servici
 
 El módulo de Artículos permite al profesional crear y gestionar contenido editorial (artículos/blog) con portada, resumen, contenido enriquecido y archivo PDF adjunto opcional. Los artículos pasan por un flujo de moderación antes de ser publicados. El estado del artículo se gestiona como: `"borrador"`, `"publicado"`, o `"archivado"`.
 
-**Componentes adicionales:** `ArticleReaderScreen` (diálogo de pantalla completa para lectura), `ArticlePdfReader` (visor PDF flipbook con `react-pdf` + turn.js), `ArticlePdfPreview` (vista previa/miniatura de documento PDF).
+**Componentes adicionales:** `ArticleReaderScreen` (pantalla de lectura completa), `ArticlePdfReader` (visor PDF flipbook con visor de PDF nativo), `ArticlePdfPreview` (vista previa/miniatura de documento PDF).
 
 #### 3.3.2 Historias de Usuario
 
@@ -1034,7 +1034,7 @@ El módulo de Horarios permite al profesional definir su disponibilidad semanal 
 | RN-HOR-01 | La matriz de horario tiene exactamente 168 elementos (7 días × 24 horas). | `schedule_grid.dart` |
 | RN-HOR-02 | El índice se calcula como: `índice = día × 24 + hora`. | `schedule_grid.dart` |
 | RN-HOR-03 | Mapeo de días: matriz día 0 = Lunes, día 1 = Martes, ..., día 6 = Domingo. | `schedule_grid.dart`, `schedule_manager.dart` |
-| RN-HOR-04 | JavaScript `Date.getDay()`: 0 = Domingo mapea a matriz índice 6; 1 = Lunes mapea a 0, etc. | `schedule_grid.dart` |
+| RN-HOR-04 | `DateTime.weekday` de Dart: 1 = Lunes mapea a matriz índice 0; 7 = Domingo mapea a 6, etc. | `schedule_grid.dart` |
 | RN-HOR-05 | Las citas solo pueden agendarse en horas marcadas como disponibles (`true`). | `booking_form.dart` |
 | RN-HOR-06 | El horario público se obtiene por `slug` del profesional, no por `perfilId`. | `lib/services/api.dart` |
 | RN-HOR-07 | Cada profesional tiene exactamente un registro de horario (relación 1:1 con PerfilProfesional). | `lib/services/api.dart` |
@@ -1547,8 +1547,8 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 | **API** | `Geolocator.getCurrentPosition()` |
 
 **Flujo Principal:**
-1. El usuario hace clic en "Usar mi ubicación actual" en el mapa.
-2. El sistema solicita permiso de geolocalización al navegador.
+1. El usuario toca "Usar mi ubicación actual" en el mapa.
+2. El sistema solicita permiso de geolocalización al dispositivo.
 3. Si el usuario acepta, `Geolocator.getCurrentPosition()` retorna coordenadas.
 4. El sistema posiciona el marcador y autocompleta `latitud`/`longitud`.
 
@@ -1558,7 +1558,7 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 
 **Criterios de Aceptación:**
 - [ ] Botón "Usar mi ubicación actual" visible en el mapa.
-- [ ] Solicitud de permiso de geolocalización al navegador.
+- [ ] Solicitud de permiso de geolocalización al dispositivo.
 - [ ] Fallback a selección manual si la geolocalización falla.
 
 ---
@@ -1845,7 +1845,7 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 | **Moderación** | Proceso administrativo de revisión de artículos antes de su publicación (`PUT /articulos/{id}/moderar`). |
 | **ProfessionalNavigationRail** | Widget de navegación lateral para tablet (≥600dp). Colapsable con animación. |
 | **ProfessionalBottomNav** | Widget de navegación inferior para teléfono (<600dp). BottomNavigationBar. |
-| **usePathname** | Método de GoRouter usado para detectar la ruta activa y resaltar el item de navegación correspondiente (`GoRouter.of(context).location`). |
+| **GoRouter.of(context).location** | Método de GoRouter usado para detectar la ruta activa y resaltar el item de navegación correspondiente (`GoRouter.of(context).location`). |
 | **FormData** | Formato `multipart/form-data` usado para enviar archivos (imágenes, PDFs) junto con datos de texto en artículos. |
 | **PayPhonePriorityRegistrationDraft** | Borrador que almacena temporalmente todos los datos de registro (perfil, servicios, horario, documentos) antes de completar el pago por PayPhone. |
 | **RFC** | Requerimiento Funcional. Identificador único con formato `RF-MODULO-NNN`. |

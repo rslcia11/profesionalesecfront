@@ -222,7 +222,7 @@ export interface PayPhonePriorityCheckout {
 }
 
 export interface PayPhonePriorityPreparePayload {
-  clientTransactionId: string
+  clientTransactionId?: string
   cancellationUrl?: string
   currency?: string
   idempotencyKey?: string
