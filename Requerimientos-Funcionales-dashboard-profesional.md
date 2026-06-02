@@ -1,11 +1,8 @@
-# Requerimientos Funcionales — Dashboard Profesional
+# Requerimientos Funcionales
 
-## Plataforma: Profesionales EC Frontend (Next.js)
+## App Movil: Profesionales EC Mobile (Flutter)
 
-**Versión:** 1.0  
-**Fecha:** 26 de mayo de 2026  
 **Estado:** Documento de Especificación Funcional  
-**Idioma:** Español (EC)
 
 ---
 
@@ -13,7 +10,7 @@
 
 ### 1.1 Propósito
 
-Este documento define los requerimientos funcionales completos del **Dashboard del Profesional** de la plataforma Profesionales EC. El dashboard permite a profesionales (abogados, médicos, ingenieros, etc.) gestionar su perfil público, servicios, artículos, citas, horarios, redes sociales y configuración de cuenta desde una interfaz web unificada.
+Este documento define los requerimientos funcionales completos del **Dashboard del Profesional** del app Profesionales EC. El dashboard permite a profesionales (abogados, médicos, ingenieros, etc.) gestionar su perfil público, servicios, artículos, citas, horarios, redes sociales y configuración de cuenta desde una interfaz web unificada.
 
 ### 1.2 Alcance
 
