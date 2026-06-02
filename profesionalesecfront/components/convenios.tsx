@@ -37,11 +37,21 @@ export default function Convenios() {
         setIsLoading(true)
         setError(null)
 
-        const backendUrl = process.env.NEXT_PUBLIC_API_URL || "/api"
-        const response = await fetch(`${backendUrl}/convenios?limit=10&offset=0`)
+        const response = await fetch("/api/convenios?limit=10&offset=0", {
+          cache: "no-store",
+        })
 
         if (!response.ok) {
-          throw new Error("Error al cargar convenios")
+          let errorMessage = "Error al cargar convenios"
+
+          try {
+            const payload = await response.json()
+            errorMessage = payload?.error || payload?.message || errorMessage
+          } catch {
+            // ignore body parse errors
+          }
+
+          throw new Error(errorMessage)
         }
 
         const data = await response.json()

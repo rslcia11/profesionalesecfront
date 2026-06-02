@@ -187,6 +187,14 @@ export interface BankAccountPayload {
   is_active?: boolean
 }
 
+export interface PayPhoneAdminConfiguration {
+  PAYPHONE_ENABLED: boolean
+  PAYPHONE_TOKEN: string
+  PAYPHONE_STORE_ID: string
+  PAYPHONE_RESPONSE_URL: string
+  PAYPHONE_CANCELLATION_URL: string
+}
+
 export interface PayPhonePriorityTransaction {
   id: number
   pago_id: number | null
@@ -955,6 +963,20 @@ export const bankAccountsApi = {
 }
 
 export const payphoneApi = {
+  async getAdminConfiguration(token: string): Promise<PayPhoneAdminConfiguration> {
+    return fetchApi("/payphone/admin/configuration", {
+      headers: authHeader(token),
+    })
+  },
+
+  async updateAdminConfiguration(data: PayPhoneAdminConfiguration, token: string): Promise<PayPhoneAdminConfiguration> {
+    return fetchApi("/payphone/admin/configuration", {
+      method: "PUT",
+      headers: authHeader(token),
+      body: JSON.stringify(data),
+    })
+  },
+
   async preparePriorityCheckout(
     data: PayPhonePriorityPreparePayload,
     token?: string | null,

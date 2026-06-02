@@ -569,8 +569,75 @@ export default function AdminProfesionalesPage() {
       }
 
       await profesionalApi.actualizarPerfil(payload, token)
+      const profesionSeleccionada = profesiones.find(
+        (profesion: any) => String(profesion.id) === editProfileForm.profesion_id,
+      )
+      const especialidadSeleccionada = especialidadesOptions.find(
+        (especialidad: any) => String(especialidad.id) === editProfileForm.especialidad_id,
+      )
+      const ciudadSeleccionada = ciudadesOptions.find(
+        (ciudad: any) => String(ciudad.id) === editProfileForm.ciudad_id,
+      )
+      const provinciaSeleccionada = provincias.find(
+        (provincia: any) => String(provincia.id) === editProfileForm.provincia_id,
+      )
+      const direccionTextoActualizada = editProfileForm.calle_principal.trim()
+        ? `${editProfileForm.calle_principal.trim()}${editProfileForm.referencia.trim() ? ` (${editProfileForm.referencia.trim()})` : ""}`
+        : "No registrada"
+
+      const updatedProfile = {
+        ...selectedProfile,
+        telefono: editProfileForm.telefono.trim(),
+        cedula: editProfileForm.cedula.trim(),
+        descripcion: editProfileForm.descripcion.trim(),
+        permitir_reagendar: editProfileForm.permitir_reagendar,
+        profesion_id: editProfileForm.profesion_id ? Number(editProfileForm.profesion_id) : selectedProfile.profesion_id,
+        especialidad_id: editProfileForm.especialidad_id ? Number(editProfileForm.especialidad_id) : null,
+        provincia_id: editProfileForm.provincia_id ? Number(editProfileForm.provincia_id) : null,
+        ciudad_id: editProfileForm.ciudad_id ? Number(editProfileForm.ciudad_id) : null,
+        profesion: profesionSeleccionada?.nombre || selectedProfile.profesion,
+        especialidad: especialidadSeleccionada?.nombre || "Sin especialidad",
+        ciudad: ciudadSeleccionada?.nombre || "",
+        provincia: provinciaSeleccionada?.nombre || "",
+        tarifa: tarifaNormalizada === "" ? "No definida" : `$${tarifaNormalizada}`,
+        calle_principal: editProfileForm.calle_principal.trim(),
+        referencia: editProfileForm.referencia.trim(),
+        direccion_texto: direccionTextoActualizada,
+        facebook_url: editProfileForm.facebook_url.trim(),
+        instagram_url: editProfileForm.instagram_url.trim(),
+        tiktok_url: editProfileForm.tiktok_url.trim(),
+        linkedin_url: editProfileForm.linkedin_url.trim(),
+        x_url: editProfileForm.x_url.trim(),
+        yt_url: editProfileForm.yt_url.trim(),
+      }
+
+      setSelectedProfile(updatedProfile)
+      setPerfilesPendientes((prev) =>
+        prev.map((profile) =>
+          profile.id === selectedProfile.id
+            ? {
+                ...profile,
+                telefono: updatedProfile.telefono,
+                cedula: updatedProfile.cedula,
+                profesion: updatedProfile.profesion,
+                especialidad: updatedProfile.especialidad,
+                ciudad: updatedProfile.ciudad,
+                provincia: updatedProfile.provincia,
+                tarifa: updatedProfile.tarifa,
+                descripcion: updatedProfile.descripcion,
+                direccion_texto: updatedProfile.direccion_texto,
+                facebook_url: updatedProfile.facebook_url,
+                instagram_url: updatedProfile.instagram_url,
+                tiktok_url: updatedProfile.tiktok_url,
+                linkedin_url: updatedProfile.linkedin_url,
+                x_url: updatedProfile.x_url,
+                yt_url: updatedProfile.yt_url,
+              }
+            : profile,
+        ),
+      )
       await refreshProfiles()
-      await hydrateProfileDetails({ ...selectedProfile, id: selectedProfile.id })
+      await hydrateProfileDetails(updatedProfile)
       setIsEditingProfile(false)
 
       toast({
