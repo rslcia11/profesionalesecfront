@@ -930,17 +930,13 @@ export default function ProfessionalForm({ isAdditionalProfile = false }: Profes
             documents: uploadedDocuments,
           }
 
-          const origin = typeof window !== "undefined" ? window.location.origin : ""
-          const resultUrl = origin ? `${origin}/payphone/priority/resultado` : undefined
           const clientTransactionId = `priority-registration-${Date.now()}`
           const prepareResponse = await payphoneApi.preparePriorityCheckout(
             {
               clientTransactionId,
-              cancellationUrl: resultUrl,
               plan: "priority",
               reference: `priority-registration-${Date.now()}`,
               registrationDraft,
-              responseUrl: resultUrl,
             },
             token,
           )

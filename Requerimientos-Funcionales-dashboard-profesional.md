@@ -10,24 +10,24 @@
 
 ### 1.1 Propósito
 
-Este documento define los requerimientos funcionales completos del **Dashboard del Profesional** del app Profesionales EC. El dashboard permite a profesionales (abogados, médicos, ingenieros, etc.) gestionar su perfil público, servicios, artículos, citas, horarios, redes sociales y configuración de cuenta desde una interfaz web unificada.
+Este documento define los requerimientos funcionales completos del **Dashboard del Profesional** del app Profesionales EC. El dashboard permite a profesionales (abogados, médicos, ingenieros, etc.) gestionar su perfil público, servicios, artículos, citas, horarios, redes sociales y configuración de cuenta desde la app móvil de Flutter.
 
 ### 1.2 Alcance
 
 El alcance cubre los siete (7) módulos del dashboard profesional accesibles desde la barra lateral de navegación, más los requerimientos transversales de autenticación, subida de archivos, geolocalización, pagos y diseño responsivo.
 
 **Módulos incluidos:**
-| # | Módulo | Ruta | Componente Principal |
+| # | Módulo | Ruta | Widget Principal |
 |---|--------|------|---------------------|
-| 1 | Perfil Profesional | `/dashboard/profesional` | `ProfessionalForm` (wizard de 5-6 pasos) |
-| 2 | Servicios | `/dashboard/profesional/servicios` | `ServicesManager` |
-| 3 | Artículos | `/dashboard/profesional/articulos` | `ArticleFormModal` |
-| 4 | Citas | `/dashboard/profesional/citas` | `RescheduleModal`, `BookingForm` |
-| 5 | Horarios | `/dashboard/profesional/horario` | `ScheduleManager`, `ScheduleGrid` |
-| 6 | Redes Sociales | `/dashboard/profesional/redes` | `SocialMediaManager` |
-| 7 | Configuración | `/dashboard/profesional/configuracion` | Página de configuración |
+| 1 | Perfil Profesional | `/professional-dashboard` | `ProfessionalForm` (wizard de 5-6 pasos) |
+| 2 | Servicios | `/professional-dashboard/services` | `ServicesManager` |
+| 3 | Artículos | `/professional-dashboard/articles` | `ArticleFormScreen` |
+| 4 | Citas | `/professional-dashboard/appointments` | `RescheduleBottomSheet`, `BookingForm` |
+| 5 | Horarios | `/professional-dashboard/schedule` | `ScheduleManager`, `ScheduleGrid` |
+| 6 | Redes Sociales | `/professional-dashboard/social-media` | `SocialMediaManager` |
+| 7 | Configuración | `/professional-dashboard/settings` | Pantalla de configuración |
 
-**Navegación:** `lib/profesional-nav.ts` define `PROFESIONAL_NAV_ITEMS` con 7 elementos de navegación usando `ProfesionalSidebar` (escritorio, colapsable con hover) y `ProfesionalMobileNav` (sheet/drawer en móvil). Ambos usan `usePathname()` para detección de estado activo.
+**Navegación:** `lib/config/professional_nav.dart` define `PROFESSIONAL_NAV_ITEMS` con 7 elementos de navegación usando `ProfessionalNavigationRail` (tablet, colapsable con animación) y `ProfessionalBottomNav` (teléfono, bottom navigation bar). Ambos usan `GoRouter.of(context).location` para detección de estado activo.
 
 ### 1.3 Usuarios del Sistema
 
@@ -45,22 +45,23 @@ El alcance cubre los siete (7) módulos del dashboard profesional accesibles des
 
 ```
 Dashboard Layout
-├── ProfesionalSidebar (escritorio, colapsable con hover)
-│   └── PROFESIONAL_NAV_ITEMS (7 secciones + iconos Lucide)
-├── ProfesionalMobileNav (móvil, sheet/drawer)
+├── ProfessionalNavigationRail (tablet, colapsable con animación)
+│   └── PROFESSIONAL_NAV_ITEMS (7 secciones + iconos Material)
+├── ProfessionalBottomNav (teléfono, bottom navigation bar)
 │   └── Mismos 7 items de navegación
-└── Contenido Principal (ruteo dinámico por módulo)
+└── Contenido Principal (GoRouter ShellRoute)
 ```
 
 **Stack tecnológico:**
-- **Framework:** Next.js (App Router)
-- **Lenguaje:** TypeScript (estricto)
-- **UI:** Tailwind CSS + shadcn/ui (Radix primitives)
-- **Iconos:** Lucide React
-- **Estado:** React hooks locales + props drilling
-- **Autenticación:** JWT (token en `localStorage("auth_token")`)
+- **Framework:** Flutter (Dart)
+- **Lenguaje:** Dart (null safety)
+- **UI:** Flutter widgets / Material Design 3
+- **Iconos:** Material Icons / Flutter Icons
+- **Estado:** StatefulWidget / setState + Provider (state management)
+- **Ruteo:** GoRouter (navegación declarativa)
+- **Autenticación:** JWT (token en `flutter_secure_storage` bajo la clave `auth_token`)
 - **Subida de archivos:** Cloudinary (`dw4p8pdcz`, preset `profesionales`)
-- **Mapas:** Componente `LocationMap` con interacción de clic/geolocalización
+- **Mapas:** Widget `LocationMap` con `google_maps_flutter` o `flutter_map` + `geolocator`
 
 ### 2.2 Modelo de Datos General
 
@@ -70,11 +71,11 @@ Dashboard Layout
 
 1. Registro: `authApi.register({nombre, correo, contrasena, rol_id, telefono, cedula})` → `{token, usuario}`
 2. Login: `authApi.login({correo, contrasena})` → `{token, usuario}`
-3. Token JWT almacenado en `localStorage("auth_token")`
+3. Token JWT almacenado en `flutter_secure_storage (auth_token)`
 4. Todas las llamadas autenticadas incluyen header `Authorization: Bearer {token}`
 5. Endpoints adicionales: `cambiarContrasena`, `recuperarContrasena`, `verificarEmail`
 
-**Fuente:** `lib/api.ts` (authApi)
+**Fuente:** `lib/services/api.dart` (authApi)
 
 ---
 
@@ -84,9 +85,9 @@ Dashboard Layout
 
 ### 3.1 Módulo: Perfil Profesional
 
-**Ruta:** `/dashboard/profesional`  
+**Ruta:** `/professional-dashboard`  
 **Componente:** `ProfessionalForm` (wizard multi-paso: 5 pasos base + 1 opcional para plan prioritario)  
-**Fuente:** `components/professional-form.tsx`, `lib/api.ts`
+**Fuente:** `lib/screens/professional_form.dart`, `lib/services/api.dart`
 
 #### 3.1.1 Descripción General
 
@@ -94,8 +95,8 @@ El módulo de Perfil Profesional permite al usuario con `rol_id = 2` crear y man
 
 #### 3.1.2 Entidades Involucradas
 
-- **Usuario** (`lib/api.ts`): `id`, `nombre`, `correo`, `rol_id`, `foto_url`, `telefono`, `cedula`, `estado`
-- **PerfilProfesional** (`lib/api.ts`): 28 campos incluyendo `slug`, `profesion_id`, `especialidad_id`, `ciudad_id`, `descripcion`, `tarifa`, `tarifa_hora`, `latitud`, `longitud`, `calle_principal`, `referencia`, `permitir_reagendar`, `show_phone`, `show_email`, `verificado`, `plan`, campos de redes sociales, campos de pago
+- **Usuario** (`lib/services/api.dart`): `id`, `nombre`, `correo`, `rol_id`, `foto_url`, `telefono`, `cedula`, `estado`
+- **PerfilProfesional** (`lib/services/api.dart`): 28 campos incluyendo `slug`, `profesion_id`, `especialidad_id`, `ciudad_id`, `descripcion`, `tarifa`, `tarifa_hora`, `latitud`, `longitud`, `calle_principal`, `referencia`, `permitir_reagendar`, `show_phone`, `show_email`, `verificado`, `plan`, campos de redes sociales, campos de pago
 - **Servicio** (creación en lote durante el paso 1): `descripcion` (máx. 100 caracteres)
 - **Horario** (matriz 7×24): `matriz` (boolean[168])
 - **Documentos** (paso 3): `cedula_frontal`, `cedula_posterior`, `titulo`, `licencia`
@@ -121,7 +122,7 @@ El módulo de Perfil Profesional permite al usuario con `rol_id = 2` crear y man
 |----------|-------|
 | **Prioridad** | Alta |
 | **Precondiciones** | Usuario NO autenticado. Formulario de registro visible. |
-| **Fuente** | `components/professional-form.tsx` (Step 0 - Personal Data) |
+| **Fuente** | `lib/screens/professional_form.dart` (Step 0 - Personal Data) |
 
 **Flujo Principal:**
 1. El sistema muestra el formulario del Paso 0: Datos Personales con los campos: `fullName`, `cedula`, `email`, `password`, `confirmPassword`, `phone`, `profileImage`.
@@ -133,7 +134,7 @@ El módulo de Perfil Profesional permite al usuario con `rol_id = 2` crear y man
 7. El usuario ingresa su teléfono (10 dígitos numéricos) en el campo `phone`.
 8. El usuario opcionalmente selecciona una imagen de perfil (`profileImage`) que se sube a Cloudinary (cloud: `dw4p8pdcz`, preset: `profesionales`).
 9. El sistema llama a `authApi.register({nombre: fullName, correo: email, contrasena: password, rol_id: 2, telefono: phone, cedula: cedula})`.
-10. El sistema recibe `{token, usuario}`, almacena el token en `localStorage("auth_token")`, y avanza al Paso 1.
+10. El sistema recibe `{token, usuario}`, almacena el token en `flutter_secure_storage (auth_token)`, y avanza al Paso 1.
 
 **Flujos Alternativos:**
 - **FA1 (Cédula inválida):** Si la cédula no tiene 10 dígitos numéricos, el sistema muestra mensaje de error y no permite avanzar.
@@ -163,7 +164,7 @@ El módulo de Perfil Profesional permite al usuario con `rol_id = 2` crear y man
 |----------|-------|
 | **Prioridad** | Alta |
 | **Precondiciones** | Usuario autenticado (Paso 0 completado o sesión existente). Catálogos de Profesión y Especialidad cargados. |
-| **Fuente** | `components/professional-form.tsx` (Step 1 - Professional Info) |
+| **Fuente** | `lib/screens/professional_form.dart` (Step 1 - Professional Info) |
 
 **Flujo Principal:**
 1. El sistema carga los catálogos desde `GET /catalogos/profesiones` y `GET /catalogos/especialidades?profesion_id=X`.
@@ -208,7 +209,7 @@ El módulo de Perfil Profesional permite al usuario con `rol_id = 2` crear y man
 |----------|-------|
 | **Prioridad** | Alta |
 | **Precondiciones** | Usuario autenticado. Catálogos de Provincia y Ciudad cargados. |
-| **Fuente** | `components/professional-form.tsx` (Step 2 - Location), `LocationMap` |
+| **Fuente** | `lib/screens/professional_form.dart` (Step 2 - Location), `LocationMap` |
 
 **Flujo Principal:**
 1. El sistema carga catálogos: `GET /catalogos/provincias` y `GET /catalogos/ciudades?provincia_id=X`.
@@ -228,7 +229,7 @@ El módulo de Perfil Profesional permite al usuario con `rol_id = 2` crear y man
 
 **Criterios de Aceptación:**
 - [ ] El mapa se renderiza con un marcador arrastrable o clicable.
-- [ ] El botón de geolocalización usa la API `navigator.geolocation.getCurrentPosition()`.
+- [ ] El botón de geolocalización usa la API `Geolocator.getCurrentPosition()`.
 - [ ] Las ciudades se filtran correctamente al seleccionar provincia.
 - [ ] `latitud` y `longitud` se guardan como tipo `number`.
 
@@ -240,7 +241,7 @@ El módulo de Perfil Profesional permite al usuario con `rol_id = 2` crear y man
 |----------|-------|
 | **Prioridad** | Media |
 | **Precondiciones** | Usuario autenticado. Pasos 0-2 completados. |
-| **Fuente** | `components/professional-form.tsx` (Step 3 - Documents) |
+| **Fuente** | `lib/screens/professional_form.dart` (Step 3 - Documents) |
 
 **Flujo Principal:**
 1. El sistema muestra el Paso 3 (Opcional) con 4 campos de archivo: `identityFront` (cédula frontal), `identityBack` (cédula posterior), `title` (título profesional), `license` (licencia).
@@ -269,7 +270,7 @@ El módulo de Perfil Profesional permite al usuario con `rol_id = 2` crear y man
 |----------|-------|
 | **Prioridad** | Media |
 | **Precondiciones** | Usuario autenticado. Perfil profesional creado. |
-| **Fuente** | `components/professional-form.tsx` (Step 4 - Preferences) |
+| **Fuente** | `lib/screens/professional_form.dart` (Step 4 - Preferences) |
 
 **Flujo Principal:**
 1. El sistema muestra el Paso 4 con: `showPhone` (checkbox), `showEmail` (checkbox), `tags` (campo de texto, palabras clave separadas por coma), y 6 campos de URL de redes sociales: `facebook_url`, `instagram_url`, `x_url` (Twitter/X), `linkedin_url`, `tiktok_url`, `yt_url` (YouTube).
@@ -305,7 +306,7 @@ El módulo de Perfil Profesional permite al usuario con `rol_id = 2` crear y man
 |----------|-------|
 | **Prioridad** | Alta |
 | **Precondiciones** | Usuario autenticado. Perfil creado. Plan seleccionado requiere pago. |
-| **Fuente** | `components/professional-form.tsx` (Step 5 - Payment), `lib/api.ts` (PayPhone flow) |
+| **Fuente** | `lib/screens/professional_form.dart` (Step 5 - Payment), `lib/services/api.dart` (PayPhone flow) |
 
 **Flujo Principal:**
 1. El sistema muestra el Paso 5 (solo si el plan es prioritario) con: `payment_method` (selector: "bank" o "payphone"), vista previa de cuentas bancarias (desde `GET /bank-accounts`), y campo `paymentProof` (archivo).
@@ -337,20 +338,20 @@ El módulo de Perfil Profesional permite al usuario con `rol_id = 2` crear y man
 
 | ID | Regla | Fuente |
 |----|-------|--------|
-| RN-PERF-01 | La cédula debe tener exactamente 10 dígitos numéricos. | `professional-form.tsx` (Step 0, validación `cedula`) |
-| RN-PERF-02 | El correo electrónico debe contener `@` y validarse con regex. | `professional-form.tsx` (Step 0, validación `email`) |
-| RN-PERF-03 | La contraseña debe tener mínimo 8 caracteres, con al menos una mayúscula, una minúscula y un carácter especial. | `professional-form.tsx` (Step 0, validación `password`) |
-| RN-PERF-04 | El teléfono debe tener exactamente 10 dígitos numéricos. | `professional-form.tsx` (Step 0, validación `phone`) |
-| RN-PERF-05 | La descripción profesional tiene un máximo de 80 caracteres. | `professional-form.tsx` (Step 1, `descripcion`) |
-| RN-PERF-06 | La descripción de cada servicio tiene un máximo de 100 caracteres. | `services-manager.tsx` (`maxLength=100`) |
-| RN-PERF-07 | La modalidad de trabajo debe ser una de: "Presencial", "Virtual", "Ambas modalidades". | `professional-form.tsx` (enum `workModes`) |
-| RN-PERF-08 | Las URLs de redes sociales deben validarse contra el patrón regex de su plataforma específica. | `social-media-manager.tsx`, `professional-form.tsx` (Step 4) |
-| RN-PERF-09 | Al crear el perfil, los servicios se crean en lote llamando a `POST /servicios` por cada uno. | `professional-form.tsx` (Step 1, submit) |
-| RN-PERF-10 | El horario se representa como `boolean[168]` (7 días × 24 horas), índice = `día × 24 + hora`. | `schedule-grid.tsx`, `schedule-manager.tsx` |
-| RN-PERF-11 | La imagen de perfil se sube a Cloudinary (`dw4p8pdcz`, preset `profesionales`). | `professional-form.tsx` (Step 0, `profileImage`) |
-| RN-PERF-12 | El plan prioritario requiere comprobante de pago si el método es transferencia bancaria. | `professional-form.tsx` (Step 5) |
-| RN-PERF-13 | Los campos `show_phone` y `show_email` controlan la visibilidad pública del teléfono y correo. | `professional-form.tsx` (Step 4) |
-| RN-PERF-14 | `permitir_reagendar` controla si los clientes pueden reagendar citas con este profesional. | `lib/api.ts` (PerfilProfesional) |
+| RN-PERF-01 | La cédula debe tener exactamente 10 dígitos numéricos. | `professional_form.dart` (Step 0, validación `cedula`) |
+| RN-PERF-02 | El correo electrónico debe contener `@` y validarse con regex. | `professional_form.dart` (Step 0, validación `email`) |
+| RN-PERF-03 | La contraseña debe tener mínimo 8 caracteres, con al menos una mayúscula, una minúscula y un carácter especial. | `professional_form.dart` (Step 0, validación `password`) |
+| RN-PERF-04 | El teléfono debe tener exactamente 10 dígitos numéricos. | `professional_form.dart` (Step 0, validación `phone`) |
+| RN-PERF-05 | La descripción profesional tiene un máximo de 80 caracteres. | `professional_form.dart` (Step 1, `descripcion`) |
+| RN-PERF-06 | La descripción de cada servicio tiene un máximo de 100 caracteres. | `services_manager.dart` (`maxLength=100`) |
+| RN-PERF-07 | La modalidad de trabajo debe ser una de: "Presencial", "Virtual", "Ambas modalidades". | `professional_form.dart` (enum `workModes`) |
+| RN-PERF-08 | Las URLs de redes sociales deben validarse contra el patrón regex de su plataforma específica. | `social_media_manager.dart`, `professional_form.dart` (Step 4) |
+| RN-PERF-09 | Al crear el perfil, los servicios se crean en lote llamando a `POST /servicios` por cada uno. | `professional_form.dart` (Step 1, submit) |
+| RN-PERF-10 | El horario se representa como `boolean[168]` (7 días × 24 horas), índice = `día × 24 + hora`. | `schedule_grid.dart`, `schedule_manager.dart` |
+| RN-PERF-11 | La imagen de perfil se sube a Cloudinary (`dw4p8pdcz`, preset `profesionales`). | `professional_form.dart` (Step 0, `profileImage`) |
+| RN-PERF-12 | El plan prioritario requiere comprobante de pago si el método es transferencia bancaria. | `professional_form.dart` (Step 5) |
+| RN-PERF-13 | Los campos `show_phone` y `show_email` controlan la visibilidad pública del teléfono y correo. | `professional_form.dart` (Step 4) |
+| RN-PERF-14 | `permitir_reagendar` controla si los clientes pueden reagendar citas con este profesional. | `lib/services/api.dart` (PerfilProfesional) |
 
 #### 3.1.6 Validaciones de Datos — Perfil Profesional
 
@@ -401,9 +402,9 @@ El módulo de Perfil Profesional permite al usuario con `rol_id = 2` crear y man
 
 ### 3.2 Módulo: Servicios
 
-**Ruta:** `/dashboard/profesional/servicios`  
+**Ruta:** `/professional-dashboard/services`  
 **Componente:** `ServicesManager`  
-**Fuente:** `components/services-manager.tsx`, `lib/api.ts`
+**Fuente:** `lib/screens/services_manager.dart`, `lib/services/api.dart`
 
 #### 3.2.1 Descripción General
 
@@ -428,7 +429,7 @@ El módulo de Servicios permite al profesional gestionar el catálogo de servici
 |----------|-------|
 | **Prioridad** | Alta |
 | **Precondiciones** | Usuario autenticado con perfil profesional (`perfilId` existente). |
-| **Fuente** | `components/services-manager.tsx` |
+| **Fuente** | `lib/screens/services_manager.dart` |
 
 **Flujo Principal:**
 1. El sistema obtiene el `perfilId` del profesional autenticado.
@@ -441,7 +442,7 @@ El módulo de Servicios permite al profesional gestionar el catálogo de servici
 - **FA2 (Error de carga):** Si falla la API, el sistema muestra mensaje de error y botón para reintentar.
 
 **Criterios de Aceptación:**
-- [ ] Los servicios se cargan al montar el componente (`useEffect`).
+- [ ] Los servicios se cargan al inicializar la pantalla.
 - [ ] Cada servicio muestra su `servicio_id` (oculto) y `descripcion` (visible).
 - [ ] Los botones de Editar y Eliminar están presentes en cada fila.
 
@@ -453,7 +454,7 @@ El módulo de Servicios permite al profesional gestionar el catálogo de servici
 |----------|-------|
 | **Prioridad** | Alta |
 | **Precondiciones** | Usuario autenticado con `perfilId`. |
-| **Fuente** | `components/services-manager.tsx` |
+| **Fuente** | `lib/screens/services_manager.dart` |
 
 **Flujo Principal:**
 1. El sistema muestra un campo de texto (`Input`) con placeholder y un botón "Agregar".
@@ -482,7 +483,7 @@ El módulo de Servicios permite al profesional gestionar el catálogo de servici
 |----------|-------|
 | **Prioridad** | Media |
 | **Precondiciones** | Servicio existente en la lista. |
-| **Fuente** | `components/services-manager.tsx` |
+| **Fuente** | `lib/screens/services_manager.dart` |
 
 **Flujo Principal:**
 1. El usuario hace clic en el botón "Editar" de un servicio.
@@ -511,7 +512,7 @@ El módulo de Servicios permite al profesional gestionar el catálogo de servici
 |----------|-------|
 | **Prioridad** | Media |
 | **Precondiciones** | Servicio existente en la lista. |
-| **Fuente** | `components/services-manager.tsx` |
+| **Fuente** | `lib/screens/services_manager.dart` |
 
 **Flujo Principal:**
 1. El usuario hace clic en el botón "Eliminar" de un servicio.
@@ -535,10 +536,10 @@ El módulo de Servicios permite al profesional gestionar el catálogo de servici
 
 | ID | Regla | Fuente |
 |----|-------|--------|
-| RN-SERV-01 | Cada servicio está asociado a un `perfilId` (relación con PerfilProfesional). | `lib/api.ts` |
-| RN-SERV-02 | La descripción del servicio no puede exceder 100 caracteres. | `services-manager.tsx` |
-| RN-SERV-03 | No se puede crear un servicio con descripción vacía. | `services-manager.tsx` |
-| RN-SERV-04 | Un profesional puede tener múltiples servicios (relación 1:N). | `lib/api.ts` |
+| RN-SERV-01 | Cada servicio está asociado a un `perfilId` (relación con PerfilProfesional). | `lib/services/api.dart` |
+| RN-SERV-02 | La descripción del servicio no puede exceder 100 caracteres. | `services_manager.dart` |
+| RN-SERV-03 | No se puede crear un servicio con descripción vacía. | `services_manager.dart` |
+| RN-SERV-04 | Un profesional puede tener múltiples servicios (relación 1:N). | `lib/services/api.dart` |
 
 #### 3.2.5 Validaciones de Datos — Servicios
 
@@ -559,15 +560,15 @@ El módulo de Servicios permite al profesional gestionar el catálogo de servici
 
 ### 3.3 Módulo: Artículos
 
-**Ruta:** `/dashboard/profesional/articulos`  
-**Componente:** `ArticleFormModal`  
-**Fuente:** `components/article-form-modal.tsx`, `lib/api.ts`
+**Ruta:** `/professional-dashboard/articles`  
+**Componente:** `ArticleFormScreen`  
+**Fuente:** `lib/screens/article_form_screen.dart`, `lib/services/api.dart`
 
 #### 3.3.1 Descripción General
 
 El módulo de Artículos permite al profesional crear y gestionar contenido editorial (artículos/blog) con portada, resumen, contenido enriquecido y archivo PDF adjunto opcional. Los artículos pasan por un flujo de moderación antes de ser publicados. El estado del artículo se gestiona como: `"borrador"`, `"publicado"`, o `"archivado"`.
 
-**Componentes adicionales:** `ArticleReaderDialog` (diálogo de pantalla completa para lectura), `ArticlePdfReader` (visor PDF flipbook con `react-pdf` + turn.js), `ArticlePdfPreview` (vista previa/miniatura de documento PDF).
+**Componentes adicionales:** `ArticleReaderScreen` (diálogo de pantalla completa para lectura), `ArticlePdfReader` (visor PDF flipbook con `react-pdf` + turn.js), `ArticlePdfPreview` (vista previa/miniatura de documento PDF).
 
 #### 3.3.2 Historias de Usuario
 
@@ -589,7 +590,7 @@ El módulo de Artículos permite al profesional crear y gestionar contenido edit
 |----------|-------|
 | **Prioridad** | Alta |
 | **Precondiciones** | Usuario autenticado. |
-| **Fuente** | `components/article-form-modal.tsx`, página de artículos |
+| **Fuente** | `lib/screens/article_form_screen.dart`, página de artículos |
 
 **Flujo Principal:**
 1. El sistema llama a `GET /articulos/mios` (requiere token de autenticación).
@@ -609,11 +610,11 @@ El módulo de Artículos permite al profesional crear y gestionar contenido edit
 | Atributo | Valor |
 |----------|-------|
 | **Prioridad** | Alta |
-| **Precondiciones** | Usuario autenticado. Modal de creación abierto. |
-| **Fuente** | `components/article-form-modal.tsx` |
+| **Precondiciones** | Usuario autenticado. Pantalla de creación abierta. |
+| **Fuente** | `lib/screens/article_form_screen.dart` |
 
 **Flujo Principal:**
-1. El usuario hace clic en "Nuevo Artículo". Se abre el `ArticleFormModal`.
+1. El usuario hace clic en "Nuevo Artículo". Se abre el `ArticleFormScreen`.
 2. El sistema muestra el formulario con campos: `titulo` (Input, requerido), `resumen` (Textarea, 2 filas, opcional), `contenido` (Textarea, 10 filas, requerido), `imagen_portada` (File, opcional), `archivo_pdf` (File, opcional).
 3. El usuario completa los campos requeridos (`titulo` y `contenido`).
 4. El usuario opcionalmente selecciona una imagen de portada (`imagen_portada`).
@@ -621,17 +622,17 @@ El módulo de Artículos permite al profesional crear y gestionar contenido edit
 6. El usuario hace clic en "Guardar".
 7. El sistema construye un `FormData` con los campos: `titulo`, `contenido`, `resumen`, `imagen_portada` (File), `archivo_pdf` (File), y `estado: "archivado"` (nuevo artículo).
 8. El sistema llama a `POST /articulos` enviando el `FormData` (multipart).
-9. El sistema cierra el modal y refresca la lista de artículos.
+9. El sistema cierra la pantalla y refresca la lista de artículos.
 
 **Flujos Alternativos:**
 - **FA1 (Campos requeridos vacíos):** Si `titulo` o `contenido` están vacíos, el sistema muestra error y no envía.
 - **FA2 (Archivo muy grande):** El sistema debe validar tamaño máximo de archivos (imagen y PDF).
-- **FA3 (Error API):** Si falla la creación, el sistema muestra error y mantiene el modal abierto con los datos ingresados.
+- **FA3 (Error API):** Si falla la creación, el sistema muestra error y mantiene la pantalla abierta con los datos ingresados.
 
 **Postcondiciones:** Artículo creado con estado `"archivado"` (pendiente de moderación). `fecha_publicacion` y `created_at` establecidos por el servidor.
 
 **Criterios de Aceptación:**
-- [ ] El formulario modal se renderiza con 5 campos (3 texto + 2 archivo).
+- [ ] El formulario en pantalla se renderiza con 5 campos (3 texto + 2 archivo).
 - [ ] `titulo` y `contenido` son obligatorios.
 - [ ] `resumen` tiene 2 filas de altura.
 - [ ] `contenido` tiene 10 filas de altura.
@@ -647,21 +648,21 @@ El módulo de Artículos permite al profesional crear y gestionar contenido edit
 |----------|-------|
 | **Prioridad** | Alta |
 | **Precondiciones** | Artículo existente. Usuario es el autor (`usuario_id` coincide). |
-| **Fuente** | `components/article-form-modal.tsx` |
+| **Fuente** | `lib/screens/article_form_screen.dart` |
 
 **Flujo Principal:**
 1. El usuario hace clic en "Editar" en un artículo existente.
-2. El sistema abre el `ArticleFormModal` precargado con los datos del artículo: `titulo`, `resumen`, `contenido`, `imagen_url` (mostrada como vista previa), `pdf_url` (si existe).
+2. El sistema abre el `ArticleFormScreen` precargado con los datos del artículo: `titulo`, `resumen`, `contenido`, `imagen_url` (mostrada como vista previa), `pdf_url` (si existe).
 3. El usuario modifica los campos deseados.
 4. El usuario puede reemplazar la imagen de portada y/o el PDF.
 5. El usuario hace clic en "Guardar".
 6. El sistema llama a `PUT /articulos/{id}` con el `FormData` actualizado.
-7. El sistema cierra el modal y refresca la lista.
+7. El sistema cierra la pantalla y refresca la lista.
 
 **Flujos Alternativos:**
 - **FA1 (Sin cambios):** Si no se modificó ningún campo, el sistema puede omitir la llamada API.
 - **FA2 (Eliminar imagen existente):** El usuario puede quitar la imagen de portada actual; el sistema envía el campo vacío.
-- **FA3 (Error API):** Si falla, el sistema muestra error y mantiene el modal abierto.
+- **FA3 (Error API):** Si falla, el sistema muestra error y mantiene la pantalla abierta.
 
 **Criterios de Aceptación:**
 - [ ] El formulario se precarga con todos los datos del artículo.
@@ -715,13 +716,13 @@ El módulo de Artículos permite al profesional crear y gestionar contenido edit
 
 | ID | Regla | Fuente |
 |----|-------|--------|
-| RN-ART-01 | El estado inicial de un artículo nuevo es `"archivado"` (no publicado automáticamente). | `article-form-modal.tsx` |
-| RN-ART-02 | Solo el autor (`usuario_id`) puede editar o eliminar sus propios artículos. | `lib/api.ts` |
-| RN-ART-03 | Un administrador puede moderar artículos (`PUT /articulos/{id}/moderar`). | `lib/api.ts` |
-| RN-ART-04 | Los estados válidos son: `"borrador"`, `"publicado"`, `"archivado"`. | `lib/api.ts` (Articulo.estado) |
-| RN-ART-05 | `titulo` y `contenido` son campos obligatorios. | `article-form-modal.tsx` |
-| RN-ART-06 | Los archivos (imagen de portada y PDF) se envían como `multipart/form-data`. | `article-form-modal.tsx`, `lib/api.ts` |
-| RN-ART-07 | `fecha_publicacion` y `created_at` son establecidos por el servidor. | `lib/api.ts` |
+| RN-ART-01 | El estado inicial de un artículo nuevo es `"archivado"` (no publicado automáticamente). | `article_form_screen.dart` |
+| RN-ART-02 | Solo el autor (`usuario_id`) puede editar o eliminar sus propios artículos. | `lib/services/api.dart` |
+| RN-ART-03 | Un administrador puede moderar artículos (`PUT /articulos/{id}/moderar`). | `lib/services/api.dart` |
+| RN-ART-04 | Los estados válidos son: `"borrador"`, `"publicado"`, `"archivado"`. | `lib/services/api.dart` (Articulo.estado) |
+| RN-ART-05 | `titulo` y `contenido` son campos obligatorios. | `article_form_screen.dart` |
+| RN-ART-06 | Los archivos (imagen de portada y PDF) se envían como `multipart/form-data`. | `article_form_screen.dart`, `lib/services/api.dart` |
+| RN-ART-07 | `fecha_publicacion` y `created_at` son establecidos por el servidor. | `lib/services/api.dart` |
 
 #### 3.3.5 Validaciones de Datos — Artículos
 
@@ -750,9 +751,9 @@ El módulo de Artículos permite al profesional crear y gestionar contenido edit
 
 ### 3.4 Módulo: Citas
 
-**Ruta:** `/dashboard/profesional/citas`  
-**Componentes:** `BookingForm` (público), `BookingModal` (público simplificado), `RescheduleModal` (dashboard profesional)  
-**Fuente:** `components/booking-form.tsx`, `components/booking-modal.tsx`, `components/reschedule-modal.tsx`, `lib/api.ts`
+**Ruta:** `/professional-dashboard/appointments`  
+**Componentes:** `BookingForm` (público), `BookingBottomSheet` (público simplificado), `RescheduleBottomSheet` (dashboard profesional)  
+**Fuente:** `lib/screens/booking_form.dart`, `lib/screens/booking_bottom_sheet.dart`, `lib/screens/reschedule_bottom_sheet.dart`, `lib/services/api.dart`
 
 #### 3.4.1 Descripción General
 
@@ -778,10 +779,10 @@ El módulo de Citas gestiona el agendamiento y administración de citas entre cl
 |----------|-------|
 | **Prioridad** | Alta |
 | **Precondiciones** | Profesional con perfil público y horario configurado. Cliente no necesita autenticación. |
-| **Fuente** | `components/booking-form.tsx`, `components/booking-modal.tsx` |
+| **Fuente** | `lib/screens/booking_form.dart`, `lib/screens/booking_bottom_sheet.dart` |
 
 **Flujo Principal:**
-1. El cliente ve el perfil público de un profesional (vía `BookingForm` o `BookingModal`).
+1. El cliente ve el perfil público de un profesional (vía `BookingForm` o `BookingBottomSheet`).
 2. El sistema carga la disponibilidad del profesional desde `GET /horarios/publico/{slug}`.
 3. El sistema muestra un calendario con los días disponibles (días sin disponibilidad aparecen deshabilitados) y un selector de horas (bloques de 1 hora).
 4. El cliente selecciona una fecha (`fecha_cita`, formato YYYY-MM-DD) que no sea pasada.
@@ -844,7 +845,7 @@ El módulo de Citas gestiona el agendamiento y administración de citas entre cl
 |----------|-------|
 | **Prioridad** | Alta |
 | **Precondiciones** | Cita existente. Usuario es el profesional de la cita. |
-| **Fuente** | Página de citas, `lib/api.ts` |
+| **Fuente** | Página de citas, `lib/services/api.dart` |
 
 **Flujo Principal:**
 1. El profesional selecciona una cita y elige un nuevo estado (ej. "Confirmada", "Cancelada", "Completada").
@@ -864,16 +865,16 @@ El módulo de Citas gestiona el agendamiento y administración de citas entre cl
 |----------|-------|
 | **Prioridad** | Media |
 | **Precondiciones** | Cita existente. `permitir_reagendar = true` en el perfil del profesional. |
-| **Fuente** | `components/reschedule-modal.tsx` |
+| **Fuente** | `lib/screens/reschedule_bottom_sheet.dart` |
 
 **Flujo Principal:**
 1. El profesional hace clic en "Reagendar" en una cita existente.
-2. El sistema abre el `RescheduleModal` mostrando los datos actuales: `cita.id`, `cita.usuario.nombre`, `cita.fecha_hora` actual.
+2. El sistema abre el `RescheduleBottomSheet` mostrando los datos actuales: `cita.id`, `cita.usuario.nombre`, `cita.fecha_hora` actual.
 3. El sistema muestra campos HTML5 `date` (`fecha_cita`) y `time` (`hora_cita`) para seleccionar nueva fecha/hora.
 4. El profesional selecciona una nueva fecha y hora disponible.
 5. El profesional confirma el reagendamiento.
 6. El sistema llama a `PUT /citas/{id}/reagendar` con `{fecha_cita, hora_cita}`.
-7. El sistema actualiza la cita en la lista y cierra el modal.
+7. El sistema actualiza la cita en la lista y cierra el bottom sheet.
 
 **Flujos Alternativos:**
 - **FA1 (Reagendamiento no permitido):** Si `permitir_reagendar = false`, el botón "Reagendar" no aparece.
@@ -881,9 +882,9 @@ El módulo de Citas gestiona el agendamiento y administración de citas entre cl
 - **FA3 (Error API):** Si falla, el sistema muestra error y no modifica la cita.
 
 **Criterios de Aceptación:**
-- [ ] El modal se precarga con `cita.id`, `usuario.nombre`, y `fecha_hora` actual.
+- [ ] El bottom sheet se precarga con `cita.id`, `usuario.nombre`, y `fecha_hora` actual.
 - [ ] Solo se muestran fechas/horas disponibles del profesional.
-- [ ] `ReagendarModal` usa `fecha_cita` + `hora_cita` (no `fecha_hora` combinado).
+- [ ] `RescheduleBottomSheet` usa `fecha_cita` + `hora_cita` (no `fecha_hora` combinado).
 - [ ] Tras reagendar, `fecha_hora` se actualiza en el servidor.
 
 ---
@@ -892,14 +893,14 @@ El módulo de Citas gestiona el agendamiento y administración de citas entre cl
 
 | ID | Regla | Fuente |
 |----|-------|--------|
-| RN-CIT-01 | No se pueden agendar citas en fechas pasadas. | `booking-form.tsx` (Calendar deshabilita días pasados) |
-| RN-CIT-02 | Las horas de cita son bloques fijos de 1 hora (HH:00). | `booking-form.tsx` |
-| RN-CIT-03 | El teléfono del cliente debe tener 10 dígitos numéricos (patrón `[0-9]{10}`). | `booking-form.tsx`, `booking-modal.tsx` |
-| RN-CIT-04 | El reagendamiento solo está disponible si `permitir_reagendar = true` en el perfil. | `lib/api.ts` (PerfilProfesional), `reschedule-modal.tsx` |
-| RN-CIT-05 | Las citas públicas no requieren autenticación del cliente. | `lib/api.ts` (`POST /citas/publico`) |
-| RN-CIT-06 | Las citas privadas requieren token de autenticación del cliente. | `lib/api.ts` (`POST /citas`) |
-| RN-CIT-07 | Solo el profesional dueño de la cita puede cambiar su estado. | `lib/api.ts` (lógica del backend) |
-| RN-CIT-08 | La disponibilidad se determina por la matriz `boolean[168]` del profesional. | `schedule-grid.tsx`, `schedule-manager.tsx` |
+| RN-CIT-01 | No se pueden agendar citas en fechas pasadas. | `booking_form.dart` (Calendar deshabilita días pasados) |
+| RN-CIT-02 | Las horas de cita son bloques fijos de 1 hora (HH:00). | `booking_form.dart` |
+| RN-CIT-03 | El teléfono del cliente debe tener 10 dígitos numéricos (patrón `[0-9]{10}`). | `booking_form.dart`, `booking_bottom_sheet.dart` |
+| RN-CIT-04 | El reagendamiento solo está disponible si `permitir_reagendar = true` en el perfil. | `lib/services/api.dart` (PerfilProfesional), `reschedule_bottom_sheet.dart` |
+| RN-CIT-05 | Las citas públicas no requieren autenticación del cliente. | `lib/services/api.dart` (`POST /citas/publico`) |
+| RN-CIT-06 | Las citas privadas requieren token de autenticación del cliente. | `lib/services/api.dart` (`POST /citas`) |
+| RN-CIT-07 | Solo el profesional dueño de la cita puede cambiar su estado. | `lib/services/api.dart` (lógica del backend) |
+| RN-CIT-08 | La disponibilidad se determina por la matriz `boolean[168]` del profesional. | `schedule_grid.dart`, `schedule_manager.dart` |
 
 #### 3.4.5 Validaciones de Datos — Citas
 
@@ -927,9 +928,9 @@ El módulo de Citas gestiona el agendamiento y administración de citas entre cl
 
 ### 3.5 Módulo: Horarios
 
-**Ruta:** `/dashboard/profesional/horario`  
+**Ruta:** `/professional-dashboard/schedule`  
 **Componentes:** `ScheduleManager`, `ScheduleGrid`  
-**Fuente:** `components/schedule-manager.tsx`, `components/schedule-grid.tsx`, `lib/api.ts`
+**Fuente:** `lib/screens/schedule_manager.dart`, `lib/screens/schedule_grid.dart`, `lib/services/api.dart`
 
 #### 3.5.1 Descripción General
 
@@ -954,7 +955,7 @@ El módulo de Horarios permite al profesional definir su disponibilidad semanal 
 |----------|-------|
 | **Prioridad** | Alta |
 | **Precondiciones** | Usuario autenticado con `perfilId`. |
-| **Fuente** | `components/schedule-grid.tsx`, `components/schedule-manager.tsx` |
+| **Fuente** | `lib/screens/schedule_grid.dart`, `lib/screens/schedule_manager.dart` |
 
 **Flujo Principal:**
 1. El `ScheduleManager` obtiene el `perfilId` del profesional.
@@ -982,7 +983,7 @@ El módulo de Horarios permite al profesional definir su disponibilidad semanal 
 |----------|-------|
 | **Prioridad** | Alta |
 | **Precondiciones** | Grilla de horario renderizada. |
-| **Fuente** | `components/schedule-grid.tsx` (callback `onChange`) |
+| **Fuente** | `lib/screens/schedule_grid.dart` (callback `onChange`) |
 
 **Flujo Principal:**
 1. El usuario hace clic en una celda para alternar su estado (disponible ↔ no disponible).
@@ -1011,7 +1012,7 @@ El módulo de Horarios permite al profesional definir su disponibilidad semanal 
 |----------|-------|
 | **Prioridad** | Alta |
 | **Precondiciones** | Horario guardado. |
-| **Fuente** | `lib/api.ts` (`GET /horarios/publico/{slug}`) |
+| **Fuente** | `lib/services/api.dart` (`GET /horarios/publico/{slug}`) |
 
 **Flujo Principal:**
 1. Cuando un cliente ve el perfil público del profesional, el sistema llama a `GET /horarios/publico/{slug}`.
@@ -1030,13 +1031,13 @@ El módulo de Horarios permite al profesional definir su disponibilidad semanal 
 
 | ID | Regla | Fuente |
 |----|-------|--------|
-| RN-HOR-01 | La matriz de horario tiene exactamente 168 elementos (7 días × 24 horas). | `schedule-grid.tsx` |
-| RN-HOR-02 | El índice se calcula como: `índice = día × 24 + hora`. | `schedule-grid.tsx` |
-| RN-HOR-03 | Mapeo de días: matriz día 0 = Lunes, día 1 = Martes, ..., día 6 = Domingo. | `schedule-grid.tsx`, `schedule-manager.tsx` |
-| RN-HOR-04 | JavaScript `Date.getDay()`: 0 = Domingo mapea a matriz índice 6; 1 = Lunes mapea a 0, etc. | `schedule-grid.tsx` |
-| RN-HOR-05 | Las citas solo pueden agendarse en horas marcadas como disponibles (`true`). | `booking-form.tsx` |
-| RN-HOR-06 | El horario público se obtiene por `slug` del profesional, no por `perfilId`. | `lib/api.ts` |
-| RN-HOR-07 | Cada profesional tiene exactamente un registro de horario (relación 1:1 con PerfilProfesional). | `lib/api.ts` |
+| RN-HOR-01 | La matriz de horario tiene exactamente 168 elementos (7 días × 24 horas). | `schedule_grid.dart` |
+| RN-HOR-02 | El índice se calcula como: `índice = día × 24 + hora`. | `schedule_grid.dart` |
+| RN-HOR-03 | Mapeo de días: matriz día 0 = Lunes, día 1 = Martes, ..., día 6 = Domingo. | `schedule_grid.dart`, `schedule_manager.dart` |
+| RN-HOR-04 | JavaScript `Date.getDay()`: 0 = Domingo mapea a matriz índice 6; 1 = Lunes mapea a 0, etc. | `schedule_grid.dart` |
+| RN-HOR-05 | Las citas solo pueden agendarse en horas marcadas como disponibles (`true`). | `booking_form.dart` |
+| RN-HOR-06 | El horario público se obtiene por `slug` del profesional, no por `perfilId`. | `lib/services/api.dart` |
+| RN-HOR-07 | Cada profesional tiene exactamente un registro de horario (relación 1:1 con PerfilProfesional). | `lib/services/api.dart` |
 
 #### 3.5.5 Validaciones de Datos — Horarios
 
@@ -1057,9 +1058,9 @@ El módulo de Horarios permite al profesional definir su disponibilidad semanal 
 
 ### 3.6 Módulo: Redes Sociales
 
-**Ruta:** `/dashboard/profesional/redes`  
+**Ruta:** `/professional-dashboard/social-media`  
 **Componente:** `SocialMediaManager`  
-**Fuente:** `components/social-media-manager.tsx`, `components/professional-form.tsx` (Step 4), `lib/api.ts`
+**Fuente:** `lib/screens/social_media_manager.dart`, `lib/screens/professional_form.dart` (Step 4), `lib/services/api.dart`
 
 #### 3.6.1 Descripción General
 
@@ -1085,7 +1086,7 @@ El módulo de Redes Sociales permite al profesional gestionar los enlaces a sus 
 |----------|-------|
 | **Prioridad** | Media |
 | **Precondiciones** | Usuario autenticado con perfil profesional. |
-| **Fuente** | `components/social-media-manager.tsx` |
+| **Fuente** | `lib/screens/social_media_manager.dart` |
 
 **Flujo Principal:**
 1. El sistema muestra el `SocialMediaManager` con 6 campos de entrada, uno por plataforma:
@@ -1120,10 +1121,10 @@ El módulo de Redes Sociales permite al profesional gestionar los enlaces a sus 
 
 | ID | Regla | Fuente |
 |----|-------|--------|
-| RN-RED-01 | Seis plataformas soportadas: Facebook, Instagram, TikTok, LinkedIn, X/Twitter, YouTube. | `social-media-manager.tsx` |
-| RN-RED-02 | Cada URL se valida contra un patrón regex específico de la plataforma. | `social-media-manager.tsx`, `professional-form.tsx` |
-| RN-RED-03 | Las URLs de redes sociales son campos opcionales. | `lib/api.ts` (PerfilProfesional) |
-| RN-RED-04 | Los cambios en redes sociales se guardan a través del endpoint de actualización de perfil. | `social-media-manager.tsx` |
+| RN-RED-01 | Seis plataformas soportadas: Facebook, Instagram, TikTok, LinkedIn, X/Twitter, YouTube. | `social_media_manager.dart` |
+| RN-RED-02 | Cada URL se valida contra un patrón regex específico de la plataforma. | `social_media_manager.dart`, `professional_form.dart` |
+| RN-RED-03 | Las URLs de redes sociales son campos opcionales. | `lib/services/api.dart` (PerfilProfesional) |
+| RN-RED-04 | Los cambios en redes sociales se guardan a través del endpoint de actualización de perfil. | `social_media_manager.dart` |
 | RN-RED-05 | La validación ocurre tanto en `SocialMediaManager` como en el Paso 4 del `ProfessionalForm`. | Ambos componentes |
 
 #### 3.6.5 Validaciones de Datos — Redes Sociales
@@ -1147,9 +1148,9 @@ El módulo de Redes Sociales permite al profesional gestionar los enlaces a sus 
 
 ### 3.7 Módulo: Configuración
 
-**Ruta:** `/dashboard/profesional/configuracion`  
+**Ruta:** `/professional-dashboard/settings`  
 **Componente:** Página de configuración  
-**Fuente:** `lib/api.ts`, `lib/profesional-nav.ts`
+**Fuente:** `lib/services/api.dart`, `lib/config/professional_nav.dart`
 
 #### 3.7.1 Descripción General
 
@@ -1174,7 +1175,7 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 |----------|-------|
 | **Prioridad** | Alta |
 | **Precondiciones** | Usuario autenticado. |
-| **Fuente** | `lib/api.ts` (`authApi.cambiarContrasena`) |
+| **Fuente** | `lib/services/api.dart` (`authApi.cambiarContrasena`) |
 
 **Flujo Principal:**
 1. El sistema muestra el formulario de cambio de contraseña: `contraseña_actual`, `nueva_contraseña`, `confirmar_nueva_contraseña`.
@@ -1204,7 +1205,7 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 |----------|-------|
 | **Prioridad** | Media |
 | **Precondiciones** | Usuario autenticado. |
-| **Fuente** | `lib/api.ts` (`PUT /usuarios/perfil`) |
+| **Fuente** | `lib/services/api.dart` (`PUT /usuarios/perfil`) |
 
 **Flujo Principal:**
 1. El sistema carga los datos actuales del usuario desde `GET /usuarios/perfil`.
@@ -1235,7 +1236,7 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 |----------|-------|
 | **Prioridad** | Baja |
 | **Precondiciones** | Usuario autenticado. |
-| **Fuente** | `lib/api.ts` (`DELETE /usuarios/mi-cuenta`) |
+| **Fuente** | `lib/services/api.dart` (`DELETE /usuarios/mi-cuenta`) |
 
 **Flujo Principal:**
 1. El usuario navega a la sección "Eliminar Cuenta" en Configuración.
@@ -1243,7 +1244,7 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 3. El sistema solicita confirmación: el usuario debe ingresar su contraseña actual para verificar identidad.
 4. El usuario ingresa su contraseña y confirma.
 5. El sistema llama a `DELETE /usuarios/mi-cuenta`.
-6. El sistema cierra la sesión (elimina token de `localStorage`) y redirige a la página principal.
+6. El sistema cierra la sesión (elimina token de `flutter_secure_storage`) y redirige a la página principal.
 
 **Flujos Alternativos:**
 - **FA1 (Contraseña incorrecta):** El sistema muestra: "Contraseña incorrecta. No se pudo eliminar la cuenta."
@@ -1252,7 +1253,7 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 **Criterios de Aceptación:**
 - [ ] Advertencia clara sobre la irreversibilidad de la acción.
 - [ ] Requiere contraseña para confirmar identidad.
-- [ ] Tras eliminar, se limpia el token de `localStorage("auth_token")`.
+- [ ] Tras eliminar, se limpia el token de `flutter_secure_storage (auth_token)`.
 - [ ] Redirección a la página principal pública.
 
 ---
@@ -1263,7 +1264,7 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 |----------|-------|
 | **Prioridad** | Media |
 | **Precondiciones** | Usuario autenticado con perfil profesional. |
-| **Fuente** | `lib/api.ts` (PerfilProfesional) |
+| **Fuente** | `lib/services/api.dart` (PerfilProfesional) |
 
 **Flujo Principal:**
 1. El sistema muestra opciones de configuración:
@@ -1289,11 +1290,11 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 
 | ID | Regla | Fuente |
 |----|-------|--------|
-| RN-CONF-01 | La eliminación de cuenta es permanente e irreversible. | `lib/api.ts` |
+| RN-CONF-01 | La eliminación de cuenta es permanente e irreversible. | `lib/services/api.dart` |
 | RN-CONF-02 | Para eliminar la cuenta, el usuario debe confirmar con su contraseña actual. | Página de configuración |
 | RN-CONF-03 | La nueva contraseña no puede ser igual a la contraseña actual. | `authApi.cambiarContrasena` |
-| RN-CONF-04 | `show_phone` y `show_email` aplican a la vista pública del perfil. | `lib/api.ts` |
-| RN-CONF-05 | `permitir_reagendar` debe estar activo para que aparezca la opción de reagendar citas. | `reschedule-modal.tsx` |
+| RN-CONF-04 | `show_phone` y `show_email` aplican a la vista pública del perfil. | `lib/services/api.dart` |
+| RN-CONF-05 | `permitir_reagendar` debe estar activo para que aparezca la opción de reagendar citas. | `reschedule_bottom_sheet.dart` |
 
 #### 3.7.5 Validaciones de Datos — Configuración
 
@@ -1327,7 +1328,7 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 
 ### 4.1 Autenticación y Seguridad
 
-**Fuente:** `lib/api.ts` (authApi), `localStorage("auth_token")`
+**Fuente:** `lib/services/api.dart` (authApi), `flutter_secure_storage (auth_token)`
 
 ---
 
@@ -1345,11 +1346,11 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 1. El usuario completa el formulario de registro con nombre, correo, contraseña, teléfono, cédula.
 2. `rol_id` se establece automáticamente como `2` (profesional).
 3. El sistema envía `POST /auth/register` con los datos.
-4. El sistema recibe `{token, usuario}`, almacena el token JWT en `localStorage("auth_token")`.
+4. El sistema recibe `{token, usuario}`, almacena el token JWT en `flutter_secure_storage (auth_token)`.
 5. El sistema redirige al dashboard profesional o al wizard de creación de perfil.
 
 **Criterios de Aceptación:**
-- [ ] El token JWT se almacena en `localStorage` bajo la clave `"auth_token"`.
+- [ ] El token JWT se almacena en `flutter_secure_storage` bajo la clave `"auth_token"`.
 - [ ] `rol_id = 2` identifica al usuario como profesional.
 - [ ] El endpoint retorna tanto el token como los datos básicos del usuario.
 
@@ -1368,7 +1369,7 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 **Flujo Principal:**
 1. El usuario ingresa correo y contraseña.
 2. El sistema envía `POST /auth/login`.
-3. Al éxito, el sistema almacena el token en `localStorage("auth_token")`.
+3. Al éxito, el sistema almacena el token en `flutter_secure_storage (auth_token)`.
 4. El sistema verifica `usuario.rol_id` y redirige según el rol.
 
 **Flujos Alternativos:**
@@ -1389,13 +1390,13 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 
 **Flujo Principal:**
 1. Cada petición a endpoints protegidos incluye el header `Authorization: Bearer {token}`.
-2. El token se obtiene de `localStorage("auth_token")`.
+2. El token se obtiene de `flutter_secure_storage (auth_token)`.
 3. Si el token expira o es inválido, el servidor retorna `401 Unauthorized`.
-4. El sistema intercepta el `401`, limpia el token de `localStorage`, y redirige al login.
+4. El sistema intercepta el `401`, limpia el token de `flutter_secure_storage`, y redirige al login.
 
 **Criterios de Aceptación:**
 - [ ] Todas las llamadas autenticadas incluyen `Authorization: Bearer {token}`.
-- [ ] El token se lee de `localStorage("auth_token")`.
+- [ ] El token se lee de `flutter_secure_storage (auth_token)`.
 - [ ] `401` provoca cierre de sesión y redirección a login.
 
 ---
@@ -1408,12 +1409,12 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 
 **Flujo Principal:**
 1. El usuario hace clic en "Cerrar Sesión".
-2. El sistema elimina `auth_token` de `localStorage`.
+2. El sistema elimina `auth_token` de `flutter_secure_storage`.
 3. El sistema limpia cualquier estado de usuario en memoria.
 4. El sistema redirige a la página principal pública.
 
 **Criterios de Aceptación:**
-- [ ] `localStorage.removeItem("auth_token")` al cerrar sesión.
+- [ ] `flutter_secure_storage.delete(key: 'auth_token')` al cerrar sesión.
 - [ ] Redirección a página pública.
 - [ ] No se requiere llamada API para cerrar sesión (solo limpieza local).
 
@@ -1508,7 +1509,7 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 
 ### 4.3 Geolocalización
 
-**Fuente:** `LocationMap` component, `navigator.geolocation`, `lib/api.ts`
+**Fuente:** `LocationMap` component, `Geolocator`, `lib/services/api.dart`
 
 ---
 
@@ -1543,12 +1544,12 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 | Atributo | Valor |
 |----------|-------|
 | **Prioridad** | Baja |
-| **API** | `navigator.geolocation.getCurrentPosition()` |
+| **API** | `Geolocator.getCurrentPosition()` |
 
 **Flujo Principal:**
 1. El usuario hace clic en "Usar mi ubicación actual" en el mapa.
 2. El sistema solicita permiso de geolocalización al navegador.
-3. Si el usuario acepta, `navigator.geolocation.getCurrentPosition()` retorna coordenadas.
+3. Si el usuario acepta, `Geolocator.getCurrentPosition()` retorna coordenadas.
 4. El sistema posiciona el marcador y autocompleta `latitud`/`longitud`.
 
 **Flujos Alternativos:**
@@ -1564,7 +1565,7 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 
 ### 4.4 Pagos
 
-**Fuente:** `lib/api.ts` (PayPhone flow, pagosApi), `components/professional-form.tsx` (Step 5 - Payment), `BankAccount`
+**Fuente:** `lib/services/api.dart` (PayPhone flow, pagosApi), `lib/screens/professional_form.dart` (Step 5 - Payment), `BankAccount`
 
 ---
 
@@ -1688,66 +1689,65 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 
 ---
 
-### 4.5 Diseño Responsivo
+### 4.5 Diseño Adaptativo (Phone vs Tablet)
 
-**Fuente:** `ProfesionalSidebar` (escritorio), `ProfesionalMobileNav` (móvil), `lib/profesional-nav.ts`
+**Fuente:** `ProfessionalNavigationRail` (tablet), `ProfessionalBottomNav` (teléfono), `lib/config/professional_nav.dart`
 
 ---
 
-**RF-RESP-001: Sidebar de Navegación en Escritorio**
+**RF-RESP-001: NavigationRail en Tablet**
 
 | Atributo | Valor |
 |----------|-------|
 | **Prioridad** | Alta |
-| **Componente** | `ProfesionalSidebar` |
+| **Componente** | `ProfessionalNavigationRail` |
 
 **Flujo Principal:**
-1. En viewports de escritorio (≥1024px), el sistema muestra el `ProfesionalSidebar`.
-2. El sidebar contiene 7 items de navegación (`PROFESIONAL_NAV_ITEMS`), cada uno con ícono Lucide y etiqueta.
-3. El sidebar es colapsable: al colapsar muestra solo íconos; al expandir (hover) muestra íconos + etiquetas.
-4. El item activo se resalta usando `usePathname()` para comparar la ruta actual.
+1. En tablet (≥600dp), el sistema muestra el `ProfessionalNavigationRail`.
+2. El NavigationRail contiene 7 items de navegación (`PROFESSIONAL_NAV_ITEMS`), cada uno con ícono Material Icons y etiqueta.
+3. El NavigationRail es colapsable con animación: al colapsar muestra solo íconos; al expandir muestra íconos + etiquetas.
+4. El item activo se resalta usando `GoRouter.of(context).location` para comparar la ruta actual.
 
 **Items de navegación:**
 | # | Etiqueta | Ruta | Ícono |
 |---|----------|------|-------|
-| 1 | Dashboard | `/dashboard/profesional` | `LayoutDashboard` |
-| 2 | Citas | `/dashboard/profesional/citas` | `Calendar` |
-| 3 | Artículos | `/dashboard/profesional/articulos` | `FileText` |
-| 4 | Servicios | `/dashboard/profesional/servicios` | `Briefcase` |
-| 5 | Horario | `/dashboard/profesional/horario` | `Clock` |
-| 6 | Redes Soc. | `/dashboard/profesional/redes` | `Share2` |
-| 7 | Config. | `/dashboard/profesional/configuracion` | `Settings` |
+| 1 | Dashboard | `/professional-dashboard` | `Icons.dashboard` |
+| 2 | Citas | `/professional-dashboard/appointments` | `Icons.calendar_today` |
+| 3 | Artículos | `/professional-dashboard/articles` | `Icons.article` |
+| 4 | Servicios | `/professional-dashboard/services` | `Icons.work` |
+| 5 | Horario | `/professional-dashboard/schedule` | `Icons.schedule` |
+| 6 | Redes Soc. | `/professional-dashboard/social-media` | `Icons.share` |
+| 7 | Config. | `/professional-dashboard/settings` | `Icons.settings` |
 
 **Criterios de Aceptación:**
-- [ ] Sidebar visible en viewports ≥1024px.
-- [ ] Colapsable/expandible con hover.
-- [ ] Item activo resaltado basado en `usePathname()`.
-- [ ] 7 items con íconos Lucide correspondientes.
+- [ ] NavigationRail visible en tablet (≥600dp).
+- [ ] Colapsable/expandible con animación.
+- [ ] Item activo resaltado basado en `GoRouter.of(context).location`.
+- [ ] 7 items con íconos Material Icons correspondientes.
 
 ---
 
-**RF-RESP-002: Navegación Móvil (Drawer/Sheet)**
+**RF-RESP-002: Navegación en Teléfono (BottomNavigationBar)**
 
 | Atributo | Valor |
 |----------|-------|
 | **Prioridad** | Alta |
-| **Componente** | `ProfesionalMobileNav` |
+| **Componente** | `ProfessionalBottomNav` |
 
 **Flujo Principal:**
-1. En viewports móviles (<1024px), el sistema oculta el sidebar y muestra un botón de menú (hamburguesa).
-2. Al hacer clic en el botón, se abre un drawer/sheet con los mismos 7 items de navegación.
-3. Al seleccionar un item, el drawer se cierra y navega a la ruta correspondiente.
-4. El item activo se resalta visualmente.
+1. En teléfono (<600dp), el sistema oculta el NavigationRail y muestra un `ProfessionalBottomNav` (BottomNavigationBar) con los mismos 7 items de navegación.
+2. Al tocar un item, el sistema navega a la pantalla correspondiente.
+3. El item activo se resalta visualmente con el color primario.
 
 **Criterios de Aceptación:**
-- [ ] Drawer/sheet visible en viewports <1024px.
-- [ ] Mismos 7 items que el sidebar de escritorio.
-- [ ] Cierre automático al seleccionar un item.
-- [ ] Botón de menú accesible y visible.
+- [ ] BottomNavigationBar visible en teléfono (<600dp).
+- [ ] Mismos 7 items que el NavigationRail de tablet.
+- [ ] Cambio de pantalla al seleccionar un item.
+- [ ] Barra de navegación accesible y visible.
 
 ---
 
-**RF-RESP-003: Grilla de Horario Responsiva**
+**RF-RESP-003: Grilla de Horario Adaptativa**
 
 | Atributo | Valor |
 |----------|-------|
@@ -1756,12 +1756,12 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 
 **Flujo Principal:**
 1. La grilla de 7×24 se adapta a diferentes tamaños de pantalla.
-2. En escritorio: todas las columnas y filas visibles.
-3. En móvil: scroll horizontal para ver todos los días, etiquetas de hora simplificadas.
+2. En tablet: todas las columnas y filas visibles.
+3. En teléfono: scroll horizontal para ver todos los días, etiquetas de hora simplificadas.
 
 **Criterios de Aceptación:**
-- [ ] Grilla con scroll horizontal en móviles.
-- [ ] Celdas con tamaño táctil adecuado (mín. 44×44px en móvil).
+- [ ] Grilla con scroll horizontal en teléfono.
+- [ ] Celdas con tamaño táctil adecuado (mín. 48×48dp en teléfono).
 - [ ] Etiquetas de días y horas legibles en todos los tamaños.
 
 ---
@@ -1812,9 +1812,9 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 | RF-PAY-003 | Pagos | Pago por PayPhone (pasarela) | Alta |
 | RF-PAY-004 | Pagos | Confirmación de pago (admin) | Media |
 | RF-PAY-005 | Pagos | Historial de pagos | Baja |
-| RF-RESP-001 | Responsive | Sidebar de navegación en escritorio | Alta |
-| RF-RESP-002 | Responsive | Navegación móvil (drawer/sheet) | Alta |
-| RF-RESP-003 | Responsive | Grilla de horario responsiva | Media |
+| RF-RESP-001 | Adaptativo | NavigationRail en tablet | Alta |
+| RF-RESP-002 | Adaptativo | Navegación en teléfono (BottomNavigationBar) | Alta |
+| RF-RESP-003 | Adaptativo | Grilla de horario adaptativa | Media |
 
 **Total: 45 requerimientos funcionales**
 
@@ -1826,7 +1826,7 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 |---------|------------|
 | **Profesional** | Usuario registrado con `rol_id = 2`. Persona que ofrece servicios profesionales en la plataforma (abogado, médico, ingeniero, etc.). |
 | **Cliente** | Usuario registrado (cualquier `rol_id`) o usuario público que agenda citas con profesionales. |
-| **Dashboard** | Panel de control del profesional con 7 módulos accesibles desde la barra lateral. |
+| **Dashboard** | Panel de control del profesional con 7 módulos accesibles desde el NavigationRail o BottomNavigationBar. |
 | **PerfilProfesional** | Entidad que contiene toda la información pública y configuraciones del profesional (28 campos). |
 | **Wizard** | Formulario multi-paso (`ProfessionalForm`) de 5-6 pasos para crear/editar el perfil profesional. |
 | **Matriz de Horario** | Array de 168 valores booleanos (`boolean[]`) que representa la disponibilidad semanal: 7 días × 24 horas. Índice = `día × 24 + hora`. |
@@ -1834,7 +1834,7 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 | **Slug** | Identificador único URL-friendly del perfil profesional, usado en rutas públicas (`/profesionales/publico/{slug}`). |
 | **Modalidad de Trabajo** | Enum con 3 valores: `"Presencial"`, `"Virtual"`, `"Ambas modalidades"`. Define cómo el profesional atiende a sus clientes. |
 | **Cloudinary** | Servicio externo de almacenamiento y entrega de imágenes. Configuración: cloud `dw4p8pdcz`, preset `profesionales`. |
-| **JWT (JSON Web Token)** | Token de autenticación almacenado en `localStorage("auth_token")` y enviado en el header `Authorization: Bearer {token}`. |
+| **JWT (JSON Web Token)** | Token de autenticación almacenado en `flutter_secure_storage (auth_token)` y enviado en el header `Authorization: Bearer {token}`. |
 | **PayPhone** | Pasarela de pago externa utilizada para procesar pagos del plan prioritario. |
 | **Plan Prioritario** | Plan de suscripción que requiere pago. Incluye paso adicional (Paso 5) en el wizard de registro. |
 | **BankAccount** | Entidad que representa una cuenta bancaria para transferencias. Contiene: `bank_name`, `account_type`, `account_number`, `holder_identifier`, `holder_name`. |
@@ -1843,9 +1843,9 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 | **Catálogos** | Entidades de búsqueda (lookup): Profesión, Especialidad (filtrable por `profesion_id`), Provincia, Ciudad (filtrable por `provincia_id`). |
 | **Artículo** | Contenido editorial (blog post) creado por el profesional. Tiene estados: `"borrador"`, `"publicado"`, `"archivado"`. |
 | **Moderación** | Proceso administrativo de revisión de artículos antes de su publicación (`PUT /articulos/{id}/moderar`). |
-| **ProfesionalSidebar** | Componente de navegación lateral para escritorio (≥1024px). Colapsable con hover. |
-| **ProfesionalMobileNav** | Componente de navegación móvil (<1024px) tipo drawer/sheet. |
-| **usePathname** | Hook de Next.js usado para detectar la ruta activa y resaltar el item de navegación correspondiente. |
+| **ProfessionalNavigationRail** | Widget de navegación lateral para tablet (≥600dp). Colapsable con animación. |
+| **ProfessionalBottomNav** | Widget de navegación inferior para teléfono (<600dp). BottomNavigationBar. |
+| **usePathname** | Método de GoRouter usado para detectar la ruta activa y resaltar el item de navegación correspondiente (`GoRouter.of(context).location`). |
 | **FormData** | Formato `multipart/form-data` usado para enviar archivos (imágenes, PDFs) junto con datos de texto en artículos. |
 | **PayPhonePriorityRegistrationDraft** | Borrador que almacena temporalmente todos los datos de registro (perfil, servicios, horario, documentos) antes de completar el pago por PayPhone. |
 | **RFC** | Requerimiento Funcional. Identificador único con formato `RF-MODULO-NNN`. |
@@ -1862,6 +1862,6 @@ El módulo de Configuración permite al profesional gestionar los ajustes de su 
 
 ---
 
-**Documento generado a partir de la exploración de código fuente del frontend Profesionales EC (Next.js).**  
+**Documento generado a partir de la exploración de código fuente del frontend Profesionales EC (Flutter).**  
 **Trazabilidad:** Cada requerimiento funcional referencia el componente, archivo y/o endpoint API del cual deriva.  
-**Fuente de datos:** `lib/api.ts`, `components/professional-form.tsx`, `components/services-manager.tsx`, `components/article-form-modal.tsx`, `components/booking-form.tsx`, `components/booking-modal.tsx`, `components/reschedule-modal.tsx`, `components/schedule-manager.tsx`, `components/schedule-grid.tsx`, `components/social-media-manager.tsx`, `lib/profesional-nav.ts`, `lib/validators/carousel.ts`.
+**Fuente de datos:** `lib/services/api.dart`, `lib/screens/professional_form.dart`, `lib/screens/services_manager.dart`, `lib/screens/article_form_screen.dart`, `lib/screens/booking_form.dart`, `lib/screens/booking_bottom_sheet.dart`, `lib/screens/reschedule_bottom_sheet.dart`, `lib/screens/schedule_manager.dart`, `lib/screens/schedule_grid.dart`, `lib/screens/social_media_manager.dart`, `lib/config/professional_nav.dart`, `lib/utils/validators.dart`.
